@@ -8,6 +8,7 @@ export default function ContactForm() {
   >("idle");
 
   const [feedback, setFeedback] = useState("");
+  const [startedAt] = useState(() => Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,6 +26,8 @@ export default function ContactForm() {
       service: formData.get("service"),
       budget: formData.get("budget"),
       message: formData.get("message"),
+      website: formData.get("website"),
+      startedAt: formData.get("startedAt"),
     };
 
     try {
@@ -43,10 +46,13 @@ export default function ContactForm() {
       }
 
       setStatus("success");
-      setFeedback("Thank you. Your project enquiry has been sent to Monetcore.");
+      setFeedback(
+        "Thank you. Your project enquiry has been sent to Monetcore."
+      );
+
       form.reset();
     } catch (error) {
-      console.error(error);
+      console.error("Contact form error:", error);
 
       setStatus("error");
       setFeedback(
@@ -63,6 +69,26 @@ export default function ContactForm() {
       onSubmit={handleSubmit}
       className="mt-12 grid gap-6 rounded-2xl border border-white/10 bg-black/20 p-6 sm:p-8"
     >
+      {/* Spam honeypot — hidden from real visitors */}
+      <div className="hidden" aria-hidden="true">
+        <label>
+          Website
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </label>
+      </div>
+
+      {/* Records when the visitor opened the form */}
+      <input
+        type="hidden"
+        name="startedAt"
+        value={startedAt}
+      />
+
       <div className="grid gap-6 md:grid-cols-2">
         <label className="text-sm text-neutral-300">
           Your name *
@@ -72,6 +98,7 @@ export default function ContactForm() {
             type="text"
             autoComplete="name"
             placeholder="Your name"
+            maxLength={100}
             className={inputStyle}
           />
         </label>
@@ -84,6 +111,7 @@ export default function ContactForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
+            maxLength={200}
             className={inputStyle}
           />
         </label>
@@ -95,6 +123,7 @@ export default function ContactForm() {
             type="text"
             autoComplete="organization"
             placeholder="Company name"
+            maxLength={150}
             className={inputStyle}
           />
         </label>
@@ -109,18 +138,35 @@ export default function ContactForm() {
             <option value="" className="bg-neutral-950">
               Select a service
             </option>
-            <option value="Software Development" className="bg-neutral-950">
+
+            <option
+              value="Software Development"
+              className="bg-neutral-950"
+            >
               Software Development
             </option>
-            <option value="AI Solution" className="bg-neutral-950">
+
+            <option
+              value="AI Solution"
+              className="bg-neutral-950"
+            >
               AI Solution
             </option>
-            <option value="Business Automation" className="bg-neutral-950">
+
+            <option
+              value="Business Automation"
+              className="bg-neutral-950"
+            >
               Business Automation
             </option>
-            <option value="Digital Product" className="bg-neutral-950">
+
+            <option
+              value="Digital Product"
+              className="bg-neutral-950"
+            >
               Digital Product
             </option>
+
             <option value="Other" className="bg-neutral-950">
               Other
             </option>
@@ -137,21 +183,27 @@ export default function ContactForm() {
             <option value="" className="bg-neutral-950">
               Select a budget range
             </option>
+
             <option value="Under $500" className="bg-neutral-950">
               Under $500
             </option>
+
             <option value="$500 - $1,000" className="bg-neutral-950">
               $500 – $1,000
             </option>
+
             <option value="$1,000 - $2,500" className="bg-neutral-950">
               $1,000 – $2,500
             </option>
+
             <option value="$2,500 - $5,000" className="bg-neutral-950">
               $2,500 – $5,000
             </option>
+
             <option value="$5,000+" className="bg-neutral-950">
               $5,000+
             </option>
+
             <option value="Not sure" className="bg-neutral-950">
               Not sure yet
             </option>
@@ -165,6 +217,7 @@ export default function ContactForm() {
           required
           name="message"
           rows={6}
+          maxLength={5000}
           placeholder="What are you trying to build, improve, or automate?"
           className={inputStyle}
         />
@@ -180,14 +233,19 @@ export default function ContactForm() {
           disabled={status === "sending"}
           className="rounded-lg bg-white px-6 py-3.5 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {status === "sending" ? "Sending..." : "Send Project Enquiry"}
+          {status === "sending"
+            ? "Sending..."
+            : "Send Project Enquiry"}
         </button>
       </div>
 
       {feedback && (
         <p
+          role="status"
           className={`text-sm ${
-            status === "success" ? "text-green-400" : "text-red-400"
+            status === "success"
+              ? "text-green-400"
+              : "text-red-400"
           }`}
         >
           {feedback}
