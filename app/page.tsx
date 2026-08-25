@@ -1,3 +1,5 @@
+import ContactForm from "./ContactForm";
+
 const services = [
   {
     title: "Software Development",
@@ -24,6 +26,7 @@ const services = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
+      {/* Header */}
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-neutral-950/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
           <a href="#" className="flex items-center gap-3">
@@ -65,6 +68,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Hero */}
       <section className="relative overflow-hidden px-6 pb-24 pt-40 lg:px-8 lg:pt-48">
         <div className="absolute left-1/2 top-20 -z-10 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-white/[0.035] blur-3xl" />
 
@@ -130,6 +134,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Services */}
       <section
         id="services"
         className="border-t border-white/10 px-6 py-24 lg:px-8"
@@ -173,6 +178,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* About */}
       <section
         id="about"
         className="border-t border-white/10 px-6 py-24 lg:px-8"
@@ -205,13 +211,13 @@ export default function Home() {
 
             <p>
               Our goal is simple: build technology that solves real problems
-              and creates measurable value for businesses locally and
-              globally.
+              and creates measurable value for businesses locally and globally.
             </p>
           </div>
         </div>
       </section>
 
+      {/* Products */}
       <section
         id="products"
         className="border-t border-white/10 px-6 py-24 lg:px-8"
@@ -262,6 +268,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Contact / Project Enquiry */}
       <section
         id="contact"
         className="border-t border-white/10 px-6 py-24 lg:px-8"
@@ -272,29 +279,21 @@ export default function Home() {
               Start a project
             </p>
 
-            <div className="mt-5 flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
-              <div>
-                <h2 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Have a business problem that software can solve?
-                </h2>
+            <h2 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+              Have a business problem that software can solve?
+            </h2>
 
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-neutral-400">
-                  Talk to Monetcore about software development, AI systems,
-                  automation, or a new digital product.
-                </p>
-              </div>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-neutral-400">
+              Talk to Monetcore about software development, AI systems,
+              automation, or a new digital product.
+            </p>
 
-              <a
-                href="mailto:hello@monetcore.dev"
-                className="shrink-0 rounded-lg bg-white px-6 py-3.5 text-center font-semibold text-black transition hover:bg-neutral-200"
-              >
-                Start a Conversation
-              </a>
-            </div>
+            <ContactForm />
           </div>
         </div>
       </section>
 
+      {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-8 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 text-sm text-neutral-500 md:flex-row">
           <div>
