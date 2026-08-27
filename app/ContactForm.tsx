@@ -62,12 +62,12 @@ export default function ContactForm() {
   }
 
   const inputStyle =
-    "mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30";
+    "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-12 grid gap-6 rounded-2xl border border-white/10 bg-black/20 p-6 sm:p-8"
+      className="mt-12 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
     >
       {/* Spam honeypot — hidden from real visitors */}
       <div className="hidden" aria-hidden="true">
@@ -90,8 +90,8 @@ export default function ContactForm() {
       />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <label className="text-sm text-neutral-300">
-          Your name *
+        <label className="text-sm font-semibold text-slate-900">
+          Your name <span className="text-red-500">*</span>
           <input
             required
             name="name"
@@ -103,8 +103,8 @@ export default function ContactForm() {
           />
         </label>
 
-        <label className="text-sm text-neutral-300">
-          Business email *
+        <label className="text-sm font-semibold text-slate-900">
+          Business email <span className="text-red-500">*</span>
           <input
             required
             name="email"
@@ -116,7 +116,7 @@ export default function ContactForm() {
           />
         </label>
 
-        <label className="text-sm text-neutral-300">
+        <label className="text-sm font-semibold text-slate-900">
           Company
           <input
             name="company"
@@ -128,91 +128,79 @@ export default function ContactForm() {
           />
         </label>
 
-        <label className="text-sm text-neutral-300">
+        <label className="text-sm font-semibold text-slate-900">
           What do you need?
           <select
             name="service"
             defaultValue=""
             className={inputStyle}
           >
-            <option value="" className="bg-neutral-950">
+            <option value="">
               Select a service
             </option>
 
-            <option
-              value="Software Development"
-              className="bg-neutral-950"
-            >
+            <option value="Software Development">
               Software Development
             </option>
 
-            <option
-              value="AI Solution"
-              className="bg-neutral-950"
-            >
+            <option value="AI Solution">
               AI Solution
             </option>
 
-            <option
-              value="Business Automation"
-              className="bg-neutral-950"
-            >
+            <option value="Business Automation">
               Business Automation
             </option>
 
-            <option
-              value="Digital Product"
-              className="bg-neutral-950"
-            >
+            <option value="Digital Product">
               Digital Product
             </option>
 
-            <option value="Other" className="bg-neutral-950">
+            <option value="Other">
               Other
             </option>
           </select>
         </label>
 
-        <label className="text-sm text-neutral-300 md:col-span-2">
+        <label className="text-sm font-semibold text-slate-900 md:col-span-2">
           Estimated budget
           <select
             name="budget"
             defaultValue=""
             className={inputStyle}
           >
-            <option value="" className="bg-neutral-950">
+            <option value="">
               Select a budget range
             </option>
 
-            <option value="Under $500" className="bg-neutral-950">
+            <option value="Under $500">
               Under $500
             </option>
 
-            <option value="$500 - $1,000" className="bg-neutral-950">
+            <option value="$500 - $1,000">
               $500 – $1,000
             </option>
 
-            <option value="$1,000 - $2,500" className="bg-neutral-950">
+            <option value="$1,000 - $2,500">
               $1,000 – $2,500
             </option>
 
-            <option value="$2,500 - $5,000" className="bg-neutral-950">
+            <option value="$2,500 - $5,000">
               $2,500 – $5,000
             </option>
 
-            <option value="$5,000+" className="bg-neutral-950">
+            <option value="$5,000+">
               $5,000+
             </option>
 
-            <option value="Not sure" className="bg-neutral-950">
+            <option value="Not sure">
               Not sure yet
             </option>
           </select>
         </label>
       </div>
 
-      <label className="text-sm text-neutral-300">
-        Tell us about your project *
+      <label className="text-sm font-semibold text-slate-900">
+        Tell us about your project <span className="text-red-500">*</span>
         <textarea
           required
           name="message"
@@ -224,14 +212,20 @@ export default function ContactForm() {
       </label>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-neutral-500">
-          Or email us directly at hello@monetcore.dev
+        <p className="text-sm text-slate-500">
+          Or email us directly at{" "}
+          <a
+            href="mailto:hello@monetcore.dev"
+            className="font-semibold text-blue-600 transition hover:text-blue-700"
+          >
+            hello@monetcore.dev
+          </a>
         </p>
 
         <button
           type="submit"
           disabled={status === "sending"}
-          className="rounded-lg bg-white px-6 py-3.5 font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "sending"
             ? "Sending..."
@@ -242,10 +236,10 @@ export default function ContactForm() {
       {feedback && (
         <p
           role="status"
-          className={`text-sm ${
+          className={`rounded-lg px-4 py-3 text-sm font-medium ${
             status === "success"
-              ? "text-green-400"
-              : "text-red-400"
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
           }`}
         >
           {feedback}
