@@ -245,7 +245,9 @@ export default function Home() {
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-4">
-                  <a href="#contact" className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700">Request a Demo</a>
+                  <a href="https://monetcore-lead-demo.vercel.app/"
+  target="_blank"
+  rel="noopener noreferrer" className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700">Request a Demo</a>
                   <a href="#services" className="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">Build Something Similar</a>
                 </div>
               </div>
