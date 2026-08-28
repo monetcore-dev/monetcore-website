@@ -35,7 +35,7 @@ const company = [
   { label: "Contact", href: "/contact" },
   {
     label: "Book a Consultation",
-    href: "/contact#consultation",
+    href: "/book",
   },
 ];
 

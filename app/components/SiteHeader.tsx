@@ -186,7 +186,7 @@ export default function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <Link
-            href="/contact#consultation"
+            href="/book"
             className="hidden rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:inline-flex"
           >
             Book a Consultation
@@ -333,7 +333,7 @@ export default function SiteHeader() {
             </Link>
 
             <Link
-              href="/contact#consultation"
+              href="/book"
               onClick={() => setMobileOpen(false)}
               className="mt-5 flex justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white"
             >
