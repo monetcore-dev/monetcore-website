@@ -1,4 +1,6 @@
 import ContactForm from "./ContactForm";
+import SiteHeader from "./components/SiteHeader";
+import SiteFooter from "./components/SiteFooter";
 
 const services = [
   {
@@ -43,30 +45,7 @@ const productSteps = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-blue-100 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <a href="#" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-black text-white shadow-md shadow-blue-200">
-              M
-            </div>
-            <div>
-              <p className="text-sm font-extrabold tracking-[0.18em] text-blue-700">MONETCORE</p>
-              <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">System Solutions</p>
-            </div>
-          </a>
-
-          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-            <a href="#services" className="transition hover:text-blue-700">Services</a>
-            <a href="#products" className="transition hover:text-blue-700">Products</a>
-            <a href="#about" className="transition hover:text-blue-700">About</a>
-            <a href="#contact" className="transition hover:text-blue-700">Contact</a>
-          </nav>
-
-          <a href="#contact" className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
-            Book a Consultation
-          </a>
-        </div>
-      </header>
+ <SiteHeader />
 
       <section className="relative overflow-hidden px-6 pb-24 pt-36 lg:px-8 lg:pt-44">
         <div className="absolute inset-x-0 top-0 -z-10 h-[620px] bg-gradient-to-b from-blue-100/70 via-cyan-50/40 to-transparent" />
@@ -339,25 +318,9 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-blue-100 bg-white px-6 py-10 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 text-sm text-slate-500 md:flex-row md:items-end">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-xs font-black text-white">M</div>
-              <div>
-                <p className="font-bold tracking-[0.12em] text-slate-900">MONETCORE</p>
-                <p className="text-xs">System Solutions</p>
-              </div>
-            </div>
-            <p className="mt-4">AI Automation • Software Development • Intelligent Systems</p>
-          </div>
+      
 
-          <div className="md:text-right">
-            <p>© 2026 Monetcore System Solutions.</p>
-            <p className="mt-1 font-medium text-blue-700">monetcore.dev</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
