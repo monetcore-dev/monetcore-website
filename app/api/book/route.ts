@@ -153,6 +153,31 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+	
+	
+	
+	if (date === todayString) {
+  const currentTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Lagos",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+
+  if (time <= currentTime) {
+    return NextResponse.json(
+      {
+        error:
+          "That consultation time has already passed. Please choose a later time.",
+      },
+      { status: 400 }
+    );
+  }
+}
+	
+	
+	
+	
 
     const bookingDate = new Date(
       `${date}T12:00:00+01:00`

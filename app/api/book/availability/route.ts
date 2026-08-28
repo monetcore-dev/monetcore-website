@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
+const allowedTimes = [
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "14:00",
+  "15:00",
+  "16:00",
+];
+
 function isValidDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -19,6 +29,30 @@ function isValidDate(value: string) {
   );
 }
 
+function getLagosDateParts() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+
+  const values = Object.fromEntries(
+    parts.map((part) => [
+      part.type,
+      part.value,
+    ])
+  );
+
+  return {
+    date: `${values.year}-${values.month}-${values.day}`,
+    time: `${values.hour}:${values.minute}`,
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -28,21 +62,22 @@ export async function GET(request: Request) {
 
     if (!isValidDate(date)) {
       return NextResponse.json(
-        { error: "Please provide a valid date." },
+        {
+          error:
+            "Please provide a valid date.",
+        },
         { status: 400 }
       );
     }
 
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Africa/Lagos",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
+    const lagosNow = getLagosDateParts();
 
-    if (date < today) {
+    if (date < lagosNow.date) {
       return NextResponse.json(
-        { error: "This booking date is in the past." },
+        {
+          error:
+            "This booking date is in the past.",
+        },
         { status: 400 }
       );
     }
@@ -58,6 +93,7 @@ export async function GET(request: Request) {
         success: true,
         date,
         bookedTimes: [],
+        unavailableTimes: [...allowedTimes],
         unavailable: true,
         message:
           "Consultations are available Monday to Friday.",
@@ -90,10 +126,26 @@ export async function GET(request: Request) {
         String(booking.booking_time).slice(0, 5)
     );
 
+    const pastTimes =
+      date === lagosNow.date
+        ? allowedTimes.filter(
+            (time) => time <= lagosNow.time
+          )
+        : [];
+
+    const unavailableTimes = Array.from(
+      new Set([
+        ...bookedTimes,
+        ...pastTimes,
+      ])
+    );
+
     return NextResponse.json({
       success: true,
       date,
       bookedTimes,
+      pastTimes,
+      unavailableTimes,
     });
   } catch (error) {
     console.error(

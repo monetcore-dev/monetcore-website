@@ -23,6 +23,7 @@ export default function BookingForm() {
   const [selectedTime, setSelectedTime] = useState("");
 
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
   const [availabilityStatus, setAvailabilityStatus] =
     useState<AvailabilityStatus>("idle");
   const [availabilityMessage, setAvailabilityMessage] = useState("");
@@ -43,6 +44,7 @@ export default function BookingForm() {
   async function checkAvailability(date: string) {
     if (!date) {
       setBookedTimes([]);
+      setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
       return;
@@ -51,6 +53,7 @@ export default function BookingForm() {
     setAvailabilityStatus("loading");
     setAvailabilityMessage("");
     setBookedTimes([]);
+    setUnavailableTimes([]);
 
     try {
       const response = await fetch(
@@ -69,24 +72,34 @@ export default function BookingForm() {
         );
       }
 
-      const unavailable = Array.isArray(result.bookedTimes)
+      const booked = Array.isArray(result.bookedTimes)
         ? result.bookedTimes.map((time: unknown) =>
             String(time).slice(0, 5)
           )
         : [];
 
-      setBookedTimes(unavailable);
+      const unavailable = Array.isArray(result.unavailableTimes)
+        ? result.unavailableTimes.map((time: unknown) =>
+            String(time).slice(0, 5)
+          )
+        : booked;
+
+      setBookedTimes(booked);
+      setUnavailableTimes(unavailable);
       setAvailabilityStatus("ready");
 
-      if (unavailable.length === timeSlots.length) {
+      if (result.message) {
+        setAvailabilityMessage(String(result.message));
+      } else if (unavailable.length === timeSlots.length) {
         setAvailabilityMessage(
-          "All consultation times are booked for this date. Please choose another date."
+          "No consultation times remain available for this date. Please choose another date."
         );
       }
     } catch (error) {
       console.error("Availability error:", error);
 
       setBookedTimes([]);
+      setUnavailableTimes([]);
       setAvailabilityStatus("error");
       setAvailabilityMessage(
         error instanceof Error
@@ -95,19 +108,35 @@ export default function BookingForm() {
       );
     }
   }
+  
+  
+  
+  
 
-  async function handleDateChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const date = event.target.value;
+async function handleDateChange(
+  event: React.ChangeEvent<HTMLInputElement>
+) {
+  const date = event.target.value;
 
-    setSelectedDate(date);
-    setSelectedTime("");
-    setStatus("idle");
-    setFeedback("");
+  setSelectedDate(date);
+  setSelectedTime("");
+  setStatus("idle");
+  setFeedback("");
+  setAvailabilityMessage("");
 
-    await checkAvailability(date);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    setBookedTimes([]);
+    setUnavailableTimes([]);
+    setAvailabilityStatus("idle");
+    return;
   }
+
+  await checkAvailability(date);
+}
+  
+  
+  
+  
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -120,7 +149,7 @@ export default function BookingForm() {
       return;
     }
 
-    if (bookedTimes.includes(selectedTime)) {
+    if (unavailableTimes.includes(selectedTime)) {
       setStatus("error");
       setFeedback(
         "That consultation time is no longer available. Please choose another time."
@@ -183,6 +212,7 @@ export default function BookingForm() {
       setSelectedDate("");
       setSelectedTime("");
       setBookedTimes([]);
+      setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
     } catch (error) {
@@ -307,13 +337,14 @@ export default function BookingForm() {
             <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {timeSlots.map((time) => {
                 const isBooked = bookedTimes.includes(time);
+                const isUnavailable = unavailableTimes.includes(time);
                 const active = selectedTime === time;
 
                 const disabled =
                   !selectedDate ||
                   availabilityStatus === "loading" ||
                   availabilityStatus === "error" ||
-                  isBooked;
+                  isUnavailable;
 
                 return (
                   <button
@@ -326,7 +357,7 @@ export default function BookingForm() {
                       setFeedback("");
                     }}
                     className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-                      isBooked
+                      isUnavailable
                         ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 line-through"
                         : active
                           ? "border-blue-600 bg-blue-600 text-white"
@@ -335,7 +366,7 @@ export default function BookingForm() {
                   >
                     <span className="block">{time}</span>
 
-                    {isBooked && (
+                    {isUnavailable && (
                       <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide no-underline">
                         Unavailable
                       </span>
@@ -353,7 +384,7 @@ export default function BookingForm() {
 
             {availabilityStatus === "ready" &&
               selectedDate &&
-              bookedTimes.length === 0 && (
+              unavailableTimes.length === 0 && (
                 <p className="mt-3 text-xs font-medium text-green-700">
                   All listed times are currently available.
                 </p>
