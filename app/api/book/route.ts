@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
+import {
+  googleCalendar,
+  monetcoreCalendarId,
+} from "@/app/lib/googleCalendar";
 
 function cleanText(value: unknown, maxLength = 500) {
   if (typeof value !== "string") return "";
-
   return value.trim().slice(0, maxLength);
 }
 
@@ -43,6 +46,76 @@ function formatBookingDate(date: string) {
   }).format(parsedDate);
 }
 
+function getConsultationDuration(consultationType: string) {
+  const match = consultationType.match(/(\d+)\s*minutes?/i);
+
+  if (!match) {
+    return 45;
+  }
+
+  const duration = Number(match[1]);
+
+  if (!Number.isFinite(duration) || duration < 15 || duration > 180) {
+    return 45;
+  }
+
+  return duration;
+}
+
+function buildCalendarDescription({
+  consultationType,
+  name,
+  email,
+  phone,
+  company,
+  service,
+  message,
+  bookingId,
+}: {
+  consultationType: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  service: string;
+  message: string;
+  bookingId: string;
+}) {
+  return `
+Monetcore System Solutions Consultation
+
+Consultation:
+${consultationType}
+
+CUSTOMER
+
+Name:
+${name}
+
+Email:
+${email}
+
+Phone / WhatsApp:
+${phone || "Not provided"}
+
+Company:
+${company || "Not provided"}
+
+Service:
+${service || "Not specified"}
+
+PROJECT / DISCUSSION DETAILS
+
+${message || "No additional details provided."}
+
+Booking ID:
+${bookingId}
+
+Booked through:
+https://monetcore.dev/book
+  `.trim();
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -54,14 +127,12 @@ export async function POST(request: Request) {
 
     const date = cleanText(body.date, 10);
     const time = cleanText(body.time, 5);
-
     const name = cleanText(body.name, 100);
     const email = cleanText(body.email, 200).toLowerCase();
     const phone = cleanText(body.phone, 50);
     const company = cleanText(body.company, 150);
     const service = cleanText(body.service, 150);
     const message = cleanText(body.message, 3000);
-
     const website = cleanText(body.website, 200);
     const startedAt = Number(body.startedAt);
 
@@ -99,7 +170,9 @@ export async function POST(request: Request) {
 
     if (!name) {
       return NextResponse.json(
-        { error: "Please enter your name." },
+        {
+          error: "Please enter your name.",
+        },
         { status: 400 }
       );
     }
@@ -153,31 +226,25 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-	
-	
-	
-	if (date === todayString) {
-  const currentTime = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Africa/Lagos",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(new Date());
 
-  if (time <= currentTime) {
-    return NextResponse.json(
-      {
-        error:
-          "That consultation time has already passed. Please choose a later time.",
-      },
-      { status: 400 }
-    );
-  }
-}
-	
-	
-	
-	
+    if (date === todayString) {
+      const currentTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Lagos",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date());
+
+      if (time <= currentTime) {
+        return NextResponse.json(
+          {
+            error:
+              "That consultation time has already passed. Please choose a later time.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     const bookingDate = new Date(
       `${date}T12:00:00+01:00`
@@ -195,7 +262,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Save booking first
+    // Save booking first.
+    // Supabase remains the source of truth.
     const { data: booking, error: bookingError } =
       await supabaseAdmin
         .from("bookings")
@@ -243,7 +311,88 @@ export async function POST(request: Request) {
     }
 
     // Booking is now safely stored.
-    // Email failures must not delete or duplicate it.
+    // Calendar or email failures must not remove the booking.
+
+    let calendarEventCreated = false;
+    let calendarEventId: string | null = null;
+
+    try {
+      const durationMinutes =
+        getConsultationDuration(consultationType);
+
+      const startDateTime = new Date(
+        `${date}T${time}:00+01:00`
+      );
+
+      const endDateTime = new Date(
+        startDateTime.getTime() +
+          durationMinutes * 60 * 1000
+      );
+
+      const calendarResponse =
+        await googleCalendar.events.insert({
+          calendarId: monetcoreCalendarId,
+          sendUpdates: "none",
+          requestBody: {
+            summary: `Monetcore Consultation — ${name}`,
+            description: buildCalendarDescription({
+              consultationType,
+              name,
+              email,
+              phone,
+              company,
+              service,
+              message,
+              bookingId: booking.id,
+            }),
+            location:
+              "Ventures Park, 5 Kwaji Close, Maitama, Abuja, Nigeria",
+            start: {
+              dateTime: startDateTime.toISOString(),
+              timeZone: "Africa/Lagos",
+            },
+            end: {
+              dateTime: endDateTime.toISOString(),
+              timeZone: "Africa/Lagos",
+            },
+          },
+        });
+
+      calendarEventId =
+        calendarResponse.data.id ?? null;
+
+      if (calendarEventId) {
+        calendarEventCreated = true;
+
+        const { error: calendarUpdateError } =
+          await supabaseAdmin
+            .from("bookings")
+            .update({
+              google_calendar_event_id:
+                calendarEventId,
+              google_calendar_event_created_at:
+                new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", booking.id);
+
+        if (calendarUpdateError) {
+          console.error(
+            "Calendar tracking update error:",
+            calendarUpdateError
+          );
+        }
+      } else {
+        console.error(
+          "Google Calendar event created without an event ID."
+        );
+      }
+    } catch (calendarError) {
+      console.error(
+        "Google Calendar booking sync error:",
+        calendarError
+      );
+    }
 
     let customerEmailSent = false;
     let adminEmailSent = false;
@@ -417,6 +566,10 @@ ${booking.id}
           ).slice(0, 5),
           consultationType:
             booking.consultation_type,
+        },
+        calendar: {
+          eventCreated: calendarEventCreated,
+          eventId: calendarEventId,
         },
         email: {
           customerConfirmationSent:
