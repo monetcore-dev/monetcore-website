@@ -23,6 +23,10 @@ const slides = [
     id: "dashboard",
     label: "Customer Dashboards",
   },
+  {
+    id: "monepay",
+    label: "MonePay Fintech Demo",
+  },
 ];
 
 export default function HeroShowcase() {
@@ -79,6 +83,10 @@ export default function HeroShowcase() {
 
           {slide.id === "dashboard" && (
             <DashboardSlide />
+          )}
+
+          {slide.id === "monepay" && (
+            <MonePaySlide />
           )}
         </div>
 
@@ -503,6 +511,58 @@ function DashboardSlide() {
                   />
                 )
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MonePaySlide() {
+  return (
+    <div className="relative min-h-[455px] overflow-hidden bg-[#053e32] px-5 py-8 text-white sm:px-8">
+      <div className="pointer-events-none absolute -right-20 top-0 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl" />
+      <div className="relative z-10 flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#51e3b2] text-lg font-black text-[#053e32]">₦</span>
+        <span className="text-xl font-black tracking-tight">Mone<span className="text-[#51e3b2]">Pay</span></span>
+        <span className="ml-auto rounded-full border border-emerald-300/25 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-100">Live concept</span>
+      </div>
+
+      <div className="relative z-10 mt-7 grid items-center gap-5 sm:grid-cols-[0.92fr_1.08fr]">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#65edbf]">Modern money, made simple</p>
+          <h3 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl">One app. <span className="text-[#51e3b2]">Every money possibility.</span></h3>
+          <p className="mt-4 max-w-xs text-sm leading-6 text-emerald-50/80">Explore a working fintech prototype for transfers, QR payments, savings, loans and more.</p>
+          <a href="/demo/fintech" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#51e3b2] px-5 py-3 text-xs font-bold text-[#053e32] shadow-lg transition hover:bg-[#83f2ce]">Explore Live Demo <span aria-hidden="true">↗</span></a>
+          <p className="mt-3 text-[10px] text-emerald-100/70">Interactive concept · No real money</p>
+        </div>
+
+        <div className="relative mx-auto flex min-h-[290px] w-full max-w-[260px] items-center justify-center">
+          <div className="absolute inset-5 rounded-full border border-emerald-300/15" />
+          <span className="absolute -left-2 top-4 z-20 rounded-full border border-emerald-200/25 bg-[#08634e] px-3 py-1.5 text-[9px] font-bold shadow-lg">▦ Scan to Pay</span>
+          <span className="absolute -right-3 top-12 z-20 rounded-full border border-emerald-200/25 bg-[#08634e] px-3 py-1.5 text-[9px] font-bold shadow-lg">↗ Transfer</span>
+          <span className="absolute -left-4 bottom-14 z-20 rounded-full border border-emerald-200/25 bg-[#08634e] px-3 py-1.5 text-[9px] font-bold shadow-lg">✦ Savings</span>
+          <span className="absolute -right-4 bottom-5 z-20 rounded-full border border-emerald-200/25 bg-[#08634e] px-3 py-1.5 text-[9px] font-bold shadow-lg">₦ Loans</span>
+          <div className="relative w-[164px] rotate-[-7deg] rounded-[2rem] border-[7px] border-[#112c27] bg-white p-3 text-[#063e32] shadow-2xl">
+            <div className="mx-auto mb-3 h-3 w-14 rounded-full bg-[#112c27]" />
+            <p className="text-[11px] font-black">Mone<span className="text-emerald-500">Pay</span></p>
+            <div className="mt-4 rounded-xl bg-[#08634e] p-3 text-white">
+              <p className="text-[8px] text-emerald-100">Available balance</p>
+              <p className="mt-1 text-lg font-black">₦2,450,000</p>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              {['Send', 'Scan', 'Save'].map((item) => (
+                <div key={item} className="rounded-lg bg-emerald-50 px-1 py-3 text-center text-[8px] font-bold">{item}</div>
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg bg-emerald-50 p-2">
+              <p className="text-[8px] font-bold">Savings goal</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-emerald-100"><div className="h-full w-3/4 rounded-full bg-emerald-500" /></div>
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="h-2 w-full rounded bg-slate-100" />
+              <div className="h-2 w-4/5 rounded bg-slate-100" />
             </div>
           </div>
         </div>
