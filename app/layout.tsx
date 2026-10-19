@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import SiteFooter from "./components/SiteFooter";
+import { isReviewPreview } from "./lib/previewSafety";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://monetcore.dev"),
@@ -52,8 +53,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://monetcore.dev",
     siteName: "Monetcore System Solutions",
-    title:
-      "Monetcore System Solutions | AI Automation & Software Development",
+    title: "Monetcore System Solutions | AI Automation & Software Development",
     description:
       "Build smarter. Automate faster. Grow further. Monetcore builds AI automation, custom software, and intelligent systems for modern businesses.",
     images: [
@@ -68,8 +68,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title:
-      "Monetcore System Solutions | AI Automation & Software Development",
+    title: "Monetcore System Solutions | AI Automation & Software Development",
     description:
       "Build smarter. Automate faster. Grow further. AI automation, custom software, and intelligent business systems from Monetcore.",
     images: ["/og-image.png"],
@@ -121,18 +120,23 @@ export const metadata: Metadata = {
   category: "technology",
 };
 
-export default function RootLayout({
-  children,
-}: LayoutProps<"/">) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className="h-full antialiased"
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
         <SiteFooter />
-        <Analytics />
+        {isReviewPreview() ? (
+          <aside
+            aria-label="Preview safety notice"
+            className="fixed bottom-3 left-3 right-3 z-[60] mx-auto max-w-3xl rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950 shadow-lg"
+          >
+            Review preview · Forms and bookings are disabled; no submissions are
+            sent. WhatsApp, email and phone links contact Monetcore directly.
+          </aside>
+        ) : (
+          <Analytics />
+        )}
       </body>
     </html>
   );

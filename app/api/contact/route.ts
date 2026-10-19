@@ -1,3 +1,4 @@
+import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import {
@@ -7,6 +8,9 @@ import {
 } from "@/app/config/websitePackages";
 
 export async function POST(request: Request) {
+  if (isReviewPreview()) {
+    return NextResponse.json({ error: previewFormMessage }, { status: 403 });
+  }
   try {
     const body = await request.json();
 

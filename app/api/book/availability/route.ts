@@ -1,3 +1,4 @@
+import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
 
@@ -54,6 +55,9 @@ function getLagosDateParts() {
 }
 
 export async function GET(request: Request) {
+  if (isReviewPreview()) {
+    return NextResponse.json({ error: previewFormMessage }, { status: 403 });
+  }
   try {
     const { searchParams } = new URL(request.url);
 
