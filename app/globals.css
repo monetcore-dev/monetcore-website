@@ -706,6 +706,11 @@ summary {
   align-items: center;
   min-height: 32px;
 }
+.site-footer address a {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+}
 .site-footer a {
   transition:
     color 0.18s,

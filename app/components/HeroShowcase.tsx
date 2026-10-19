@@ -299,7 +299,7 @@ function WebsiteSlide() {
     <div className="bg-slate-50 p-5 sm:p-6">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="showcase-toolbar">
-          <p className="font-bold text-slate-900">NORTHSTAR</p>
+          <p className="font-bold text-slate-900">WEBSITE</p>
 
           <div className="hidden gap-4 text-[10px] font-medium text-slate-400 sm:flex">
             <span>Solutions</span>
