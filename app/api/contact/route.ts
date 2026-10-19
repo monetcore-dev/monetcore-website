@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import {
+  getWebsitePackage,
+  packagePrice,
+  packageRenewal,
+} from "@/app/config/websitePackages";
 
 export async function POST(request: Request) {
   try {
@@ -14,15 +19,14 @@ export async function POST(request: Request) {
       message,
       website,
       startedAt,
+      packageId,
+      consent,
     } = body;
 
     // Honeypot: real users won't fill this hidden field.
     // If a bot fills it, pretend the request succeeded.
     if (website) {
-      return NextResponse.json(
-        { success: true },
-        { status: 200 }
-      );
+      return NextResponse.json({ success: true }, { status: 200 });
     }
 
     // Reject submissions completed unrealistically fast.
@@ -36,7 +40,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid form submission." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,10 +48,9 @@ export async function POST(request: Request) {
     if (!name || !email || !message) {
       return NextResponse.json(
         {
-          error:
-            "Name, email, and project details are required.",
+          error: "Name, email, and project details are required.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid form data." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid form data." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Form submission is too long." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -96,25 +99,27 @@ export async function POST(request: Request) {
     if (!emailPattern.test(email)) {
       return NextResponse.json(
         { error: "Please provide a valid email address." },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    const selectedPackage = getWebsitePackage(packageId);
+    if (packageId !== undefined && (!selectedPackage || consent !== true)) {
+      return NextResponse.json(
+        { error: "Choose a valid website package and consent to a response." },
+        { status: 400 },
       );
     }
 
     // Make sure server-side email credentials exist
-    if (
-      !process.env.MONETCORE_EMAIL ||
-      !process.env.MONETCORE_EMAIL_PASSWORD
-    ) {
-      console.error(
-        "Missing Monetcore email environment variables."
-      );
+    if (!process.env.MONETCORE_EMAIL || !process.env.MONETCORE_EMAIL_PASSWORD) {
+      console.error("Missing Monetcore email environment variables.");
 
       return NextResponse.json(
         {
-          error:
-            "Email service is temporarily unavailable.",
+          error: "Email service is temporarily unavailable.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -141,6 +146,15 @@ Email: ${email}
 Company: ${company || "Not provided"}
 Service: ${service || "Not specified"}
 Budget: ${budget || "Not specified"}
+${
+  selectedPackage
+    ? `Website Package: ${selectedPackage.name}
+Proposed Price: ${packagePrice(selectedPackage)}
+Proposed Annual Renewal: ${packageRenewal(selectedPackage)} after 12 months
+Final business approval and quotation required. Optional integrations and third-party usage separately quoted.
+Consent to quotation response: yes`
+    : ""
+}
 
 Project Details:
 ${message}
@@ -156,10 +170,9 @@ ${message}
 
     return NextResponse.json(
       {
-        error:
-          "Unable to send your enquiry. Please try again.",
+        error: "Unable to send your enquiry. Please try again.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

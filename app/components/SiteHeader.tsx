@@ -7,7 +7,7 @@ const groups = [
   {
     label: "Websites",
     links: [
-      ["Website packages", "/#website-packages"],
+      ["Website packages", "/website-packages"],
       ["Live demos", "/#live-demos"],
       ["How it works", "/#process"],
       ["Website FAQs", "/#faq"],

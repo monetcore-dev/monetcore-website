@@ -10,16 +10,22 @@ import {
 } from "lucide-react";
 import ContactForm from "./ContactForm";
 import SiteHeader from "./components/SiteHeader";
+import {
+  formatNaira,
+  packageQuotationHref,
+  packageWhatsAppHref,
+  websitePackages,
+} from "./config/websitePackages";
+const starter = websitePackages[0];
 
 export const metadata: Metadata = {
-  title: "Business Websites from ₦99,000 | Monetcore System Solutions",
+  title: `Business Websites from ${formatNaira(starter.price)} | Monetcore System Solutions`,
   description:
     "Explore proposed smart website packages for Nigerian businesses, with domain, hosting, WhatsApp contact and customer enquiry tools. Free website consultation.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Your business. Your website. More possibilities.",
-    description:
-      "Professional business websites from a proposed ₦99,000. Built by Monetcore System Solutions.",
+    description: `Professional business websites from a proposed ${formatNaira(starter.price)}. Built by Monetcore System Solutions.`,
     url: "/",
   },
 };
@@ -28,8 +34,7 @@ const primary =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-800";
 const secondary =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100";
-const whatsapp =
-  "https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27m%20interested%20in%20the%20proposed%20%E2%82%A699%2C000%20Smart%20Starter%20website.%20Please%20confirm%20pricing%20and%20availability.";
+const whatsapp = packageWhatsAppHref(starter);
 const benefits = [
   {
     icon: Globe2,
@@ -53,12 +58,12 @@ const faqs = [
     "Absolutely. Keep using Instagram, Facebook, TikTok and WhatsApp. Your website gives those audiences one organised place to explore your services and make an enquiry.",
   ],
   [
-    "What does the proposed ₦99,000 package include?",
+    `What does the proposed ${formatNaira(starter.price)} package include?`,
     "Smart Starter is proposed to include a one-page website, a standard .com domain and hosting for 12 months, SSL, WhatsApp click-to-chat, an enquiry form and a basic rule-based enquiry assistant. Final scope and pricing must be confirmed by Monetcore before purchase.",
   ],
   [
     "What happens after the first year?",
-    "Annual domain and hosting renewals apply after 12 months. The proposed Smart Starter renewal is ₦45,000 per year, subject to final confirmation. Premium domains, complex integrations and third-party usage cost extra.",
+    `Annual domain and hosting renewals apply after 12 months. The proposed ${starter.name} renewal is ${formatNaira(starter.renewal)} per year, subject to final confirmation. Premium domains, complex integrations and third-party usage cost extra.`,
   ],
   [
     "Is the Starter assistant powered by generative AI?",
@@ -96,7 +101,9 @@ export default function Home() {
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
                 Professional business websites that work for you — starting from
                 a proposed{" "}
-                <strong className="font-bold text-slate-950">₦99,000.</strong>
+                <strong className="font-bold text-slate-950">
+                  {formatNaira(starter.price)}.
+                </strong>
               </p>
               <p className="mt-3 max-w-xl leading-7 text-slate-600">
                 Your own domain, mobile-friendly design, hosting, WhatsApp
@@ -104,7 +111,7 @@ export default function Home() {
                 business online.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="#website-packages" className={primary}>
+                <Link href="/website-packages" className={primary}>
                   Explore website packages{" "}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
@@ -310,10 +317,10 @@ export default function Home() {
                 recommending a scope.
               </p>
               <Link
-                href="/contact#consultation"
+                href="/website-packages"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-blue-800"
               >
-                Discuss your website{" "}
+                Compare all website packages{" "}
                 <ArrowUpRight size={16} aria-hidden="true" />
               </Link>
             </div>
@@ -321,20 +328,15 @@ export default function Home() {
               <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800">
                 Proposed package · Subject to confirmation
               </span>
-              <h3 className="mt-6 text-2xl font-bold">Smart Starter</h3>
-              <p className="mt-3 text-5xl font-bold tracking-tight">₦99,000</p>
+              <h3 className="mt-6 text-2xl font-bold">{starter.name}</h3>
+              <p className="mt-3 text-5xl font-bold tracking-tight">
+                {formatNaira(starter.price)}
+              </p>
               <p className="mt-2 text-sm text-slate-600">
                 Proposed first-year price
               </p>
               <ul className="my-7 grid gap-3 text-sm text-slate-700">
-                {[
-                  "Professional one-page, mobile-friendly website",
-                  "Standard .com domain + hosting for 12 months",
-                  "SSL certificate and basic SEO configuration",
-                  "WhatsApp click-to-chat and enquiry form",
-                  "Basic rule-based enquiry assistant and email notifications",
-                  "Two revision rounds",
-                ].map((feature) => (
+                {starter.features.map((feature) => (
                   <li key={feature} className="flex gap-3">
                     <Check
                       className="mt-0.5 shrink-0 text-blue-700"
@@ -354,12 +356,19 @@ export default function Home() {
                 Ask about Smart Starter{" "}
                 <ArrowUpRight size={16} aria-hidden="true" />
               </a>
+              <Link
+                href={packageQuotationHref(starter)}
+                className="mt-4 block text-center text-sm font-bold text-blue-800 underline underline-offset-4"
+              >
+                Request a Starter quotation
+              </Link>
               <p className="mt-5 text-xs leading-6 text-slate-600">
-                Proposed annual renewal: ₦45,000 after the first 12 months.
-                Final pricing and scope require Monetcore confirmation before
-                purchase. Premium domains and complex integrations cost extra.
-                Generative AI and automated WhatsApp replies are not included;
-                third-party usage may incur separate fees.
+                Proposed annual renewal: {formatNaira(starter.renewal)} after
+                the first 12 months. Final pricing and scope require Monetcore
+                confirmation before purchase. Premium domains and complex
+                integrations cost extra. Generative AI and automated WhatsApp
+                replies are not included; third-party usage may incur separate
+                fees.
               </p>
             </article>
           </div>

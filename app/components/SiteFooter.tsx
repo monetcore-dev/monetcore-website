@@ -5,7 +5,7 @@ const columns = [
     title: "Explore",
     links: [
       ["Home", "/"],
-      ["Website packages", "/#website-packages"],
+      ["Website packages", "/website-packages"],
       ["Live demos", "/#live-demos"],
       ["How it works", "/#process"],
     ],

@@ -2,7 +2,21 @@
 
 import { FormEvent, useState } from "react";
 
-export default function ContactForm() {
+import {
+  getWebsitePackage,
+  packagePrice,
+  websitePackages,
+} from "./config/websitePackages";
+
+type ContactFormProps = { initialPackageId?: string; quotationMode?: boolean };
+
+export default function ContactForm({
+  initialPackageId,
+  quotationMode = false,
+}: ContactFormProps) {
+  const [selectedPackageId, setSelectedPackageId] = useState(
+    initialPackageId ?? "",
+  );
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
@@ -28,6 +42,8 @@ export default function ContactForm() {
       message: formData.get("message"),
       website: formData.get("website"),
       startedAt: formData.get("startedAt"),
+      packageId: quotationMode ? formData.get("packageId") : undefined,
+      consent: quotationMode ? formData.get("consent") === "on" : undefined,
     };
 
     try {
@@ -47,16 +63,17 @@ export default function ContactForm() {
 
       setStatus("success");
       setFeedback(
-        "Thank you. Your project enquiry has been sent to Monetcore."
+        "Thank you. Your project enquiry has been sent to Monetcore.",
       );
 
       form.reset();
+      if (quotationMode) setSelectedPackageId(initialPackageId ?? "");
     } catch (error) {
       console.error("Contact form error:", error);
 
       setStatus("error");
       setFeedback(
-        "We couldn't send your enquiry. Please email hello@monetcore.dev."
+        "We couldn't send your enquiry. Please email hello@monetcore.dev.",
       );
     }
   }
@@ -67,27 +84,48 @@ export default function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
+      aria-label={
+        quotationMode ? "Website quotation enquiry" : "Project enquiry"
+      }
       className="mt-12 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
     >
       {/* Spam honeypot — hidden from real visitors */}
       <div className="hidden" aria-hidden="true">
         <label>
           Website
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-          />
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
       {/* Records when the visitor opened the form */}
-      <input
-        type="hidden"
-        name="startedAt"
-        value={startedAt}
-      />
+      <input type="hidden" name="startedAt" value={startedAt} />
+
+      {quotationMode && (
+        <div>
+          <label className="text-sm font-semibold text-slate-900">
+            Website package <span className="text-red-500">*</span>
+            <select
+              required
+              name="packageId"
+              value={selectedPackageId}
+              onChange={(event) => setSelectedPackageId(event.target.value)}
+              className={inputStyle}
+            >
+              <option value="">Select a package</option>
+              {websitePackages.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} — {packagePrice(item)} (proposed)
+                </option>
+              ))}
+            </select>
+          </label>
+          <p aria-live="polite" className="mt-3 text-sm text-slate-600">
+            {getWebsitePackage(selectedPackageId)
+              ? `${getWebsitePackage(selectedPackageId)?.name} selected. Final price and scope require business approval.`
+              : "Choose the package you would like us to quote."}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-900">
@@ -132,47 +170,29 @@ export default function ContactForm() {
           What do you need?
           <select
             name="service"
-            defaultValue=""
+            defaultValue={quotationMode ? "Business Website" : ""}
             className={inputStyle}
           >
-            <option value="">
-              Select a service
-            </option>
+            <option value="">Select a service</option>
 
             <option value="Business Website">Business Website</option>
 
-            <option value="Software Development">
-              Software Development
-            </option>
+            <option value="Software Development">Software Development</option>
 
-            <option value="AI Solution">
-              AI Solution
-            </option>
+            <option value="AI Solution">AI Solution</option>
 
-            <option value="Business Automation">
-              Business Automation
-            </option>
+            <option value="Business Automation">Business Automation</option>
 
-            <option value="Digital Product">
-              Digital Product
-            </option>
+            <option value="Digital Product">Digital Product</option>
 
-            <option value="Other">
-              Other
-            </option>
+            <option value="Other">Other</option>
           </select>
         </label>
 
         <label className="text-sm font-semibold text-slate-900 md:col-span-2">
           Estimated budget
-          <select
-            name="budget"
-            defaultValue=""
-            className={inputStyle}
-          >
-            <option value="">
-              Select a budget range
-            </option>
+          <select name="budget" defaultValue="" className={inputStyle}>
+            <option value="">Select a budget range</option>
 
             <option value="Under ₦100,000">Under ₦100,000</option>
             <option value="₦100,000 - ₦200,000">₦100,000 – ₦200,000</option>
@@ -195,6 +215,19 @@ export default function ContactForm() {
         />
       </label>
 
+      {quotationMode && (
+        <label className="flex items-start gap-3 text-sm leading-6 text-slate-600">
+          <input
+            required
+            name="consent"
+            type="checkbox"
+            className="mt-1 h-4 w-4 shrink-0"
+          />
+          I agree that Monetcore may use the details I submit to respond to this
+          quotation request. This does not confirm a purchase or subscription.
+        </label>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-500">
           Or email us directly at{" "}
@@ -213,7 +246,9 @@ export default function ContactForm() {
         >
           {status === "sending"
             ? "Sending..."
-            : "Send Project Enquiry"}
+            : quotationMode
+              ? "Send Quotation Request"
+              : "Send Project Enquiry"}
         </button>
       </div>
 
