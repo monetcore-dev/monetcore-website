@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 
 import {
   getWebsitePackage,
@@ -8,12 +8,39 @@ import {
   websitePackages,
 } from "./config/websitePackages";
 
+import { useProjectPlan } from "./components/ProjectPlanContext";
+import { enquiryBudgets } from "./config/projectPlanner";
+
 type ContactFormProps = { initialPackageId?: string; quotationMode?: boolean };
 
 export default function ContactForm({
   initialPackageId,
   quotationMode = false,
 }: ContactFormProps) {
+  const planner = useProjectPlan();
+  const incomingPlan = quotationMode ? null : planner?.draft;
+  const planId = incomingPlan?.id ?? 0;
+  const messageCounterId = useId();
+  const defaultService = quotationMode ? "Business Website" : "";
+  const [editedFields, setEditedFields] = useState({
+    planId: 0,
+    service: defaultService,
+    budget: "",
+    message: "",
+  });
+  // A new draft replaces only the planner fields; uncontrolled contact details keep their DOM state.
+  const fields =
+    editedFields.planId === planId
+      ? editedFields
+      : {
+          planId,
+          service: incomingPlan?.service ?? defaultService,
+          budget: incomingPlan?.budget ?? "",
+          message: incomingPlan?.message ?? "",
+        };
+  function editField(field: "service" | "budget" | "message", value: string) {
+    setEditedFields({ ...fields, [field]: value });
+  }
   const [selectedPackageId, setSelectedPackageId] = useState(
     initialPackageId ?? "",
   );
@@ -22,11 +49,18 @@ export default function ContactForm({
   >("idle");
 
   const [feedback, setFeedback] = useState("");
+  const [feedbackForPlan, setFeedbackForPlan] = useState(0);
   const [startedAt] = useState(() => Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFeedbackForPlan(planId);
 
+    if (!fields.message.trim()) {
+      setStatus("error");
+      setFeedback("Please add meaningful project details before submitting.");
+      return;
+    }
     setStatus("sending");
     setFeedback("");
 
@@ -57,7 +91,7 @@ export default function ContactForm({
 
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || result.success !== true) {
         throw new Error(result.error || "Unable to send enquiry.");
       }
 
@@ -67,13 +101,19 @@ export default function ContactForm({
       );
 
       form.reset();
+      setEditedFields({
+        planId,
+        service: defaultService,
+        budget: "",
+        message: "",
+      });
       if (quotationMode) setSelectedPackageId(initialPackageId ?? "");
     } catch (error) {
       console.error("Contact form error:", error);
 
       setStatus("error");
       setFeedback(
-        "We couldn't send your enquiry. Please email hello@monetcore.dev.",
+        `We couldn't send your enquiry. ${error instanceof Error ? error.message : "Please try again."} You can email hello@monetcore.dev.`,
       );
     }
   }
@@ -84,11 +124,18 @@ export default function ContactForm({
   return (
     <form
       onSubmit={handleSubmit}
+      aria-busy={status === "sending"}
       aria-label={
         quotationMode ? "Website quotation enquiry" : "Project enquiry"
       }
       className="mt-12 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
     >
+      {incomingPlan && fields.message && (
+        <p className="enquiry-plan-notice" role="status">
+          Your planner outline is ready to review. You can edit these details
+          before sending; nothing has been submitted.
+        </p>
+      )}
       {/* Spam honeypot — hidden from real visitors */}
       <div className="hidden" aria-hidden="true">
         <label>
@@ -170,7 +217,8 @@ export default function ContactForm({
           What do you need?
           <select
             name="service"
-            defaultValue={quotationMode ? "Business Website" : ""}
+            value={fields.service}
+            onChange={(event) => editField("service", event.target.value)}
             className={inputStyle}
           >
             <option value="">Select a service</option>
@@ -191,14 +239,19 @@ export default function ContactForm({
 
         <label className="text-sm font-semibold text-slate-900 md:col-span-2">
           Estimated budget
-          <select name="budget" defaultValue="" className={inputStyle}>
+          <select
+            name="budget"
+            value={fields.budget}
+            onChange={(event) => editField("budget", event.target.value)}
+            className={inputStyle}
+          >
             <option value="">Select a budget range</option>
 
-            <option value="Under ₦100,000">Under ₦100,000</option>
-            <option value="₦100,000 - ₦200,000">₦100,000 – ₦200,000</option>
-            <option value="₦200,000 - ₦500,000">₦200,000 – ₦500,000</option>
-            <option value="₦500,000+">₦500,000+</option>
-            <option value="Not sure yet">Not sure yet — please advise</option>
+            {enquiryBudgets.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -208,12 +261,19 @@ export default function ContactForm({
         <textarea
           required
           name="message"
+          value={fields.message}
+          onChange={(event) => editField("message", event.target.value)}
+          aria-describedby={messageCounterId}
           rows={6}
           maxLength={5000}
           placeholder="What are you trying to build, improve, or automate?"
           className={inputStyle}
         />
       </label>
+
+      <p id={messageCounterId} className="enquiry-character-count">
+        {fields.message.length.toLocaleString("en-NG")} / 5,000 characters
+      </p>
 
       {quotationMode && (
         <label className="flex items-start gap-3 text-sm leading-6 text-slate-600">
@@ -252,9 +312,9 @@ export default function ContactForm({
         </button>
       </div>
 
-      {feedback && (
+      {feedback && feedbackForPlan === planId && (
         <p
-          role="status"
+          role={status === "error" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
             status === "success"
               ? "bg-green-50 text-green-700"

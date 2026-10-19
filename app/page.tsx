@@ -22,6 +22,8 @@ import {
   CircleHelp,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import SolutionExplorer from "./components/SolutionExplorer";
+import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
@@ -530,83 +532,89 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="contact" className="contact-enhanced px-5 py-20 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="corporate-conversion">
-              <div className="conversion-copy">
-                <p className="eyebrow">
-                  Your next chapter starts with a conversation
-                </p>
-                <h2>
-                  Have a business challenge?
-                  <br />
-                  Let&apos;s build the right solution.
-                </h2>
-                <p>
-                  Tell us what you want to build, connect or improve. We can
-                  explore the right software, application, website or automation
-                  approach with you.
-                </p>
+        <ProjectPlanProvider>
+          <SolutionExplorer />
+          <section id="contact" className="contact-enhanced px-5 py-20 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <div className="corporate-conversion">
+                <div className="conversion-copy">
+                  <p className="eyebrow">
+                    Your next chapter starts with a conversation
+                  </p>
+                  <h2>
+                    Have a business challenge?
+                    <br />
+                    Let&apos;s build the right solution.
+                  </h2>
+                  <p>
+                    Tell us what you want to build, connect or improve. We can
+                    explore the right software, application, website or
+                    automation approach with you.
+                  </p>
+                </div>
+                <div className="conversion-actions">
+                  <Link href="/book" className="conversion-primary">
+                    <CalendarDays size={19} aria-hidden="true" />
+                    Book a Consultation
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                  </Link>
+                  <Link
+                    href="#project-enquiry"
+                    className="conversion-secondary"
+                  >
+                    <ArrowRight size={19} aria-hidden="true" />
+                    Start a Project
+                  </Link>
+                  <a
+                    href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="conversion-whatsapp"
+                  >
+                    <MessageCircle size={19} aria-hidden="true" />
+                    Chat on WhatsApp
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                  </a>
+                </div>
               </div>
-              <div className="conversion-actions">
-                <Link href="/book" className="conversion-primary">
-                  <CalendarDays size={19} aria-hidden="true" />
-                  Book a Consultation
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
-                <Link href="#project-enquiry" className="conversion-secondary">
-                  <ArrowRight size={19} aria-hidden="true" />
-                  Start a Project
-                </Link>
-                <a
-                  href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="conversion-whatsapp"
-                >
-                  <MessageCircle size={19} aria-hidden="true" />
-                  Chat on WhatsApp
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </a>
+              <div id="project-enquiry" className="project-enquiry-layout">
+                <div className="enquiry-introduction">
+                  <p className="eyebrow">Start a conversation</p>
+                  <h3>Have a business problem technology can solve?</h3>
+                  <p>
+                    Send the details using our existing project enquiry form, or
+                    get in touch directly.
+                  </p>
+                  <address>
+                    <a href="mailto:hello@monetcore.dev">
+                      <Mail size={19} aria-hidden="true" />
+                      <span>
+                        <small>Email</small>hello@monetcore.dev
+                      </span>
+                    </a>
+                    <a href="tel:+2347065880558">
+                      <Phone size={19} aria-hidden="true" />
+                      <span>
+                        <small>Phone</small>07065880558
+                      </span>
+                    </a>
+                  </address>
+                  <p>Based in Maitama, Abuja, Nigeria.</p>
+                  <Link
+                    className="enquiry-consultation"
+                    href="/contact#consultation"
+                  >
+                    Request a free consultation{" "}
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+                <div>
+                  <ContactForm />
+                </div>
               </div>
             </div>
-            <div id="project-enquiry" className="project-enquiry-layout">
-              <div className="enquiry-introduction">
-                <p className="eyebrow">Start a conversation</p>
-                <h3>Have a business problem technology can solve?</h3>
-                <p>
-                  Send the details using our existing project enquiry form, or
-                  get in touch directly.
-                </p>
-                <address>
-                  <a href="mailto:hello@monetcore.dev">
-                    <Mail size={19} aria-hidden="true" />
-                    <span>
-                      <small>Email</small>hello@monetcore.dev
-                    </span>
-                  </a>
-                  <a href="tel:+2347065880558">
-                    <Phone size={19} aria-hidden="true" />
-                    <span>
-                      <small>Phone</small>07065880558
-                    </span>
-                  </a>
-                </address>
-                <p>Based in Maitama, Abuja, Nigeria.</p>
-                <Link
-                  className="enquiry-consultation"
-                  href="/contact#consultation"
-                >
-                  Request a free consultation{" "}
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                </Link>
-              </div>
-              <div>
-                <ContactForm />
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </ProjectPlanProvider>
       </main>
     </>
   );

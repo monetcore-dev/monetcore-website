@@ -8,6 +8,8 @@ import {
   FileText,
   Code2,
   Rocket,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const steps = [
@@ -124,6 +126,31 @@ export default function ProjectWorkflow() {
           );
         })}
       </ol>
+      <div className="workflow-navigation">
+        <p>
+          Step {active + 1} of {steps.length} · {selected.title}
+        </p>
+        <div>
+          <button
+            type="button"
+            onClick={() => setActive((current) => Math.max(0, current - 1))}
+            disabled={active === 0}
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            Previous Step
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setActive((current) => Math.min(steps.length - 1, current + 1))
+            }
+            disabled={active === steps.length - 1}
+          >
+            Next Step
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
       <div
         id="workflow-detail"
         tabIndex={0}
@@ -150,14 +177,19 @@ export default function ProjectWorkflow() {
             </h3>
             <p>{selected.detail}</p>
           </div>
-          <ul>
-            {selected.points.map((point) => (
-              <li key={point}>
-                <Check size={17} aria-hidden="true" />
-                {point}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <p className="workflow-deliverables-label">
+              Deliverables to agree at this stage
+            </p>
+            <ul>
+              {selected.points.map((point) => (
+                <li key={point}>
+                  <Check size={17} aria-hidden="true" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
