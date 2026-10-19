@@ -10,8 +10,20 @@ import {
   Globe2,
   PlugZap,
   Compass,
+  Lightbulb,
+  Expand,
+  Sparkles,
+  Building2,
+  ArrowRight,
+  MessageCircle,
+  CalendarDays,
+  Mail,
+  Phone,
+  CircleHelp,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import ProjectWorkflow from "./components/ProjectWorkflow";
+import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
 import HeroShowcase from "./components/HeroShowcase";
 import { corporateSolutions } from "./config/corporateSolutions";
@@ -407,172 +419,191 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="about" className="px-5 py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                About Monetcore
-              </p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
+        <section id="about" className="about-enhanced px-5 py-20 lg:px-8">
+          <div className="about-layout mx-auto max-w-7xl">
+            <div className="about-introduction">
+              <p className="eyebrow">About Monetcore</p>
+              <h2>
                 Experience behind us.
                 <br />
-                <span className="text-blue-700">A smarter future ahead.</span>
+                <span>A smarter future ahead.</span>
               </h2>
-              <Link href="/about" className={`${secondary} mt-7`}>
-                Meet Monetcore <ArrowUpRight size={17} aria-hidden="true" />
+              <div className="company-milestone">
+                <span>
+                  <Building2 size={25} strokeWidth={1.6} aria-hidden="true" />
+                </span>
+                <div>
+                  <p>Our foundation</p>
+                  <strong>Established in 2016</strong>
+                  <small>Useful technology for businesses.</small>
+                </div>
+              </div>
+              <Link href="/about" className="about-meet-button">
+                Meet Monetcore <ArrowUpRight size={18} aria-hidden="true" />
               </Link>
             </div>
-            <div>
-              <p className="text-lg leading-8 text-slate-600">
+            <div className="about-story">
+              <p className="about-lead">
                 Monetcore System Solutions was established in 2016 with a focus
                 on useful technology for businesses. Our work spans modern
                 applications, software engineering, intelligent automation and
                 digital products.
               </p>
-              <p className="mt-5 leading-8 text-slate-600">
+              <p>
                 We start with your business context, agree a realistic scope and
                 work toward a solution that fits your team. Our company brings
                 these capabilities together; each product has its own purpose
                 and place.
               </p>
-              <div className="mt-7 grid grid-cols-3 gap-3">
+              <div className="company-values">
                 {[
-                  ["Practical", "Real workflows."],
-                  ["Scalable", "Room to evolve."],
-                  ["Intelligent", "AI where useful."],
-                ].map(([title, text]) => (
-                  <div key={title} className="rounded-xl bg-slate-50 p-4">
-                    <h3 className="text-sm font-bold text-blue-800">{title}</h3>
-                    <p className="mt-2 text-xs leading-6 text-slate-600">
-                      {text}
-                    </p>
-                  </div>
+                  {
+                    title: "Practical",
+                    text: "Real workflows.",
+                    detail: "Start with the way your business works.",
+                    icon: Lightbulb,
+                  },
+                  {
+                    title: "Scalable",
+                    text: "Room to evolve.",
+                    detail: "Plan for the next chapter, at the right scope.",
+                    icon: Expand,
+                  },
+                  {
+                    title: "Intelligent",
+                    text: "AI where useful.",
+                    detail: "Choose technology for its practical value.",
+                    icon: Sparkles,
+                  },
+                ].map(({ title, text, detail, icon: Icon }) => (
+                  <article key={title} className="company-value-card">
+                    <span>
+                      <Icon size={24} strokeWidth={1.6} aria-hidden="true" />
+                    </span>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                    <small>{detail}</small>
+                  </article>
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        <section
-          id="process"
-          className="border-y border-slate-200 bg-slate-50 px-5 py-16 lg:px-8"
-        >
+        <section id="process" className="process-enhanced px-5 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              How we work
-            </p>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight">
-              A clear path from problem to solution.
-            </h2>
-            <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                [
-                  "Understand",
-                  "Discuss your goals, existing tools and the people who will use the solution.",
-                ],
-                [
-                  "Define",
-                  "Agree deliverables, integrations, costs and a practical project scope.",
-                ],
-                [
-                  "Build & review",
-                  "Develop in manageable stages and gather feedback at agreed checkpoints.",
-                ],
-                [
-                  "Launch & support",
-                  "Review the finished work, plan an approved launch and agree ongoing support.",
-                ],
-              ].map(([title, text], i) => (
-                <li key={title}>
-                  <span className="text-sm font-bold text-blue-700">
-                    0{i + 1} /
-                  </span>
-                  <h3 className="mt-4 text-lg font-bold">{title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    {text}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            <div className="process-heading">
+              <div>
+                <p className="eyebrow">How we work</p>
+                <h2>A clear path from problem to solution.</h2>
+              </div>
+              <p>
+                Four connected steps. Select a card to explore how we move from
+                understanding your goals to an approved launch.
+              </p>
+            </div>
+            <ProjectWorkflow />
           </div>
         </section>
 
-        <section id="faq" className="px-5 py-16 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr_1.3fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Before we begin
-              </p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">
+        <section id="faq" className="faq-enhanced px-5 py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+            <div className="faq-introduction">
+              <span className="faq-section-icon">
+                <CircleHelp size={27} strokeWidth={1.6} aria-hidden="true" />
+              </span>
+              <p className="eyebrow">Before we begin</p>
+              <h2>
                 Your questions.
                 <br />A useful starting point.
               </h2>
+              <p>
+                Get to know our approach, explore the available solutions, and
+                find the right place to start.
+              </p>
+              <Link href="/contact#consultation">
+                Have another question? Let&apos;s talk{" "}
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
             </div>
-            <div>
-              {faqs.map(([question, answer]) => (
-                <details
-                  key={question}
-                  className="group border-b border-slate-200 py-5"
-                >
-                  <summary className="flex cursor-pointer list-none justify-between gap-5 font-bold">
-                    {question}
-                    <span
-                      aria-hidden="true"
-                      className="text-blue-700 group-open:rotate-45"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">
-                    {answer}
-                  </p>
-                </details>
-              ))}
-            </div>
+            <CorporateFAQ items={faqs} />
           </div>
         </section>
 
-        <section id="contact" className="bg-blue-50/60 px-5 py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">
-                Start a conversation
-              </p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
-                Have a business problem technology can solve?
-              </h2>
-              <p className="mt-5 leading-8 text-slate-600">
-                Tell us what you want to build, connect or improve. We can
-                explore the right software, application, website or automation
-                approach with you.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/contact#consultation" className={primary}>
-                  Free consultation{" "}
+        <section id="contact" className="contact-enhanced px-5 py-20 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="corporate-conversion">
+              <div className="conversion-copy">
+                <p className="eyebrow">
+                  Your next chapter starts with a conversation
+                </p>
+                <h2>
+                  Have a business challenge?
+                  <br />
+                  Let&apos;s build the right solution.
+                </h2>
+                <p>
+                  Tell us what you want to build, connect or improve. We can
+                  explore the right software, application, website or automation
+                  approach with you.
+                </p>
+              </div>
+              <div className="conversion-actions">
+                <Link href="/book" className="conversion-primary">
+                  <CalendarDays size={19} aria-hidden="true" />
+                  Book a Consultation
                   <ArrowUpRight size={17} aria-hidden="true" />
+                </Link>
+                <Link href="#project-enquiry" className="conversion-secondary">
+                  <ArrowRight size={19} aria-hidden="true" />
+                  Start a Project
                 </Link>
                 <a
                   href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={secondary}
+                  className="conversion-whatsapp"
                 >
-                  WhatsApp Monetcore
+                  <MessageCircle size={19} aria-hidden="true" />
+                  Chat on WhatsApp
+                  <ArrowUpRight size={17} aria-hidden="true" />
                 </a>
               </div>
-              <p className="mt-5 text-sm leading-7 text-slate-600">
-                Based in Maitama, Abuja, Nigeria.
-                <br />
-                <a
-                  href="mailto:hello@monetcore.dev"
-                  className="font-semibold text-blue-800 hover:underline"
-                >
-                  hello@monetcore.dev
-                </a>
-              </p>
             </div>
-            <div>
-              <ContactForm />
+            <div id="project-enquiry" className="project-enquiry-layout">
+              <div className="enquiry-introduction">
+                <p className="eyebrow">Start a conversation</p>
+                <h3>Have a business problem technology can solve?</h3>
+                <p>
+                  Send the details using our existing project enquiry form, or
+                  get in touch directly.
+                </p>
+                <address>
+                  <a href="mailto:hello@monetcore.dev">
+                    <Mail size={19} aria-hidden="true" />
+                    <span>
+                      <small>Email</small>hello@monetcore.dev
+                    </span>
+                  </a>
+                  <a href="tel:+2347065880558">
+                    <Phone size={19} aria-hidden="true" />
+                    <span>
+                      <small>Phone</small>07065880558
+                    </span>
+                  </a>
+                </address>
+                <p>Based in Maitama, Abuja, Nigeria.</p>
+                <Link
+                  className="enquiry-consultation"
+                  href="/contact#consultation"
+                >
+                  Request a free consultation{" "}
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+              </div>
+              <div>
+                <ContactForm />
+              </div>
             </div>
           </div>
         </section>
