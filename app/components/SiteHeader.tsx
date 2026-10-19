@@ -167,6 +167,22 @@ export default function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   useEffect(() => {
+    if (!mobileOpen) return;
+    const media = window.matchMedia("(max-width: 1199px)");
+    const previousOverflow = document.body.style.overflow;
+    const syncScroll = () => {
+      document.body.style.overflow = media.matches
+        ? "hidden"
+        : previousOverflow;
+    };
+    syncScroll();
+    media.addEventListener("change", syncScroll);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      media.removeEventListener("change", syncScroll);
+    };
+  }, [mobileOpen]);
+  useEffect(() => {
     if (!openMenu && !mobileOpen) return;
     const onPointer = (event: PointerEvent) => {
       if (!header.current?.contains(event.target as Node)) {
