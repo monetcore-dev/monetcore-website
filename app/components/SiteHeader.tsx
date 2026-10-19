@@ -1,169 +1,376 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  Building2,
+  CalendarDays,
+  ChevronDown,
+  Code2,
+  Compass,
+  Cpu,
+  Globe2,
+  Layers3,
+  Mail,
+  Menu,
+  MonitorPlay,
+  PlugZap,
+  Workflow,
+  X,
+} from "lucide-react";
 
-const groups = [
+const menus = [
   {
-    label: "Solutions",
+    id: "solutions",
+    title: "Solutions & Services",
+    eyebrow: "Technology, with purpose",
+    description:
+      "The right expertise for your next business challenge. Start with what you want to achieve.",
     links: [
-      ["All services", "/services"],
-      ["AI automation", "/services#ai-automation"],
-      ["Custom software & applications", "/services#custom-software"],
-      ["AI sales systems", "/services#ai-sales-systems"],
-      ["Business integrations", "/services#business-integrations"],
-      ["Technology consulting", "/contact#consultation"],
+      {
+        title: "AI Automation",
+        description: "Practical intelligence for everyday workflows.",
+        href: "/services#ai-automation",
+        icon: Cpu,
+      },
+      {
+        title: "Custom Software Development",
+        description: "Applications, portals and tools built around you.",
+        href: "/services#custom-software",
+        icon: Code2,
+      },
+      {
+        title: "Website Development",
+        description: "A professional digital home for your business.",
+        href: "/website-packages",
+        icon: Globe2,
+      },
+      {
+        title: "Business Integrations",
+        description: "Connect your platforms, data and operations.",
+        href: "/services#business-integrations",
+        icon: PlugZap,
+      },
+      {
+        title: "Technology Consulting",
+        description: "Clarity on your scope, systems and next step.",
+        href: "/contact#consultation",
+        icon: Compass,
+      },
+      {
+        title: "AI Sales Systems",
+        description: "Organise leads and explore assisted follow-ups.",
+        href: "/services#ai-sales-systems",
+        icon: Workflow,
+      },
     ],
+    overview: "/services",
+    overviewLabel: "Explore all services",
   },
   {
-    label: "Products",
+    id: "products",
+    title: "Products",
+    eyebrow: "Ideas made useful",
+    description:
+      "Explore our product information, digital applications and clearly labelled demonstrations.",
     links: [
-      ["Product overview", "/products"],
-      ["AI Lead Automation", "/products#ai-lead-automation"],
-      ["Smart Booking", "/products#smart-booking"],
-      ["Smart Website Solutions", "/website-packages"],
-      ["Live demos & showcases", "/#live-demos"],
+      {
+        title: "Monetcore Products",
+        description: "Discover the existing product portfolio.",
+        href: "/products",
+        icon: Layers3,
+      },
+      {
+        title: "AI Lead Automation",
+        description: "Product information and an external demo.",
+        href: "/products#ai-lead-automation",
+        icon: Cpu,
+      },
+      {
+        title: "Smart Booking",
+        description: "Explore the integration-dependent booking solution.",
+        href: "/products#smart-booking",
+        icon: CalendarDays,
+      },
+      {
+        title: "Smart Website Packages",
+        description: "Compare proposed NGN packages and inclusions.",
+        href: "/website-packages",
+        icon: Globe2,
+      },
+      {
+        title: "Digital Applications",
+        description: "Custom apps, dashboards and business software.",
+        href: "/services#custom-software",
+        icon: Code2,
+      },
+      {
+        title: "MonePay Demonstration",
+        description: "An interactive fintech concept, with simulated data.",
+        href: "/demo/fintech",
+        icon: MonitorPlay,
+      },
     ],
+    overview: "/#live-demos",
+    overviewLabel: "Explore demonstrations",
   },
   {
-    label: "Company",
+    id: "company",
+    title: "Company",
+    eyebrow: "Meet Monetcore",
+    description:
+      "Software engineering, practical thinking and a company built around useful technology.",
     links: [
-      ["About Monetcore", "/about"],
-      ["Our story", "/about#our-story"],
-      ["How we work", "/#process"],
-      ["Questions & answers", "/#faq"],
-      ["Contact us", "/contact"],
+      {
+        title: "About Monetcore",
+        description: "Our story and the approach behind our work.",
+        href: "/about",
+        icon: Building2,
+      },
+      {
+        title: "Contact",
+        description: "Tell us what you want to build or improve.",
+        href: "/contact",
+        icon: Mail,
+      },
+      {
+        title: "Consultation Booking",
+        description: "Choose a time to discuss your project.",
+        href: "/book",
+        icon: CalendarDays,
+      },
     ],
+    overview: "/#process",
+    overviewLabel: "How we work",
   },
 ];
 
 export default function SiteHeader() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const header = useRef<HTMLElement>(null);
-  const toggle = useRef<HTMLButtonElement>(null);
+  const mobileTrigger = useRef<HTMLButtonElement>(null);
+  const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
 
   function closeNavigation() {
+    setOpenMenu(null);
     setMobileOpen(false);
-    header.current
-      ?.querySelectorAll("details[open]")
-      .forEach((item) => item.removeAttribute("open"));
   }
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 16);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!openMenu && !mobileOpen) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!header.current?.contains(event.target as Node)) {
+        setOpenMenu(null);
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [openMenu, mobileOpen]);
 
   return (
     <header
       ref={header}
-      className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-lg"
+      className={`site-header ${scrolled ? "is-scrolled" : ""}`}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget))
           closeNavigation();
       }}
       onKeyDown={(event) => {
-        if (event.key !== "Escape") return;
-        const detail = (event.target as HTMLElement).closest("details");
-        if (detail?.open) {
-          detail.open = false;
-          detail.querySelector("summary")?.focus();
-        } else {
-          closeNavigation();
-          toggle.current?.focus();
+        if (event.key === "Escape") {
+          event.preventDefault();
+          if (openMenu) {
+            triggers.current[openMenu]?.focus();
+            setOpenMenu(null);
+          } else if (mobileOpen) {
+            setMobileOpen(false);
+            mobileTrigger.current?.focus();
+          }
         }
       }}
     >
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-800 focus:p-3 focus:text-white"
-      >
+      <a href="#main-content" className="skip-link">
         Skip to content
       </a>
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
+      <div className="navigation-shell">
         <Link
           href="/"
           onClick={closeNavigation}
           aria-label="Monetcore System Solutions home"
-          className="flex items-center gap-3"
+          className="brand-lockup"
         >
-          <span
-            aria-hidden="true"
-            className="grid h-10 w-10 place-items-center rounded-xl bg-blue-700 text-xl font-black text-white"
-          >
-            M<span className="sr-only">.</span>
+          <span className="brand-mark" aria-hidden="true">
+            M<span />
           </span>
           <span>
-            <span className="block text-sm font-black tracking-[0.16em] text-slate-950">
-              MONETCORE
-            </span>
-            <span className="block text-[10px] uppercase tracking-[0.2em] text-slate-600">
-              System Solutions
-            </span>
+            <strong>MONETCORE</strong>
+            <small>SYSTEM SOLUTIONS</small>
           </span>
         </Link>
         <button
-          ref={toggle}
+          ref={mobileTrigger}
           type="button"
-          aria-expanded={mobileOpen}
           aria-controls="primary-navigation"
+          aria-expanded={mobileOpen}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 lg:hidden"
+          onClick={() => {
+            setMobileOpen(!mobileOpen);
+            setOpenMenu(null);
+          }}
+          className="mobile-menu-toggle"
         >
-          {mobileOpen ? "Close ×" : "Menu ☰"}
+          {mobileOpen ? (
+            <X size={22} aria-hidden="true" />
+          ) : (
+            <Menu size={22} aria-hidden="true" />
+          )}
+          <span>{mobileOpen ? "Close" : "Menu"}</span>
         </button>
         <nav
           id="primary-navigation"
           aria-label="Main navigation"
-          className={`${mobileOpen ? "flex" : "hidden"} max-h-[calc(100dvh-6rem)] w-full flex-col gap-2 overflow-y-auto text-sm font-semibold text-slate-700 lg:flex lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:overflow-visible`}
+          className={`primary-navigation ${mobileOpen ? "is-mobile-open" : ""}`}
         >
           <Link
-            onClick={closeNavigation}
             href="/"
-            className="rounded-lg px-3 py-3 hover:bg-slate-100"
+            onClick={closeNavigation}
+            aria-current={pathname === "/" ? "page" : undefined}
+            className="nav-home"
           >
             Home
           </Link>
-          {groups.map((group) => (
-            <details
-              key={group.label}
-              className="group relative"
-              onToggle={(event) => {
-                if (!event.currentTarget.open) return;
-                const current = event.currentTarget;
-                header.current
-                  ?.querySelectorAll("details[open]")
-                  .forEach((other) => {
-                    if (other !== current) other.removeAttribute("open");
-                  });
-              }}
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-3 hover:bg-slate-100">
-                {group.label}
-                <span
-                  aria-hidden="true"
-                  className="transition-transform group-open:rotate-180"
+          {menus.map((menu) => {
+            const active = openMenu === menu.id;
+            const current =
+              menu.id === "solutions"
+                ? pathname === "/services"
+                : menu.id === "products"
+                  ? [
+                      "/products",
+                      "/website-packages",
+                      "/demo/fintech",
+                    ].includes(pathname)
+                  : ["/about", "/contact", "/book"].includes(pathname);
+            return (
+              <div key={menu.id} className="nav-disclosure">
+                <button
+                  ref={(element) => {
+                    triggers.current[menu.id] = element;
+                  }}
+                  id={`trigger-${menu.id}`}
+                  type="button"
+                  aria-expanded={active}
+                  aria-controls={`panel-${menu.id}`}
+                  className={`nav-trigger ${current ? "is-current" : ""}`}
+                  onClick={() => setOpenMenu(active ? null : menu.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setOpenMenu(menu.id);
+                      requestAnimationFrame(() =>
+                        document
+                          .querySelector<HTMLAnchorElement>(
+                            `#panel-${menu.id} a`,
+                          )
+                          ?.focus(),
+                      );
+                    }
+                  }}
                 >
-                  ⌄
-                </span>
-              </summary>
-              <div className="mb-2 rounded-xl border border-slate-200 bg-white p-2 lg:absolute lg:left-0 lg:top-full lg:mb-0 lg:w-64 lg:shadow-xl">
-                {group.links.map(([label, href]) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={closeNavigation}
-                    className="block rounded-lg px-4 py-3 hover:bg-blue-50 hover:text-blue-800"
-                  >
-                    {label}
-                  </Link>
-                ))}
+                  {menu.title}
+                  <ChevronDown
+                    size={14}
+                    aria-hidden="true"
+                    className={active ? "rotate-180" : ""}
+                  />
+                </button>
+                <div
+                  id={`panel-${menu.id}`}
+                  role="region"
+                  aria-labelledby={`trigger-${menu.id}`}
+                  hidden={!active}
+                  className={`mega-panel ${menu.id === "company" ? "company-panel" : ""}`}
+                >
+                  <div className="mega-introduction">
+                    <p className="eyebrow">{menu.eyebrow}</p>
+                    <h2>{menu.title}</h2>
+                    <p>{menu.description}</p>
+                    <Link href={menu.overview} onClick={closeNavigation}>
+                      {menu.overviewLabel}
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                    </Link>
+                  </div>
+                  <div className="mega-links">
+                    {menu.links.map(
+                      ({ title, description, href, icon: Icon }) => (
+                        <Link
+                          key={title}
+                          href={href}
+                          onClick={closeNavigation}
+                          className="mega-link"
+                        >
+                          <span className="mega-icon">
+                            <Icon
+                              size={21}
+                              strokeWidth={1.6}
+                              aria-hidden="true"
+                            />
+                          </span>
+                          <span>
+                            <strong>{title}</strong>
+                            <small>{description}</small>
+                          </span>
+                          <ArrowUpRight
+                            size={15}
+                            aria-hidden="true"
+                            className="mega-arrow"
+                          />
+                        </Link>
+                      ),
+                    )}
+                  </div>
+                  <div className="mega-bottom">
+                    <span>
+                      Built around your business. Designed for what comes next.
+                    </span>
+                    <Link
+                      href="/contact#consultation"
+                      onClick={closeNavigation}
+                    >
+                      Discuss a project{" "}
+                      <ArrowUpRight size={15} aria-hidden="true" />
+                    </Link>
+                  </div>
+                </div>
               </div>
-            </details>
-          ))}
-          <Link
-            href="/contact#consultation"
-            onClick={closeNavigation}
-            className="rounded-lg bg-blue-700 px-5 py-3 text-center text-white hover:bg-blue-800"
-          >
-            Free consultation ↗
-          </Link>
+            );
+          })}
+          <div className="nav-actions">
+            <Link
+              href="/contact"
+              onClick={closeNavigation}
+              className="nav-contact"
+            >
+              Contact Us
+            </Link>
+            <Link
+              href="/book"
+              onClick={closeNavigation}
+              className="nav-consult"
+            >
+              Book a Consultation <ArrowUpRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
         </nav>
       </div>
     </header>

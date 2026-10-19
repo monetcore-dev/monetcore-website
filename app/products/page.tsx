@@ -40,7 +40,7 @@ const outcomes = [
 
 export default function ProductsPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-slate-50 text-slate-950">
+    <main id="main-content" className="corporate-page min-h-screen bg-slate-50 text-slate-950">
       <SiteHeader />
 
       {/* HERO */}

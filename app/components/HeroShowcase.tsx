@@ -2,31 +2,60 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+} from "lucide-react";
 
 const slides = [
   {
     id: "ai",
     label: "AI Lead Automation",
+    description: "Capture, organise and explore assisted follow-up workflows.",
+    href: "/products#ai-lead-automation",
+    category: "External demo & product concept",
   },
   {
     id: "website",
     label: "Website Development",
+    description:
+      "A professional digital presence, connected to customer enquiries.",
+    href: "/website-packages",
+    category: "Smart Website Solutions",
   },
   {
     id: "mobile",
     label: "Mobile Applications",
+    description:
+      "Explore an illustrative mobile experience built around daily tasks.",
+    href: "/services#custom-software",
+    category: "Custom application capability",
   },
   {
     id: "saas",
     label: "SaaS Products",
+    description:
+      "An illustrative software workspace for connected business operations.",
+    href: "/services#custom-software",
+    category: "Software platform concept",
   },
   {
     id: "dashboard",
     label: "Customer Dashboards",
+    description:
+      "Make business information easier to see and act on. Illustrative data.",
+    href: "/services#custom-software",
+    category: "Dashboard capability",
   },
   {
     id: "monepay",
     label: "MonePay Fintech Demo",
+    description: "Explore simulated payments and savings. No real money moves.",
+    href: "/demo/fintech",
+    category: "Interactive fictional prototype",
   },
 ];
 
@@ -65,7 +94,7 @@ export default function HeroShowcase() {
     <section
       aria-label="Technology and product showcases"
       aria-roledescription="carousel"
-      className="relative min-w-0"
+      className="technology-showcase relative min-w-0"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onFocusCapture={() => setFocused(true)}
@@ -76,8 +105,8 @@ export default function HeroShowcase() {
     >
       <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-200/60 to-cyan-200/40 blur-2xl" />
 
-      <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-2xl shadow-blue-950/10">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <div className="showcase-frame">
+        <div className="showcase-toolbar">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
@@ -85,7 +114,7 @@ export default function HeroShowcase() {
           </div>
 
           <span className="text-xs font-medium text-slate-400">
-            Monetcore • {slide.label}
+            Monetcore / Technology studio
           </span>
         </div>
 
@@ -94,7 +123,8 @@ export default function HeroShowcase() {
           role="group"
           aria-roledescription="slide"
           aria-label={`${active + 1} of ${slides.length}: ${slide.label}`}
-          className="min-h-[540px] animate-[fadeIn_0.5s_ease-out]"
+          tabIndex={0}
+          className="showcase-canvas"
         >
           {slide.id === "ai" && <AISlide />}
 
@@ -109,40 +139,79 @@ export default function HeroShowcase() {
           {slide.id === "monepay" && <MonePaySlide />}
         </div>
 
-        <div className="flex flex-wrap items-center justify-center border-t border-slate-100 px-2 py-2">
-          <button
-            type="button"
-            aria-pressed={paused}
-            onClick={() => setPaused(!paused)}
-            className="mr-2 min-h-11 rounded-lg px-3 text-xs font-semibold text-blue-800 hover:bg-blue-50"
-          >
-            {paused ? "Resume rotation" : "Pause rotation"}
-          </button>
-          {slides.map((item, index) => (
+        <div className="showcase-footer">
+          <p className="showcase-category">{slide.category}</p>
+          <h2>{slide.label}</h2>
+          <p>{slide.description}</p>
+          <Link href={slide.href}>
+            Explore this solution <ArrowUpRight size={14} aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="showcase-controls">
+          <div className="flex items-center gap-1">
             <button
-              key={item.id}
               type="button"
-              aria-label={`Show ${item.label}`}
-              aria-pressed={index === active}
+              aria-label="Previous showcase"
               onClick={() => {
-                setActive(index);
+                setActive((active + slides.length - 1) % slides.length);
                 setPaused(true);
               }}
-              className="flex h-11 w-8 items-center justify-center rounded-lg hover:bg-blue-50"
+              className="grid h-11 w-9 place-items-center rounded-lg text-slate-600 hover:bg-blue-50"
             >
-              <span
-                aria-hidden="true"
-                className={
-                  index === active
-                    ? "h-2 w-6 rounded-full bg-blue-700"
-                    : "h-2 w-2 rounded-full bg-slate-300"
-                }
-              />
+              <ChevronLeft size={18} aria-hidden="true" />
             </button>
-          ))}
+            <button
+              type="button"
+              aria-pressed={paused}
+              onClick={() => setPaused(!paused)}
+              className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs font-semibold text-blue-800 hover:bg-blue-50"
+            >
+              {paused ? (
+                <Play size={13} aria-hidden="true" />
+              ) : (
+                <Pause size={13} aria-hidden="true" />
+              )}
+              {paused ? "Resume rotation" : "Pause rotation"}
+            </button>
+            <button
+              type="button"
+              aria-label="Next showcase"
+              onClick={() => {
+                setActive((active + 1) % slides.length);
+                setPaused(true);
+              }}
+              className="grid h-11 w-9 place-items-center rounded-lg text-slate-600 hover:bg-blue-50"
+            >
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="flex">
+            {slides.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={`Show ${item.label}`}
+                aria-pressed={index === active}
+                onClick={() => {
+                  setActive(index);
+                  setPaused(true);
+                }}
+                className="flex h-11 w-7 items-center justify-center rounded-lg hover:bg-blue-50"
+              >
+                <span
+                  aria-hidden="true"
+                  className={
+                    index === active
+                      ? "h-1.5 w-5 rounded-full bg-blue-700"
+                      : "h-1.5 w-1.5 rounded-full bg-slate-300"
+                  }
+                />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <p className="mt-4 text-xs leading-6 text-slate-600">
+      <p className="showcase-note">
         Illustrative interfaces and fictional sample data. Product availability
         and integrations are confirmed separately. Rotation pauses on hover or
         keyboard focus and respects reduced-motion preferences.
@@ -229,7 +298,7 @@ function WebsiteSlide() {
   return (
     <div className="bg-slate-50 p-5 sm:p-6">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div className="showcase-toolbar">
           <p className="font-bold text-slate-900">NORTHSTAR</p>
 
           <div className="hidden gap-4 text-[10px] font-medium text-slate-400 sm:flex">

@@ -33,9 +33,9 @@ const columns = [
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
+    <footer className="site-footer border-t border-slate-200 bg-slate-950 text-slate-300">
       <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-        <div className="mb-12 flex flex-col justify-between gap-6 border-b border-white/15 pb-10 sm:flex-row sm:items-center">
+        <div className="footer-intro mb-12 flex flex-col justify-between gap-6 border-b border-white/15 pb-10 sm:flex-row sm:items-center">
           <div>
             <Link
               href="/"
@@ -43,8 +43,15 @@ export default function SiteFooter() {
             >
               Monetcore<span className="text-blue-400">.</span>
             </Link>
-            <p className="mt-2 text-sm">
-              System Solutions · Software. Automation. Business technology.
+            <p
+              className="mt-4 max-w-xl text-2xl font-medium tracking-tight text-white sm:text-3xl"
+              style={{ fontFamily: "var(--font-manrope), sans-serif" }}
+            >
+              Technology for your next chapter.
+            </p>
+            <p className="mt-3 max-w-lg text-sm leading-7 text-slate-300">
+              Software. Automation. Business technology. Built around your
+              goals, with room to grow.
             </p>
           </div>
           <a

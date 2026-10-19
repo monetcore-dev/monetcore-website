@@ -1,8 +1,23 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import SiteFooter from "./components/SiteFooter";
+import PreviewNotice from "./components/PreviewNotice";
 import { isReviewPreview } from "./lib/previewSafety";
+
+const inter = localFont({
+  src: "./fonts/inter-latin-variable.woff2",
+  variable: "--font-inter",
+  display: "swap",
+  weight: "100 900",
+});
+const manrope = localFont({
+  src: "./fonts/manrope-latin-variable.woff2",
+  variable: "--font-manrope",
+  display: "swap",
+  weight: "200 800",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://monetcore.dev"),
@@ -122,21 +137,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="en"
+      className={`${inter.variable} ${manrope.variable} h-full antialiased`}
+    >
+      <body
+        className={`min-h-full flex flex-col ${isReviewPreview() ? "review-preview" : ""}`}
+      >
         {children}
         <SiteFooter />
-        {isReviewPreview() ? (
-          <aside
-            aria-label="Preview safety notice"
-            className="fixed bottom-3 left-3 right-3 z-[60] mx-auto max-w-3xl rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-950 shadow-lg"
-          >
-            Review preview · Forms and bookings are disabled; no submissions are
-            sent. WhatsApp, email and phone links contact Monetcore directly.
-          </aside>
-        ) : (
-          <Analytics />
-        )}
+        {isReviewPreview() ? <PreviewNotice /> : <Analytics />}
       </body>
     </html>
   );

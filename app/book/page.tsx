@@ -3,7 +3,7 @@ import SiteHeader from "../components/SiteHeader";
 
 export default function BookPage() {
   return (
-    <main id="main-content" className="min-h-screen bg-slate-50">
+    <main id="main-content" className="corporate-page min-h-screen bg-slate-50">
       <SiteHeader />
 
       <section className="px-6 pb-24 pt-32 lg:px-8">

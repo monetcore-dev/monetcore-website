@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Check, Code2, Layers3, Workflow } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  Code2,
+  Layers3,
+  Workflow,
+  Cpu,
+  Globe2,
+  PlugZap,
+  Compass,
+} from "lucide-react";
 import ContactForm from "./ContactForm";
 import SiteHeader from "./components/SiteHeader";
 import HeroShowcase from "./components/HeroShowcase";
@@ -8,6 +18,7 @@ import { corporateSolutions } from "./config/corporateSolutions";
 import { formatNaira, websitePackages } from "./config/websitePackages";
 
 const starter = websitePackages[0];
+const solutionIcons = [Cpu, Code2, Workflow, PlugZap, Globe2, Compass];
 export const metadata: Metadata = {
   title: {
     absolute: "Monetcore System Solutions | Software, AI & Business Technology",
@@ -65,7 +76,10 @@ export default function Home() {
   return (
     <>
       <SiteHeader />
-      <main id="main-content" className="bg-white text-slate-950">
+      <main
+        id="main-content"
+        className="corporate-page bg-white text-slate-950"
+      >
         <section
           id="corporate-hero"
           className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-24 lg:pt-44"
@@ -127,7 +141,7 @@ export default function Home() {
               <HeroShowcase />
             </div>
           </div>
-          <div className="relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
+          <div className="company-snapshot relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
             {[
               [
                 "Established in 2016",
@@ -178,10 +192,21 @@ export default function Home() {
                 <Link
                   key={item.number}
                   href={item.href}
-                  className="group rounded-2xl border border-slate-200 bg-slate-50 p-7 transition-colors hover:border-blue-300 hover:bg-blue-50"
+                  className="solution-card group"
                 >
                   <span className="flex items-center justify-between text-sm font-bold text-blue-700">
-                    {item.number}
+                    <span className="solution-icon">
+                      {(() => {
+                        const Icon = solutionIcons[Number(item.number) - 1];
+                        return (
+                          <Icon
+                            size={23}
+                            strokeWidth={1.6}
+                            aria-hidden="true"
+                          />
+                        );
+                      })()}
+                    </span>
                     <ArrowUpRight size={19} aria-hidden="true" />
                   </span>
                   <h3 className="mt-6 text-xl font-bold">{item.title}</h3>
@@ -219,7 +244,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="mt-10 grid gap-6 md:grid-cols-2">
-              <article className="rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
+              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
                 <Workflow
                   size={30}
                   aria-hidden="true"
@@ -251,7 +276,7 @@ export default function Home() {
                   </a>
                 </div>
               </article>
-              <article className="rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
+              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
                 <Layers3
                   size={30}
                   aria-hidden="true"

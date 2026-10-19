@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 /* MonePay — code-only fintech concept. No images, icon libraries, or sliders. */
@@ -86,6 +86,24 @@ function PayPhone({ onAction }: { onAction: (name: string) => void }) {
 export default function MonePayDemo() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [action, setAction] = useState<string | null>(null);
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!action) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = () => Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]') ?? []);
+    focusable()[0]?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setAction(null); }
+      if (event.key !== "Tab") return;
+      const items = focusable(); const first = items[0]; const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => { document.removeEventListener("keydown", onKeyDown); document.body.style.overflow = previousOverflow; opener?.focus(); };
+  }, [action]);
   const [amount, setAmount] = useState("25000");
   const [recipient, setRecipient] = useState("MonePay Demo Store");
   const [balance, setBalance] = useState(2450000);
@@ -123,7 +141,7 @@ export default function MonePayDemo() {
   const validLoan = Number.isFinite(loanAmount) && loanAmount >= 10000 && loanAmount <= 1000000 && Number.isInteger(loanAmount);
   const loanTotal = validLoan ? loanAmount * (1 + 0.12 * months / 12) : 0;
 
-  return <main id="main-content" className="min-h-screen bg-white text-[#0b3028]" style={{fontFamily:'Inter, "Segoe UI", Arial, sans-serif'}}>
+  return <main id="main-content" className="corporate-page demo-page min-h-screen bg-white text-[#0b3028]" style={{fontFamily:'var(--font-inter), "Segoe UI", Arial, sans-serif'}}>
     <span id="top" />
     <style>{`
       .mp-float{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid rgba(145,255,212,.32);border-radius:999px;background:rgba(8,85,67,.82);box-shadow:0 12px 30px rgba(0,24,19,.24),inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(10px);color:#e9fff6;font-size:10px;font-weight:750;white-space:nowrap;letter-spacing:.01em;animation:mp-hover 5s ease-in-out infinite;will-change:transform}
@@ -197,7 +215,7 @@ export default function MonePayDemo() {
     <div className="bg-[#062e26] px-5 py-9 text-white"><div className="mx-auto flex max-w-[1260px] flex-col items-start justify-between gap-5 sm:flex-row sm:items-center"><Logo light/><p className="max-w-xl text-xs leading-6 text-[#a5c8bd]">MonePay is a fictional demonstration by Monetcore System Solutions. It does not provide banking, lending, payment processing, or investment services. All balances and transactions are simulated.</p></div></div>
 
          {action && <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-[#041c17]/75 p-3 backdrop-blur-sm sm:p-5" onMouseDown={(e) => { if (e.target === e.currentTarget) setAction(null); }}>
-       <section role="dialog" aria-modal="true" aria-label={`${action} demonstration`} className="max-h-[92dvh] w-full max-w-[490px] overflow-y-auto rounded-[28px] bg-white p-5 text-[#0b3028] shadow-2xl sm:p-8">
+       <section ref={dialog} role="dialog" aria-modal="true" aria-label={`${action} demonstration`} className="max-h-[92dvh] w-full max-w-[490px] overflow-y-auto rounded-[28px] bg-white p-5 text-[#0b3028] shadow-2xl sm:p-8">
          <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-emerald-600">MonePay · Interactive concept</span><button type="button" aria-label="Close dialog" onClick={() => setAction(null)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xl hover:bg-slate-200">×</button></div>
          <h2 className="mt-4 text-2xl font-extrabold tracking-tight">{services.find((item) => item.name === action)?.display ?? action}</h2>
          <p className="mt-2 text-sm leading-6 text-slate-500">{services.find((item) => item.name === action)?.desc}. Experience this feature using simulated data.</p>
