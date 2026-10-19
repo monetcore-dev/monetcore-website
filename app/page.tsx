@@ -1,77 +1,63 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Check,
-  Globe2,
-  MessageCircle,
-  MousePointer2,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowUpRight, Check, Code2, Layers3, Workflow } from "lucide-react";
 import ContactForm from "./ContactForm";
 import SiteHeader from "./components/SiteHeader";
-import {
-  formatNaira,
-  packageQuotationHref,
-  packageWhatsAppHref,
-  websitePackages,
-} from "./config/websitePackages";
-const starter = websitePackages[0];
+import HeroShowcase from "./components/HeroShowcase";
+import { corporateSolutions } from "./config/corporateSolutions";
+import { formatNaira, websitePackages } from "./config/websitePackages";
 
+const starter = websitePackages[0];
 export const metadata: Metadata = {
-  title: `Business Websites from ${formatNaira(starter.price)} | Monetcore System Solutions`,
+  title: {
+    absolute: "Monetcore System Solutions | Software, AI & Business Technology",
+  },
   description:
-    "Explore proposed smart website packages for Nigerian businesses, with domain, hosting, WhatsApp contact and customer enquiry tools. Free website consultation.",
+    "Monetcore System Solutions develops custom software, AI automation, websites, applications and business integrations. Explore practical technology solutions for your business.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Your business. Your website. More possibilities.",
-    description: `Professional business websites from a proposed ${formatNaira(starter.price)}. Built by Monetcore System Solutions.`,
+    title:
+      "Monetcore System Solutions | Build smarter. Automate faster. Grow further.",
+    description:
+      "Software, AI automation, digital products and technology consulting for businesses. Based in Abuja, Nigeria.",
     url: "/",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Monetcore System Solutions",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Monetcore System Solutions | Business Technology",
+    description:
+      "Custom software, AI automation, applications, websites and business integrations.",
+    images: ["/og-image.png"],
   },
 };
-
 const primary =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-800";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-800";
 const secondary =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100";
-const whatsapp = packageWhatsAppHref(starter);
-const benefits = [
-  {
-    icon: Globe2,
-    title: "A home for your business",
-    text: "Put your services, location and contact details in one place you control. Share one simple link everywhere.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Make a confident first impression",
-    text: "Help prospective customers understand what you do with a professional, mobile-friendly presentation.",
-  },
-  {
-    icon: MessageCircle,
-    title: "An easier next conversation",
-    text: "Let visitors send an enquiry or continue on WhatsApp, with useful details about what they need.",
-  },
-];
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100";
 const faqs = [
   [
-    "Can I keep selling through social media?",
-    "Absolutely. Keep using Instagram, Facebook, TikTok and WhatsApp. Your website gives those audiences one organised place to explore your services and make an enquiry.",
+    "What can Monetcore help my business build?",
+    "We work across custom software, websites, web and mobile applications, AI automation, sales workflows and business integrations. Start with the problem you want to solve; we will discuss a suitable scope and approach.",
   ],
   [
-    `What does the proposed ${formatNaira(starter.price)} package include?`,
-    "Smart Starter is proposed to include a one-page website, a standard .com domain and hosting for 12 months, SSL, WhatsApp click-to-chat, an enquiry form and a basic rule-based enquiry assistant. Final scope and pricing must be confirmed by Monetcore before purchase.",
+    "Are all the product showcases live services?",
+    "No. Showcase interfaces illustrate possibilities. MonePay is a fictional interactive prototype, and the lead automation demo is hosted separately. Booking is an existing integration-dependent workflow. We confirm availability and scope before any engagement; unfinished or optional tools are not sold as fully operational services.",
   ],
   [
-    "What happens after the first year?",
-    `Annual domain and hosting renewals apply after 12 months. The proposed ${starter.name} renewal is ${formatNaira(starter.renewal)} per year, subject to final confirmation. Premium domains, complex integrations and third-party usage cost extra.`,
+    "Do you also offer business websites?",
+    `Yes. Smart Website Solutions starts with the proposed ${formatNaira(starter.price)} ${starter.name} package. Standard first-year domain and hosting are included. Proposed renewals and all prices require final business approval; see the website packages page for full conditions.`,
   ],
   [
-    "Is the Starter assistant powered by generative AI?",
-    "No. The proposed Starter assistant follows configured questions and answers to gather enquiries. AI assistants and automated WhatsApp replies are optional advanced services with separate requirements and possible usage fees.",
-  ],
-  [
-    "Can my website grow with my business?",
-    "Yes. We can discuss extra pages, booking, custom software and business integrations as a separate scope. We will confirm what is practical, the cost and the services required before work begins.",
+    "How do we start a project?",
+    "Send an enquiry or request a free consultation. We will discuss your goals, current systems and requirements before agreeing deliverables, pricing, third-party costs and a timeline.",
   ],
 ];
 
@@ -80,58 +66,55 @@ export default function Home() {
     <>
       <SiteHeader />
       <main id="main-content" className="bg-white text-slate-950">
-        <section className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-28 lg:pt-44">
+        <section
+          id="corporate-hero"
+          className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-24 lg:pt-44"
+        >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-40 top-0 h-[650px] w-[650px] rounded-full border-[100px] border-blue-100/60"
+            className="pointer-events-none absolute -right-52 top-0 h-[800px] w-[800px] rounded-full border-[110px] border-blue-100/60"
           />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-800">
-                <span className="h-2 w-2 rounded-full bg-blue-700" /> Built for
-                Nigerian businesses
+          <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
+                Monetcore System Solutions · Business technology
               </p>
-              <h1 className="max-w-3xl text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
-                Your business.
+              <h1 className="mt-6 text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
+                Build smarter.
                 <br />
-                Your website.
+                <span className="text-blue-700">Automate faster.</span>
                 <br />
-                <span className="text-blue-700">More possibilities.</span>
+                Grow further.
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
-                Professional business websites that work for you — starting from
-                a proposed{" "}
-                <strong className="font-bold text-slate-950">
-                  {formatNaira(starter.price)}.
-                </strong>
+                We develop technology solutions for businesses. Custom software,
+                AI automation, websites and digital applications — connected to
+                the way your business works.
               </p>
-              <p className="mt-3 max-w-xl leading-7 text-slate-600">
-                Your own domain, mobile-friendly design, hosting, WhatsApp
-                contact and smart enquiry tools. A clear next step for your
-                business online.
+              <p className="mt-4 max-w-xl leading-7 text-slate-600">
+                From a professional online presence to a connected business
+                workflow, Monetcore brings software engineering and practical
+                technology thinking to your next step.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/website-packages" className={primary}>
-                  Explore website packages{" "}
+                <Link href="#contact" className={primary}>
+                  Start Your Project{" "}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
-                <Link href="#live-demos" className={secondary}>
-                  Try a live demo
+                <Link href="#services" className={secondary}>
+                  Explore Our Solutions
                 </Link>
               </div>
-              <p className="mt-5 text-xs leading-5 text-slate-600">
-                Proposed offer · Final pricing and scope confirmed before
-                purchase.
-              </p>
-              <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-700">
+              <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-700">
                 {[
-                  "Mobile-first design",
-                  "Domain + hosting",
-                  "WhatsApp ready",
+                  "Custom software",
+                  "AI & automation",
+                  "Web & mobile",
+                  "Business integrations",
                 ].map((item) => (
                   <span key={item} className="flex items-center gap-2">
                     <Check
-                      size={15}
+                      size={14}
                       aria-hidden="true"
                       className="text-blue-700"
                     />
@@ -140,366 +123,346 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            <div className="relative mx-auto w-full max-w-lg pb-8 lg:pl-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xl shadow-blue-950/10 sm:p-5">
-                <div className="mb-4 flex items-center gap-1.5 border-b border-slate-100 pb-4">
-                  <span className="h-2 w-2 rounded-full bg-slate-300" />
-                  <span className="h-2 w-2 rounded-full bg-slate-300" />
-                  <span className="h-2 w-2 rounded-full bg-slate-300" />
-                  <span className="ml-3 text-[10px] text-slate-500">
-                    your-business.com · Illustrative website
-                  </span>
-                </div>
-                <div className="overflow-hidden rounded-xl bg-[#f5f3ed] p-5 sm:p-8">
-                  <div className="flex justify-between text-[10px] font-bold tracking-widest text-slate-700">
-                    <span>YOUR BUSINESS</span>
-                    <span>SERVICES ↗</span>
-                  </div>
-                  <div className="mt-12 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-800">
-                    OPEN FOR POSSIBILITIES
-                  </div>
-                  <p className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-                    Great service.
-                    <br />
-                    Now online.
-                  </p>
-                  <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600">
-                    Show what makes your business special. Help customers take
-                    the next step.
-                  </p>
-                  <div className="mt-6 inline-flex items-center gap-3 rounded-lg bg-slate-950 px-4 py-3 text-xs font-bold text-white">
-                    Explore our services{" "}
-                    <ArrowUpRight size={14} aria-hidden="true" />
-                  </div>
-                  <div className="mt-8 grid grid-cols-3 gap-2">
-                    {["Discover", "Enquire", "Connect"].map((word, i) => (
-                      <div key={word} className="rounded-lg bg-white p-3">
-                        <span className="text-xs text-blue-700">0{i + 1}</span>
-                        <p className="mt-2 text-[10px] font-semibold sm:text-xs">
-                          {word}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="relative -mt-6 ml-6 flex w-fit max-w-[calc(100%-1.5rem)] items-center gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-lg">
-                <span className="rounded-full bg-emerald-100 p-2 text-emerald-800">
-                  <MessageCircle size={20} aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-xs font-bold text-slate-950">
-                    From interest to enquiry
-                  </p>
-                  <p className="mt-1 text-xs text-slate-600">
-                    Give every visitor a clear next step.
-                  </p>
-                </div>
-              </div>
+            <div className="min-w-0">
+              <HeroShowcase />
             </div>
+          </div>
+          <div className="relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
+            {[
+              [
+                "Established in 2016",
+                "A company focused on useful technology.",
+              ],
+              [
+                "Abuja, Nigeria",
+                "Business technology with local understanding.",
+              ],
+              [
+                "Built around your workflow",
+                "Start with the problem. Shape the right solution.",
+              ],
+            ].map(([title, text]) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-slate-200 bg-white p-6"
+              >
+                <p className="text-lg font-bold">{title}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         <section id="services" className="px-5 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-5 md:grid-cols-2">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Smart website solutions
-              </p>
+            <div className="grid gap-6 lg:grid-cols-2">
               <div>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                  A professional presence.
-                  <br />A practical business tool.
-                </h2>
-                <p className="mt-5 leading-7 text-slate-600">
-                  For service providers, shops and growing businesses ready for
-                  a home online. We bring your information, enquiries and
-                  customer contact together.
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+                  What Monetcore does
                 </p>
+                <h2 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+                  Technology built around
+                  <br />
+                  business outcomes.
+                </h2>
               </div>
+              <p className="max-w-xl self-end leading-8 text-slate-600">
+                We combine software development, artificial intelligence,
+                automation and consulting to address practical challenges in
+                operations, customer experience and growth. Your goals guide the
+                technology.
+              </p>
             </div>
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
-              {benefits.map(({ icon: Icon, title, text }) => (
-                <article
-                  key={title}
-                  className="rounded-2xl border border-slate-200 p-7"
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {corporateSolutions.map((item) => (
+                <Link
+                  key={item.number}
+                  href={item.href}
+                  className="group rounded-2xl border border-slate-200 bg-slate-50 p-7 transition-colors hover:border-blue-300 hover:bg-blue-50"
                 >
-                  <Icon
-                    className="text-blue-700"
-                    size={28}
-                    aria-hidden="true"
-                  />
-                  <h3 className="mt-7 text-xl font-bold">{title}</h3>
+                  <span className="flex items-center justify-between text-sm font-bold text-blue-700">
+                    {item.number}
+                    <ArrowUpRight size={19} aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-6 text-xl font-bold">{item.title}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
-                    {text}
+                    {item.description}
                   </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-slate-950 px-5 py-20 text-white lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
-                Social media + your website
-              </p>
-              <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-                Your social media attracts customers. Your smart website helps
-                turn visitors into enquiries.
-              </h2>
-              <p className="mt-6 leading-8 text-slate-300">
-                Keep the conversations going on Instagram, Facebook, TikTok and
-                WhatsApp. Give interested visitors a place to see the full
-                picture, even when a post has moved down their feed.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                [
-                  "Be easy to understand",
-                  "Organise your services, business hours, location and frequently asked questions.",
-                ],
-                [
-                  "Share one useful link",
-                  "Connect your bio, posts and WhatsApp profile to one consistent business destination.",
-                ],
-                [
-                  "Capture the details",
-                  "Give customers a way to explain what they need through an enquiry form.",
-                ],
-                [
-                  "Keep the conversation going",
-                  "Let visitors choose a convenient next step: WhatsApp, email or a consultation.",
-                ],
-              ].map(([title, text]) => (
-                <div
-                  key={title}
-                  className="rounded-xl border border-white/15 bg-white/5 p-6"
-                >
-                  <Check
-                    size={18}
-                    aria-hidden="true"
-                    className="text-blue-300"
-                  />
-                  <h3 className="mt-4 font-bold">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    {text}
-                  </p>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
         </section>
 
         <section
-          id="website-packages"
-          className="bg-blue-50/60 px-5 py-20 lg:px-8"
+          id="products"
+          className="bg-slate-950 px-5 py-20 text-white lg:px-8"
         >
-          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Start with the essentials
-              </p>
-              <h2 className="mt-5 text-4xl font-bold tracking-tight">
-                Small business.
-                <br />
-                Professional first impression.
-              </h2>
-              <p className="mt-6 max-w-lg leading-8 text-slate-600">
-                Smart Starter brings your business online with a focused,
-                one-page website and simple ways for customers to reach you.
-              </p>
-              <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600">
-                Need more pages or a custom workflow? Request a free
-                consultation so we can understand your business before
-                recommending a scope.
-              </p>
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
+                  Digital products & applications
+                </p>
+                <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight">
+                  Focused solutions.
+                  <br />
+                  Part of a bigger picture.
+                </h2>
+              </div>
               <Link
-                href="/website-packages"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-blue-800"
+                href="/products"
+                className="inline-flex items-center gap-2 text-sm font-bold text-blue-200 hover:underline"
               >
-                Compare all website packages{" "}
-                <ArrowUpRight size={16} aria-hidden="true" />
+                Explore product information{" "}
+                <ArrowUpRight size={17} aria-hidden="true" />
               </Link>
             </div>
-            <article className="rounded-3xl border border-blue-200 bg-white p-7 shadow-lg shadow-blue-950/5 sm:p-10">
-              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800">
-                Proposed package · Subject to confirmation
-              </span>
-              <h3 className="mt-6 text-2xl font-bold">{starter.name}</h3>
-              <p className="mt-3 text-5xl font-bold tracking-tight">
-                {formatNaira(starter.price)}
-              </p>
-              <p className="mt-2 text-sm text-slate-600">
-                Proposed first-year price
-              </p>
-              <ul className="my-7 grid gap-3 text-sm text-slate-700">
-                {starter.features.map((feature) => (
-                  <li key={feature} className="flex gap-3">
-                    <Check
-                      className="mt-0.5 shrink-0 text-blue-700"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <a
-                href={whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${primary} w-full`}
-              >
-                Ask about Smart Starter{" "}
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </a>
-              <Link
-                href={packageQuotationHref(starter)}
-                className="mt-4 block text-center text-sm font-bold text-blue-800 underline underline-offset-4"
-              >
-                Request a Starter quotation
-              </Link>
-              <p className="mt-5 text-xs leading-6 text-slate-600">
-                Proposed annual renewal: {formatNaira(starter.renewal)} after
-                the first 12 months. Final pricing and scope require Monetcore
-                confirmation before purchase. Premium domains and complex
-                integrations cost extra. Generative AI and automated WhatsApp
-                replies are not included; third-party usage may incur separate
-                fees.
-              </p>
-            </article>
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
+              <article className="rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
+                <Workflow
+                  size={30}
+                  aria-hidden="true"
+                  className="text-blue-300"
+                />
+                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
+                  External demonstration
+                </p>
+                <h3 className="mt-3 text-2xl font-bold">AI Lead Automation</h3>
+                <p className="mt-4 leading-7 text-slate-300">
+                  Explore the concept of capturing enquiries, organising leads
+                  and preparing AI-assisted follow-ups. Discuss the
+                  configuration and integrations your business would need.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-4">
+                  <Link
+                    href="/products#ai-lead-automation"
+                    className="font-bold text-blue-200 hover:underline"
+                  >
+                    Product details →
+                  </Link>
+                  <a
+                    href="https://monetcore-lead-demo.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-blue-200 hover:underline"
+                  >
+                    Open external demo ↗
+                  </a>
+                </div>
+              </article>
+              <article className="rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
+                <Layers3
+                  size={30}
+                  aria-hidden="true"
+                  className="text-blue-300"
+                />
+                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
+                  Integration-dependent workflow
+                </p>
+                <h3 className="mt-3 text-2xl font-bold">Smart Booking</h3>
+                <p className="mt-4 leading-7 text-slate-300">
+                  An existing consultation flow with availability, booking
+                  records, calendar and notification integrations. Explore
+                  scheduling for your business as a separately scoped solution.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-4">
+                  <Link
+                    href="/products"
+                    className="font-bold text-blue-200 hover:underline"
+                  >
+                    Product information →
+                  </Link>
+                  <Link
+                    href="/book"
+                    className="font-bold text-blue-200 hover:underline"
+                  >
+                    Consultation booking →
+                  </Link>
+                </div>
+              </article>
+            </div>
+            <p className="mt-6 text-xs leading-6 text-slate-400">
+              Product availability, credentials and third-party services must be
+              confirmed for each engagement. Illustrative interfaces are not
+              evidence of a deployed customer system.
+            </p>
           </div>
         </section>
 
-        <section id="live-demos" className="px-5 py-20 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                  Explore what is possible
-                </p>
-                <h2 className="mt-4 text-4xl font-bold tracking-tight">
-                  See it. Try it. Imagine yours.
-                </h2>
-              </div>
-              <p className="max-w-sm text-sm leading-7 text-slate-600">
-                Explore our existing demonstrations. These illustrate custom
-                tools beyond the Starter website scope.
+        <section id="smart-websites" className="px-5 py-16 lg:px-8">
+          <div
+            id="website-packages"
+            className="mx-auto grid max-w-7xl gap-8 rounded-3xl border border-blue-200 bg-blue-50/60 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center"
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">
+                One of our solutions
+              </p>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                Smart Website Solutions
+              </h2>
+              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
+                Professional business websites with first-year standard domain
+                and hosting, WhatsApp click-to-chat and a basic rule-based
+                lead-gathering assistant. A digital home that works alongside
+                your social media.
               </p>
             </div>
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
-              <article className="overflow-hidden rounded-2xl border border-slate-200">
-                <div className="bg-emerald-950 p-8 text-white">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
-                    Interactive concept
-                  </p>
-                  <p className="mt-5 text-4xl font-black">
-                    MonePay<span className="text-emerald-300">.</span>
-                  </p>
-                  <p className="mt-4 text-emerald-100">
-                    A different kind of digital experience.
-                  </p>
-                  <div className="mt-7 grid grid-cols-3 gap-3 text-xs">
-                    {["Send", "Save", "Explore"].map((text) => (
-                      <div
-                        key={text}
-                        className="rounded-xl border border-white/20 p-4"
-                      >
-                        {text} ↗
-                      </div>
-                    ))}
+            <div>
+              <p className="text-sm font-semibold text-slate-600">
+                Proposed starting price
+              </p>
+              <p className="mt-2 text-4xl font-bold tracking-tight">
+                {formatNaira(starter.price)}
+              </p>
+              <Link href="/website-packages" className={`${primary} mt-5`}>
+                Explore Website Packages{" "}
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </Link>
+              <p className="mt-3 text-xs leading-6 text-slate-600">
+                Pricing and scope require final business approval. Annual
+                renewals apply after 12 months; full terms are on the packages
+                page.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="live-demos" className="bg-slate-50 px-5 py-16 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+                Explore the possibilities
+              </p>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                Technology you can explore.
+              </h2>
+              <p className="mt-4 leading-7 text-slate-600">
+                Experience our existing demonstrations and workflows, with a
+                clear distinction between a prototype and a real enquiry.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link
+                href="/demo/fintech"
+                className="rounded-2xl border border-emerald-200 bg-emerald-950 p-6 text-white"
+              >
+                <Code2
+                  size={26}
+                  aria-hidden="true"
+                  className="text-emerald-300"
+                />
+                <h3 className="mt-5 text-xl font-bold">
+                  MonePay fintech concept ↗
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-emerald-100">
+                  Interactive simulated transfers, payments and savings.
+                  Fictional prototype; no real money moves.
+                </p>
+              </Link>
+              <Link
+                href="/book"
+                className="rounded-2xl border border-slate-200 bg-white p-6"
+              >
+                <Layers3
+                  size={26}
+                  aria-hidden="true"
+                  className="text-blue-700"
+                />
+                <h3 className="mt-5 text-xl font-bold">
+                  Consultation booking →
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Explore our existing form. This is a real request flow outside
+                  review previews. Only submit to request an appointment.
+                </p>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="px-5 py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+                About Monetcore
+              </p>
+              <h2 className="mt-4 text-4xl font-bold tracking-tight">
+                Experience behind us.
+                <br />
+                <span className="text-blue-700">A smarter future ahead.</span>
+              </h2>
+              <Link href="/about" className={`${secondary} mt-7`}>
+                Meet Monetcore <ArrowUpRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
+            <div>
+              <p className="text-lg leading-8 text-slate-600">
+                Monetcore System Solutions was established in 2016 with a focus
+                on useful technology for businesses. Our work spans modern
+                applications, software engineering, intelligent automation and
+                digital products.
+              </p>
+              <p className="mt-5 leading-8 text-slate-600">
+                We start with your business context, agree a realistic scope and
+                work toward a solution that fits your team. Our company brings
+                these capabilities together; each product has its own purpose
+                and place.
+              </p>
+              <div className="mt-7 grid grid-cols-3 gap-3">
+                {[
+                  ["Practical", "Real workflows."],
+                  ["Scalable", "Room to evolve."],
+                  ["Intelligent", "AI where useful."],
+                ].map(([title, text]) => (
+                  <div key={title} className="rounded-xl bg-slate-50 p-4">
+                    <h3 className="text-sm font-bold text-blue-800">{title}</h3>
+                    <p className="mt-2 text-xs leading-6 text-slate-600">
+                      {text}
+                    </p>
                   </div>
-                </div>
-                <div className="p-7">
-                  <h3 className="text-xl font-bold">
-                    Fintech website & product concept
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    Explore simulated payments and savings. Fictional demo; no
-                    banking services or real money movement.
-                  </p>
-                  <Link href="/demo/fintech" className={`${secondary} mt-6`}>
-                    Try MonePay <ArrowUpRight size={16} aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-              <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200">
-                <div className="bg-blue-100 p-8">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-800">
-                    Existing booking experience
-                  </p>
-                  <div className="mt-5 flex items-center gap-3 text-3xl font-bold">
-                    <MousePointer2 size={28} aria-hidden="true" /> Make time to
-                    connect.
-                  </div>
-                  <div className="mt-8 grid grid-cols-3 gap-3 text-center text-xs font-bold text-blue-900">
-                    {["Pick a day", "Choose a time", "Send a request"].map(
-                      (text) => (
-                        <div
-                          key={text}
-                          className="rounded-xl bg-white px-2 py-4"
-                        >
-                          {text}
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col p-7">
-                  <h3 className="text-xl font-bold">Consultation booking</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    Explore Monetcore&apos;s appointment form. This is our real
-                    booking flow, not a sandbox; only submit to request an
-                    appointment. Availability depends on connected services.
-                  </p>
-                  <Link href="/book" className={`${secondary} mt-6 w-fit`}>
-                    Explore booking{" "}
-                    <ArrowUpRight size={16} aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         <section
           id="process"
-          className="border-y border-slate-200 bg-slate-50 px-5 py-20 lg:px-8"
+          className="border-y border-slate-200 bg-slate-50 px-5 py-16 lg:px-8"
         >
           <div className="mx-auto max-w-7xl">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              From first conversation to launch
+              How we work
             </p>
-            <h2 className="mt-4 text-4xl font-bold tracking-tight">
-              A clear path to your new website.
+            <h2 className="mt-4 text-3xl font-bold tracking-tight">
+              A clear path from problem to solution.
             </h2>
-            <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 [
-                  "Tell us about your business",
-                  "Share your goals, services and the customers you want to reach.",
+                  "Understand",
+                  "Discuss your goals, existing tools and the people who will use the solution.",
                 ],
                 [
-                  "Agree the right scope",
-                  "Confirm the package, content, timeline, price and renewal terms.",
+                  "Define",
+                  "Agree deliverables, integrations, costs and a practical project scope.",
                 ],
                 [
-                  "Design and refine",
-                  "Review your website and use the agreed revision rounds to refine it.",
+                  "Build & review",
+                  "Develop in manageable stages and gather feedback at agreed checkpoints.",
                 ],
                 [
-                  "Launch with confidence",
-                  "Approve the final website, connect your domain and share your new link.",
+                  "Launch & support",
+                  "Review the finished work, plan an approved launch and agree ongoing support.",
                 ],
               ].map(([title, text], i) => (
                 <li key={title}>
                   <span className="text-sm font-bold text-blue-700">
                     0{i + 1} /
                   </span>
-                  <h3 className="mt-5 text-lg font-bold">{title}</h3>
+                  <h3 className="mt-4 text-lg font-bold">{title}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
                     {text}
                   </p>
@@ -509,82 +472,16 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="products" className="px-5 py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2">
+        <section id="faq" className="px-5 py-16 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr_1.3fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Your next chapter
+                Before we begin
               </p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
-                Start with a website.
-                <br />
-                Grow into smarter systems.
+              <h2 className="mt-4 text-3xl font-bold tracking-tight">
+                Your questions.
+                <br />A useful starting point.
               </h2>
-              <p className="mt-6 leading-8 text-slate-600">
-                Monetcore also offers custom software, AI automation and
-                business integrations. Explore these as separately scoped
-                services when your business needs more.
-              </p>
-              <Link href="/services" className={`${secondary} mt-6`}>
-                Explore all services{" "}
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {[
-                [
-                  "Custom software",
-                  "Web apps, dashboards and tools shaped around your workflow.",
-                  "/services#custom-software",
-                ],
-                [
-                  "AI & business automation",
-                  "Discuss practical automation, integrations and AI-assisted workflows.",
-                  "/services#ai-automation",
-                ],
-                [
-                  "Smart business tools",
-                  "Explore product information and the external lead automation demo.",
-                  "/products",
-                ],
-              ].map(([title, text, href]) => (
-                <Link
-                  href={href}
-                  key={title}
-                  className="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-6 hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <div>
-                    <h3 className="font-bold">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      {text}
-                    </p>
-                  </div>
-                  <ArrowUpRight
-                    size={20}
-                    className="shrink-0 text-blue-700"
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="faq" className="bg-slate-50 px-5 py-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.7fr_1.3fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Good questions. Clear answers.
-              </p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
-                Before you get started.
-              </h2>
-              <Link
-                href="/contact"
-                className="mt-6 inline-block text-sm font-bold text-blue-800"
-              >
-                Have another question? Get in touch ↗
-              </Link>
             </div>
             <div>
               {faqs.map(([question, answer]) => (
@@ -592,16 +489,16 @@ export default function Home() {
                   key={question}
                   className="group border-b border-slate-200 py-5"
                 >
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-5 text-base font-bold">
+                  <summary className="flex cursor-pointer list-none justify-between gap-5 font-bold">
                     {question}
                     <span
-                      className="text-blue-700 group-open:rotate-45"
                       aria-hidden="true"
+                      className="text-blue-700 group-open:rotate-45"
                     >
                       +
                     </span>
                   </summary>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                  <p className="mt-4 text-sm leading-7 text-slate-600">
                     {answer}
                   </p>
                 </details>
@@ -610,44 +507,46 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="contact" className="px-5 py-20 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="rounded-3xl bg-blue-700 px-6 py-12 text-white sm:px-12">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">
-                Let&apos;s build your next step
+        <section id="contact" className="bg-blue-50/60 px-5 py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">
+                Start a conversation
               </p>
-              <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight">
-                Your business deserves a place of its own.
+              <h2 className="mt-4 text-4xl font-bold tracking-tight">
+                Have a business problem technology can solve?
               </h2>
-              <p className="mt-5 max-w-2xl leading-8 text-blue-50">
-                Tell us about your business. Start with a free website
-                consultation, with no obligation to purchase.
+              <p className="mt-5 leading-8 text-slate-600">
+                Tell us what you want to build, connect or improve. We can
+                explore the right software, application, website or automation
+                approach with you.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href="/contact#consultation"
-                  className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-blue-800 hover:bg-blue-50"
-                >
-                  Request a free consultation ↗
+                <Link href="/contact#consultation" className={primary}>
+                  Free consultation{" "}
+                  <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
                 <a
-                  href={whatsapp}
+                  href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-blue-200 px-6 py-3.5 text-sm font-bold text-white hover:bg-blue-800"
+                  className={secondary}
                 >
-                  Chat with Monetcore on WhatsApp
+                  WhatsApp Monetcore
                 </a>
               </div>
-            </div>
-            <div className="mt-14">
-              <h3 className="text-2xl font-bold">
-                Prefer to send the details now?
-              </h3>
-              <p className="mt-3 text-slate-600">
-                Use our existing enquiry form. We&apos;ll discuss the right
-                scope for your business.
+              <p className="mt-5 text-sm leading-7 text-slate-600">
+                Based in Maitama, Abuja, Nigeria.
+                <br />
+                <a
+                  href="mailto:hello@monetcore.dev"
+                  className="font-semibold text-blue-800 hover:underline"
+                >
+                  hello@monetcore.dev
+                </a>
               </p>
+            </div>
+            <div>
               <ContactForm />
             </div>
           </div>

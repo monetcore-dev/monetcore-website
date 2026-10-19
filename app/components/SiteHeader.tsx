@@ -5,23 +5,24 @@ import { useRef, useState } from "react";
 
 const groups = [
   {
-    label: "Websites",
-    links: [
-      ["Website packages", "/website-packages"],
-      ["Live demos", "/#live-demos"],
-      ["How it works", "/#process"],
-      ["Website FAQs", "/#faq"],
-    ],
-  },
-  {
-    label: "Services & tools",
+    label: "Solutions",
     links: [
       ["All services", "/services"],
       ["AI automation", "/services#ai-automation"],
-      ["Custom software", "/services#custom-software"],
+      ["Custom software & applications", "/services#custom-software"],
       ["AI sales systems", "/services#ai-sales-systems"],
       ["Business integrations", "/services#business-integrations"],
-      ["Smart business tools", "/products"],
+      ["Technology consulting", "/contact#consultation"],
+    ],
+  },
+  {
+    label: "Products",
+    links: [
+      ["Product overview", "/products"],
+      ["AI Lead Automation", "/products#ai-lead-automation"],
+      ["Smart Booking", "/products#smart-booking"],
+      ["Smart Website Solutions", "/website-packages"],
+      ["Live demos & showcases", "/#live-demos"],
     ],
   },
   {
@@ -29,6 +30,8 @@ const groups = [
     links: [
       ["About Monetcore", "/about"],
       ["Our story", "/about#our-story"],
+      ["How we work", "/#process"],
+      ["Questions & answers", "/#faq"],
       ["Contact us", "/contact"],
     ],
   },

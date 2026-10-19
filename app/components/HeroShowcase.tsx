@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const slides = [
   {
@@ -31,23 +32,48 @@ const slides = [
 
 export default function HeroShowcase() {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActive(
-        (current) =>
-          (current + 1) % slides.length
-      );
-    }, 4500);
-
-    return () =>
-      window.clearInterval(timer);
-  }, []);
+    if (paused || hovering || focused) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let timer: ReturnType<typeof setInterval> | undefined;
+    function syncTimer() {
+      clearInterval(timer);
+      if (!reducedMotion.matches && !document.hidden) {
+        timer = setInterval(
+          () => setActive((current) => (current + 1) % slides.length),
+          6500,
+        );
+      }
+    }
+    syncTimer();
+    reducedMotion.addEventListener("change", syncTimer);
+    document.addEventListener("visibilitychange", syncTimer);
+    return () => {
+      clearInterval(timer);
+      reducedMotion.removeEventListener("change", syncTimer);
+      document.removeEventListener("visibilitychange", syncTimer);
+    };
+  }, [paused, hovering, focused]);
 
   const slide = slides[active];
 
   return (
-    <div className="relative">
+    <section
+      aria-label="Technology and product showcases"
+      aria-roledescription="carousel"
+      className="relative min-w-0"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setFocused(false);
+      }}
+    >
       <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-200/60 to-cyan-200/40 blur-2xl" />
 
       <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-2xl shadow-blue-950/10">
@@ -65,48 +91,63 @@ export default function HeroShowcase() {
 
         <div
           key={slide.id}
-          className="animate-[fadeIn_0.5s_ease-out]"
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${active + 1} of ${slides.length}: ${slide.label}`}
+          className="min-h-[540px] animate-[fadeIn_0.5s_ease-out]"
         >
           {slide.id === "ai" && <AISlide />}
 
-          {slide.id === "website" && (
-            <WebsiteSlide />
-          )}
+          {slide.id === "website" && <WebsiteSlide />}
 
-          {slide.id === "mobile" && (
-            <MobileSlide />
-          )}
+          {slide.id === "mobile" && <MobileSlide />}
 
-          {slide.id === "saas" && (
-            <SaaSSlide />
-          )}
+          {slide.id === "saas" && <SaaSSlide />}
 
-          {slide.id === "dashboard" && (
-            <DashboardSlide />
-          )}
+          {slide.id === "dashboard" && <DashboardSlide />}
 
-          {slide.id === "monepay" && (
-            <MonePaySlide />
-          )}
+          {slide.id === "monepay" && <MonePaySlide />}
         </div>
 
-        <div className="flex items-center justify-center gap-2 border-t border-slate-100 py-4">
+        <div className="flex flex-wrap items-center justify-center border-t border-slate-100 px-2 py-2">
+          <button
+            type="button"
+            aria-pressed={paused}
+            onClick={() => setPaused(!paused)}
+            className="mr-2 min-h-11 rounded-lg px-3 text-xs font-semibold text-blue-800 hover:bg-blue-50"
+          >
+            {paused ? "Resume rotation" : "Pause rotation"}
+          </button>
           {slides.map((item, index) => (
             <button
               key={item.id}
               type="button"
               aria-label={`Show ${item.label}`}
-              onClick={() => setActive(index)}
-              className={
-                index === active
-                  ? "h-2 w-7 rounded-full bg-blue-600 transition-all"
-                  : "h-2 w-2 rounded-full bg-slate-200 transition-all hover:bg-blue-300"
-              }
-            />
+              aria-pressed={index === active}
+              onClick={() => {
+                setActive(index);
+                setPaused(true);
+              }}
+              className="flex h-11 w-8 items-center justify-center rounded-lg hover:bg-blue-50"
+            >
+              <span
+                aria-hidden="true"
+                className={
+                  index === active
+                    ? "h-2 w-6 rounded-full bg-blue-700"
+                    : "h-2 w-2 rounded-full bg-slate-300"
+                }
+              />
+            </button>
           ))}
         </div>
       </div>
-    </div>
+      <p className="mt-4 text-xs leading-6 text-slate-600">
+        Illustrative interfaces and fictional sample data. Product availability
+        and integrations are confirmed separately. Rotation pauses on hover or
+        keyboard focus and respects reduced-motion preferences.
+      </p>
+    </section>
   );
 }
 
@@ -118,13 +159,10 @@ function AISlide() {
           Sales Pipeline
         </p>
 
-        <p className="mt-2 text-2xl font-bold">
-          Intelligent lead follow-up
-        </p>
+        <p className="mt-2 text-2xl font-bold">Intelligent lead follow-up</p>
 
         <p className="mt-2 text-sm text-blue-50">
-          Capture, qualify, prioritize and
-          communicate from one workspace.
+          Capture, qualify, prioritize and communicate from one workspace.
         </p>
       </div>
 
@@ -138,13 +176,9 @@ function AISlide() {
             key={label}
             className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
           >
-            <p className="text-xs text-slate-500">
-              {label}
-            </p>
+            <p className="text-xs text-slate-500">{label}</p>
 
-            <p className="mt-2 text-2xl font-bold text-slate-950">
-              {value}
-            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
           </div>
         ))}
       </div>
@@ -167,18 +201,13 @@ function AISlide() {
         </div>
 
         <div className="mt-4 space-y-3">
-          {[
-            "Priority property enquiry",
-            "New corporate lead",
-          ].map((item) => (
+          {["Priority property enquiry", "New corporate lead"].map((item) => (
             <div
               key={item}
               className="flex items-center justify-between rounded-xl border border-white bg-white px-4 py-3 shadow-sm"
             >
               <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {item}
-                </p>
+                <p className="text-sm font-semibold text-slate-900">{item}</p>
 
                 <p className="mt-1 text-xs text-slate-500">
                   AI follow-up ready
@@ -201,9 +230,7 @@ function WebsiteSlide() {
     <div className="bg-slate-50 p-5 sm:p-6">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <p className="font-bold text-slate-900">
-            NORTHSTAR
-          </p>
+          <p className="font-bold text-slate-900">NORTHSTAR</p>
 
           <div className="hidden gap-4 text-[10px] font-medium text-slate-400 sm:flex">
             <span>Solutions</span>
@@ -223,13 +250,11 @@ function WebsiteSlide() {
             </span>
 
             <h3 className="mt-5 text-3xl font-bold tracking-tight text-slate-950">
-              Turn your website into a growth
-              engine.
+              Turn your website into a growth engine.
             </h3>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              Fast, responsive and designed
-              around your customers.
+              Fast, responsive and designed around your customers.
             </p>
 
             <div className="mt-5 flex gap-2">
@@ -273,32 +298,20 @@ function MobileSlide() {
           <div className="mt-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[9px] text-slate-400">
-                  Welcome back
-                </p>
-                <p className="text-sm font-bold">
-                  My Business
-                </p>
+                <p className="text-[9px] text-slate-400">Welcome back</p>
+                <p className="text-sm font-bold">My Business</p>
               </div>
 
               <div className="h-8 w-8 rounded-full bg-blue-100" />
             </div>
 
             <div className="mt-5 rounded-2xl bg-gradient-to-br from-blue-700 to-cyan-500 p-4 text-white">
-              <p className="text-[9px] text-blue-100">
-                Revenue
-              </p>
-              <p className="mt-1 text-xl font-bold">
-                ₦4.8M
-              </p>
-              <p className="mt-1 text-[9px] text-blue-100">
-                +18.4% this month
-              </p>
+              <p className="text-[9px] text-blue-100">Revenue</p>
+              <p className="mt-1 text-xl font-bold">₦4.8M</p>
+              <p className="mt-1 text-[9px] text-blue-100">+18.4% this month</p>
             </div>
 
-            <p className="mt-5 text-[10px] font-bold">
-              Recent activity
-            </p>
+            <p className="mt-5 text-[10px] font-bold">Recent activity</p>
 
             <div className="mt-3 space-y-2">
               {[1, 2, 3].map((item) => (
@@ -323,29 +336,25 @@ function MobileSlide() {
           </p>
 
           <h3 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-            Your business in your
-            customers&apos; hands.
+            Your business in your customers&apos; hands.
           </h3>
 
           <p className="mt-4 text-sm leading-6 text-slate-500">
-            Modern mobile experiences designed
-            around real customer and business
+            Modern mobile experiences designed around real customer and business
             workflows.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {[
-              "Customer apps",
-              "Business apps",
-              "Connected systems",
-            ].map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-blue-100 bg-white px-3 py-2 text-[10px] font-semibold text-blue-700"
-              >
-                {item}
-              </span>
-            ))}
+            {["Customer apps", "Business apps", "Connected systems"].map(
+              (item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-blue-100 bg-white px-3 py-2 text-[10px] font-semibold text-blue-700"
+                >
+                  {item}
+                </span>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -379,17 +388,10 @@ function SaaSSlide() {
             ["MRR", "₦8.2M"],
             ["Growth", "+24%"],
           ].map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-xl bg-slate-50 p-4"
-            >
-              <p className="text-[10px] text-slate-400">
-                {label}
-              </p>
+            <div key={label} className="rounded-xl bg-slate-50 p-4">
+              <p className="text-[10px] text-slate-400">{label}</p>
 
-              <p className="mt-2 text-lg font-bold">
-                {value}
-              </p>
+              <p className="mt-2 text-lg font-bold">{value}</p>
             </div>
           ))}
         </div>
@@ -401,17 +403,15 @@ function SaaSSlide() {
             </p>
 
             <div className="mt-8 flex h-28 items-end gap-2">
-              {[35, 50, 43, 65, 58, 82, 95].map(
-                (height, index) => (
-                  <div
-                    key={index}
-                    className="flex-1 rounded-t bg-gradient-to-t from-blue-600 to-cyan-400"
-                    style={{
-                      height: `${height}%`,
-                    }}
-                  />
-                )
-              )}
+              {[35, 50, 43, 65, 58, 82, 95].map((height, index) => (
+                <div
+                  key={index}
+                  className="flex-1 rounded-t bg-gradient-to-t from-blue-600 to-cyan-400"
+                  style={{
+                    height: `${height}%`,
+                  }}
+                />
+              ))}
             </div>
           </div>
 
@@ -420,9 +420,7 @@ function SaaSSlide() {
               Active plans
             </p>
 
-            <p className="mt-3 text-3xl font-bold">
-              847
-            </p>
+            <p className="mt-3 text-3xl font-bold">847</p>
 
             <div className="mt-8 space-y-3">
               <div className="h-2 rounded-full bg-blue-500" />
@@ -445,10 +443,7 @@ function DashboardSlide() {
 
           <div className="mt-6 space-y-3">
             {[1, 2, 3, 4, 5].map((item) => (
-              <div
-                key={item}
-                className="h-2 rounded-full bg-white/10"
-              />
+              <div key={item} className="h-2 rounded-full bg-white/10" />
             ))}
           </div>
         </div>
@@ -459,9 +454,7 @@ function DashboardSlide() {
           </p>
 
           <div className="mt-2 flex items-center justify-between">
-            <h3 className="text-xl font-bold">
-              Business overview
-            </h3>
+            <h3 className="text-xl font-bold">Business overview</h3>
 
             <span className="rounded-lg bg-white/10 px-3 py-2 text-[10px] text-slate-300">
               October 2026
@@ -478,21 +471,15 @@ function DashboardSlide() {
                 key={label}
                 className="rounded-xl border border-white/10 bg-white/5 p-3"
               >
-                <p className="text-[9px] text-slate-400">
-                  {label}
-                </p>
-                <p className="mt-2 font-bold">
-                  {value}
-                </p>
+                <p className="text-[9px] text-slate-400">{label}</p>
+                <p className="mt-2 font-bold">{value}</p>
               </div>
             ))}
           </div>
 
           <div className="mt-4 rounded-2xl bg-white p-5 text-slate-950">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold">
-                Performance
-              </p>
+              <p className="text-xs font-bold">Performance</p>
 
               <span className="text-[10px] font-semibold text-emerald-600">
                 +16.8%
@@ -500,17 +487,15 @@ function DashboardSlide() {
             </div>
 
             <div className="mt-7 flex h-28 items-end gap-2">
-              {[40, 62, 50, 76, 68, 88, 72, 96].map(
-                (height, index) => (
-                  <div
-                    key={index}
-                    className="flex-1 rounded-t bg-blue-600"
-                    style={{
-                      height: `${height}%`,
-                    }}
-                  />
-                )
-              )}
+              {[40, 62, 50, 76, 68, 88, 72, 96].map((height, index) => (
+                <div
+                  key={index}
+                  className="flex-1 rounded-t bg-blue-600"
+                  style={{
+                    height: `${height}%`,
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -529,9 +514,13 @@ function MonePaySlide() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[9px] text-slate-400">Available balance</p>
-                <p className="text-sm font-black text-emerald-950">Mone<span className="text-emerald-500">Pay</span></p>
+                <p className="text-sm font-black text-emerald-950">
+                  Mone<span className="text-emerald-500">Pay</span>
+                </p>
               </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">₦</div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                ₦
+              </div>
             </div>
             <div className="mt-5 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-500 p-4 text-white">
               <p className="text-[9px] text-emerald-100">Wallet balance</p>
@@ -539,14 +528,22 @@ function MonePaySlide() {
               <p className="mt-1 text-[9px] text-emerald-100">Demo account</p>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-1.5">
-              {['Send', 'Scan', 'Save'].map((item) => (
-                <div key={item} className="rounded-lg bg-emerald-50 px-1 py-2.5 text-center text-[9px] font-semibold text-emerald-800">{item}</div>
+              {["Send", "Scan", "Save"].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-lg bg-emerald-50 px-1 py-2.5 text-center text-[9px] font-semibold text-emerald-800"
+                >
+                  {item}
+                </div>
               ))}
             </div>
             <p className="mt-5 text-[10px] font-bold">Recent activity</p>
             <div className="mt-3 space-y-2">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 p-2">
+                <div
+                  key={item}
+                  className="flex items-center gap-2 rounded-xl bg-slate-50 p-2"
+                >
                   <div className="h-7 w-7 rounded-lg bg-emerald-100" />
                   <div className="flex-1">
                     <div className="h-1.5 w-16 rounded bg-slate-300" />
@@ -558,19 +555,46 @@ function MonePaySlide() {
           </div>
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Fintech App Development</p>
-          <h3 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Build your own fintech app.</h3>
-          <p className="mt-4 text-sm leading-6 text-slate-600">Your fintech vision. Our technology. From digital wallets and transfers to payments, savings and financial dashboards, Monetcore builds modern financial experiences for your business.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+            Fintech App Development
+          </p>
+          <h3 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+            Build your own fintech app.
+          </h3>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Your fintech vision. Our technology. From digital wallets and
+            transfers to payments, savings and financial dashboards, Monetcore
+            builds modern financial experiences for your business.
+          </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {['Digital wallets', 'Instant transfers', 'Payments & savings'].map((item) => (
-              <span key={item} className="rounded-full border border-emerald-100 bg-white px-3 py-2 text-[10px] font-semibold text-emerald-700">{item}</span>
-            ))}
+            {["Digital wallets", "Instant transfers", "Payments & savings"].map(
+              (item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-emerald-100 bg-white px-3 py-2 text-[10px] font-semibold text-emerald-700"
+                >
+                  {item}
+                </span>
+              ),
+            )}
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href="/demo/fintech" className="rounded-xl bg-emerald-700 px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800">Preview Fintech Demo ↗</a>
-            <a href="#contact" className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50">Start Your Project</a>
+            <Link
+              href="/demo/fintech"
+              className="rounded-xl bg-emerald-700 px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              Preview Fintech Demo ↗
+            </Link>
+            <a
+              href="#contact"
+              className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              Start Your Project
+            </a>
           </div>
-          <p className="mt-3 text-[10px] text-slate-500">MonePay is an interactive prototype · No real money</p>
+          <p className="mt-3 text-[10px] text-slate-500">
+            MonePay is an interactive prototype · No real money
+          </p>
         </div>
       </div>
     </div>

@@ -5,7 +5,8 @@ const columns = [
     title: "Explore",
     links: [
       ["Home", "/"],
-      ["Website packages", "/website-packages"],
+      ["Solutions", "/services"],
+      ["Products", "/products"],
       ["Live demos", "/#live-demos"],
       ["How it works", "/#process"],
     ],
@@ -13,7 +14,7 @@ const columns = [
   {
     title: "Services",
     links: [
-      ["Business websites", "/#services"],
+      ["Smart websites", "/website-packages"],
       ["AI automation", "/services#ai-automation"],
       ["Custom software", "/services#custom-software"],
       ["Smart business tools", "/products"],
@@ -43,11 +44,11 @@ export default function SiteFooter() {
               Monetcore<span className="text-blue-400">.</span>
             </Link>
             <p className="mt-2 text-sm">
-              System Solutions · Websites first. Room to grow.
+              System Solutions · Software. Automation. Business technology.
             </p>
           </div>
           <a
-            href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20website."
+            href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
             target="_blank"
             rel="noopener noreferrer"
             className="w-fit rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-blue-100"
