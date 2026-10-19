@@ -1,3 +1,10 @@
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/products",
+  "Products & Applications",
+  "Explore Monetcore digital products, automation concepts, smart booking and clearly labelled technology demonstrations.",
+);
+
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 

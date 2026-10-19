@@ -1,8 +1,10 @@
+import "server-only";
 import { isReviewPreview } from "./previewSafety";
 import { google } from "googleapis";
 
 export function getGoogleCalendar() {
-  if (isReviewPreview()) throw new Error("Live integrations are disabled in review previews.");
+  if (isReviewPreview())
+    throw new Error("Live integrations are disabled in review previews.");
   const calendarId = process.env.GOOGLE_CALENDAR_ID;
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");

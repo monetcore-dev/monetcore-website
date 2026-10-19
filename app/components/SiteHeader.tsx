@@ -222,10 +222,10 @@ export default function SiteHeader() {
         <Link
           href="/"
           onClick={closeNavigation}
-          aria-label="Monetcore System Solutions home"
+          title="Monetcore System Solutions home"
           className="brand-lockup"
         >
-          <span className="brand-mark" aria-hidden="true">
+          <span className="brand-mark">
             M<span />
           </span>
           <span>
@@ -238,7 +238,9 @@ export default function SiteHeader() {
           type="button"
           aria-controls="primary-navigation"
           aria-expanded={mobileOpen}
-          aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+          aria-label={
+            mobileOpen ? "Close navigation menu" : "Open navigation menu"
+          }
           onClick={() => {
             setMobileOpen(!mobileOpen);
             setOpenMenu(null);

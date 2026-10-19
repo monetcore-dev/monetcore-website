@@ -101,7 +101,6 @@ export default function ProjectWorkflow() {
               <button
                 type="button"
                 id={`workflow-step-${index}`}
-                aria-label={`Explore ${step.title} step`}
                 aria-pressed={active === index}
                 aria-controls="workflow-detail"
                 onClick={() => setActive(index)}

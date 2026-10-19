@@ -1,8 +1,10 @@
+import "server-only";
 import { isReviewPreview } from "./previewSafety";
 import { createClient } from "@supabase/supabase-js";
 
 export function getSupabaseAdmin() {
-  if (isReviewPreview()) throw new Error("Live integrations are disabled in review previews.");
+  if (isReviewPreview())
+    throw new Error("Live integrations are disabled in review previews.");
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -14,14 +16,10 @@ export function getSupabaseAdmin() {
     throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }

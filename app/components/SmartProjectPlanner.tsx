@@ -1,6 +1,7 @@
 "use client";
+import { usePlannerSelections } from "./usePlannerSelections";
 
-import { useState, type FormEvent } from "react";
+import { type FormEvent } from "react";
 import { ArrowUpRight, ClipboardList, Check } from "lucide-react";
 import {
   enquiryBudgets,
@@ -14,10 +15,13 @@ import { useProjectPlan } from "./ProjectPlanContext";
 
 export default function SmartProjectPlanner() {
   const planner = useProjectPlan();
-  const [goal, setGoal] = useState<SolutionId | "unsure" | "">("");
-  const [challenge, setChallenge] = useState("");
-  const [budget, setBudget] = useState("");
-  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [{ goal, challenge, budget, capabilities }, update] =
+    usePlannerSelections();
+  const setGoal = (goal: SolutionId | "unsure" | "") => update({ goal });
+  const setChallenge = (challenge: string) => update({ challenge });
+  const setBudget = (budget: string) => update({ budget });
+  const setCapabilities = (change: (current: string[]) => string[]) =>
+    update((previous) => ({ capabilities: change(previous.capabilities) }));
   const ready = goal !== "" && challenge !== "" && budget !== "";
   const recommendation = ready
     ? recommendProject({ goal, challenge, budget, capabilities })
@@ -49,8 +53,9 @@ export default function SmartProjectPlanner() {
           <p className="eyebrow">A useful starting point</p>
           <h3>Smart Project Planner</h3>
           <p>
-            Four questions. A practical direction to discuss. This is rule-based
-            guidance, not an AI-generated quote or estimate.
+            Four questions. Choices stay in this browser tab for this session. A
+            practical direction to discuss. This is rule-based guidance, not an
+            AI-generated quote or estimate.
           </p>
         </div>
       </div>

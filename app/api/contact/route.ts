@@ -1,3 +1,8 @@
+import {
+  readSubmission,
+  rateLimit,
+  validateSubmission,
+} from "@/app/lib/submissionSafety";
 import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -12,8 +17,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
   try {
-    const body = await request.json();
+    const limited = rateLimit(request, "contact");
+    if (limited) return limited;
+    const body = await readSubmission(request);
+    if (body instanceof Response) return body;
+    if (body.website && typeof body.website === "string")
+      return NextResponse.json({ success: true });
+    const invalid = validateSubmission(body, "contact");
+    if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
 
+    body.name = (body.name as string).trim();
+    body.email = (body.email as string).trim();
+    body.message = (body.message as string).trim();
     const {
       name,
       email,
@@ -21,91 +36,18 @@ export async function POST(request: Request) {
       service,
       budget,
       message,
-      website,
-      startedAt,
       packageId,
       consent,
-    } = body;
-
-    // Honeypot: real users won't fill this hidden field.
-    // If a bot fills it, pretend the request succeeded.
-    if (website) {
-      return NextResponse.json({ success: true }, { status: 200 });
-    }
-
-    // Reject submissions completed unrealistically fast.
-    const submittedAt = Date.now();
-    const formStartedAt = Number(startedAt);
-
-    if (
-      !formStartedAt ||
-      Number.isNaN(formStartedAt) ||
-      submittedAt - formStartedAt < 3000
-    ) {
-      return NextResponse.json(
-        { error: "Invalid form submission." },
-        { status: 400 },
-      );
-    }
-
-    // Required fields
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        {
-          error: "Name, email, and project details are required.",
-        },
-        { status: 400 },
-      );
-    }
-
-    // Basic type validation
-    if (
-      typeof name !== "string" ||
-      typeof email !== "string" ||
-      typeof message !== "string"
-    ) {
-      return NextResponse.json(
-        { error: "Invalid form data." },
-        { status: 400 },
-      );
-    }
-
-    // Optional field type validation
-    if (
-      (company && typeof company !== "string") ||
-      (service && typeof service !== "string") ||
-      (budget && typeof budget !== "string")
-    ) {
-      return NextResponse.json(
-        { error: "Invalid form data." },
-        { status: 400 },
-      );
-    }
-
-    // Length limits
-    if (
-      name.length > 100 ||
-      email.length > 200 ||
-      message.length > 5000 ||
-      (company && company.length > 150) ||
-      (service && service.length > 100) ||
-      (budget && budget.length > 100)
-    ) {
-      return NextResponse.json(
-        { error: "Form submission is too long." },
-        { status: 400 },
-      );
-    }
-
-    // Basic email validation
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(email)) {
-      return NextResponse.json(
-        { error: "Please provide a valid email address." },
-        { status: 400 },
-      );
-    }
+    } = body as {
+      name: string;
+      email: string;
+      company?: string;
+      service?: string;
+      budget?: string;
+      message: string;
+      packageId?: unknown;
+      consent?: unknown;
+    };
 
     const selectedPackage = getWebsitePackage(packageId);
     if (packageId !== undefined && (!selectedPackage || consent !== true)) {
@@ -169,8 +111,8 @@ ${message}
       success: true,
       message: "Your enquiry has been sent successfully.",
     });
-  } catch (error) {
-    console.error("Contact form error:", error);
+  } catch {
+    console.error("Contact form error:");
 
     return NextResponse.json(
       {

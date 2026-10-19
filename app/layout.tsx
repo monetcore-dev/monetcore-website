@@ -120,12 +120,12 @@ export const metadata: Metadata = {
   },
 
   robots: {
-    index: true,
-    follow: true,
+    index: !isReviewPreview(),
+    follow: !isReviewPreview(),
 
     googleBot: {
-      index: true,
-      follow: true,
+      index: !isReviewPreview(),
+      follow: !isReviewPreview(),
       "max-image-preview": "large",
       "max-snippet": -1,
       "max-video-preview": -1,
@@ -144,6 +144,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body
         className={`min-h-full flex flex-col ${isReviewPreview() ? "review-preview" : ""}`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Monetcore System Solutions",
+              url: "https://monetcore.dev",
+              email: "hello@monetcore.dev",
+              telephone: "+2347065880558",
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
         {children}
         <SiteFooter />
         {isReviewPreview() ? <PreviewNotice /> : <Analytics />}

@@ -1,3 +1,10 @@
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/book",
+  "Book a Consultation",
+  "Choose a consultation to discuss your software, AI automation, website or business integration project with Monetcore System Solutions.",
+);
+
 import BookingForm from "../BookingForm";
 import SiteHeader from "../components/SiteHeader";
 

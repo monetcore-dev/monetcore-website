@@ -3021,3 +3021,26 @@ summary {
     color: #fff;
   }
 }
+/* Selected carousel slides need contrast checks as well as the default slide. */
+.technology-showcase .showcase-dashboard .text-slate-400,
+.technology-showcase .showcase-saas .bg-slate-950 .text-slate-400 {
+  color: #c4cee2;
+}
+.showcase-canvas .text-emerald-600,
+.showcase-canvas .text-emerald-500 {
+  color: #047857;
+}
+.showcase-website .showcase-toolbar > span {
+  color: #fff;
+}
+/* A preview warning must not cover the last link in a scrollable mobile menu. */
+@media (max-width: 1199px) {
+  .review-preview:has(> .preview-notice) .primary-navigation.is-mobile-open {
+    max-height: calc(100dvh - 208px);
+  }
+}
+@media (max-width: 767px) {
+  .review-preview:has(> .preview-notice) .primary-navigation.is-mobile-open {
+    max-height: calc(100dvh - 152px);
+  }
+}

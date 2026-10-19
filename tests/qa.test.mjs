@@ -1,0 +1,261 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  readSubmission,
+  validateSubmission,
+  isValidDate,
+  rateLimit,
+} from "../app/lib/submissionSafety.ts";
+import {
+  recommendProject,
+  plannerChallenges,
+  plannerCapabilities,
+  enquiryBudgets,
+  solutionOptions,
+} from "../app/config/projectPlanner.ts";
+import { isReviewPreview } from "../app/lib/previewSafety.ts";
+import robots from "../app/robots.ts";
+import sitemap from "../app/sitemap.ts";
+import nextConfig from "../next.config.ts";
+import { state } from "./integrations.mjs";
+import { POST as contact } from "../app/api/contact/route.ts";
+import { POST as booking } from "../app/api/book/route.ts";
+import { GET as availability } from "../app/api/book/availability/route.ts";
+const now = 2_000_000_000_000;
+const base = {
+  name: "Test Person",
+  email: "test@example.invalid",
+  message: "Test project",
+  startedAt: now - 5000,
+};
+let sequence = 0;
+function request(data, path = "contact", extras = {}) {
+  return new Request(`https://review.example/api/${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://review.example",
+      "x-forwarded-for": `test-${++sequence}`,
+      ...extras,
+    },
+    body: typeof data === "string" ? data : JSON.stringify(data),
+  });
+}
+test("bounded JSON, content type, malformed payloads and same-origin validation", async () => {
+  for (const body of ["null", "[]", "broken"])
+    assert.equal((await readSubmission(request(body))).status, 400);
+  assert.equal(
+    (
+      await readSubmission(
+        request(base, "contact", { origin: "https://other.invalid" }),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await readSubmission(
+        request(base, "contact", { "content-type": "text/plain" }),
+      )
+    ).status,
+    415,
+  );
+  assert.equal(
+    (await readSubmission(request({ message: "x".repeat(33000) }))).status,
+    413,
+  );
+  assert.deepEqual(await readSubmission(request(base)), base);
+});
+test("server validation rejects whitespace, malformed types, email header injection, timing and impossible dates", () => {
+  assert.equal(validateSubmission(base, "contact", now), null);
+  for (const patch of [
+    { name: " " },
+    { message: " " },
+    { company: {} },
+    { email: "a@b.test\r\nBcc:x@y.test" },
+    { email: "not-an-email" },
+    { name: "a\nb" },
+    { startedAt: "invalid" },
+    { startedAt: now + 1 },
+    { startedAt: now - 1 },
+    { message: "x".repeat(5001) },
+  ])
+    assert.ok(validateSubmission({ ...base, ...patch }, "contact", now));
+  for (const date of ["2027-02-29", "2026-02-31", "2026-13-01", "bad"])
+    assert.equal(isValidDate(date), false);
+  assert.equal(isValidDate("2028-02-29"), true);
+  assert.ok(
+    validateSubmission(
+      {
+        ...base,
+        consultationType: "Made up - 180 minutes",
+        date: "2027-01-04",
+      },
+      "booking",
+      now,
+    ),
+  );
+});
+test("bounded instance limiter rejects bursts and resets expired buckets", () => {
+  const req = request(base);
+  assert.equal(rateLimit(req, "unit", 2, 1000, now), null);
+  assert.equal(rateLimit(req, "unit", 2, 1000, now), null);
+  const blocked = rateLimit(req, "unit", 2, 1000, now);
+  assert.equal(blocked.status, 429);
+  assert.equal(blocked.headers.get("retry-after"), "1");
+  assert.equal(rateLimit(req, "unit", 2, 1000, now + 1001), null);
+});
+test("planner exhaustively preserves explicit goals and follows documented unsure priorities", () => {
+  let count = 0;
+  for (const goal of [...solutionOptions.map((x) => x.id), "unsure"])
+    for (const challenge of plannerChallenges)
+      for (const budget of enquiryBudgets)
+        for (let mask = 0; mask < 64; mask++) {
+          const capabilities = plannerCapabilities
+            .filter((_, i) => mask & (1 << i))
+            .map((x) => x.id);
+          const result = recommendProject({
+            goal,
+            challenge: challenge.id,
+            budget: budget.value,
+            capabilities,
+          });
+          const expected =
+            goal !== "unsure"
+              ? goal
+              : challenge.id === "disconnected" ||
+                  capabilities.includes("connections")
+                ? "integrations"
+                : challenge.id === "responses" ||
+                    capabilities.includes("ai-responses")
+                  ? "ai"
+                  : challenge.id === "visibility" ||
+                      capabilities.includes("website")
+                    ? "websites"
+                    : "software";
+          assert.equal(result.solution.id, expected);
+          assert.ok(result.message.includes(challenge.label));
+          assert.ok(result.message.includes(budget.value));
+          assert.match(result.message, /not a quotation/);
+          count++;
+        }
+  assert.equal(count, 9600);
+});
+test("production SEO allows public routes; preview uses three independent indexing barriers", async () => {
+  process.env.VERCEL_ENV = "production";
+  assert.equal(isReviewPreview(), false);
+  assert.equal(robots().rules.allow, "/");
+  assert.equal(sitemap().length, 8);
+  assert.ok(sitemap().every((x) => x.url.startsWith("https://monetcore.dev")));
+  assert.ok(
+    !(await nextConfig.headers())[0].headers.some(
+      (x) => x.key === "X-Robots-Tag",
+    ),
+  );
+  process.env.VERCEL_ENV = "preview";
+  assert.equal(robots().rules.disallow, "/");
+  assert.deepEqual(sitemap(), []);
+  assert.ok(
+    (await nextConfig.headers())[0].headers.some(
+      (x) => x.key === "X-Robots-Tag" && x.value.includes("noindex"),
+    ),
+  );
+});
+test("preview rejects valid/invalid submissions before touching integrations", async () => {
+  process.env.VERCEL_ENV = "preview";
+  for (const payload of [base, null, { website: "bot" }]) {
+    assert.equal((await contact(request(payload))).status, 403);
+    assert.equal((await booking(request(payload, "book"))).status, 403);
+  }
+  assert.equal(
+    (
+      await availability(
+        new Request(
+          "https://review.example/api/book/availability?date=2030-01-07",
+        ),
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    state.emails.length + state.bookings.length + state.calendars.length,
+    0,
+  );
+});
+test("contact validation, quotation consent and success use mocked SMTP only", async () => {
+  process.env.VERCEL_ENV = "production";
+  process.env.MONETCORE_EMAIL = "mock@example.invalid";
+  process.env.MONETCORE_EMAIL_PASSWORD = "mock-only";
+  const valid = { ...base, startedAt: Date.now() - 5000 };
+  assert.equal(
+    (await contact(request({ ...valid, message: " " }))).status,
+    400,
+  );
+  assert.equal(
+    (await contact(request({ ...valid, packageId: "starter", consent: false })))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await contact(request({ ...valid, packageId: "unknown", consent: true })))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await contact(request({ ...valid, packageId: "starter", consent: true })))
+      .status,
+    200,
+  );
+  assert.match(state.emails.at(-1).text, /₦99,000/);
+  assert.equal(state.emails.at(-1).to, "mock@example.invalid");
+  state.failEmail = true;
+  assert.equal((await contact(request(valid))).status, 500);
+  state.failEmail = false;
+});
+test("booking, unique-slot conflict, unavailable date and partial integration failure use mocks only", async () => {
+  const valid = {
+    ...base,
+    startedAt: Date.now() - 5000,
+    consultationType: "Discovery Call - 30 minutes",
+    date: "2030-01-07",
+    time: "10:00",
+    message: '<img src=x onerror="alert(1)"> & literal project text',
+  };
+  assert.equal(
+    (await booking(request({ ...valid, date: "2030-02-31" }, "book"))).status,
+    400,
+  );
+  assert.equal(
+    (await booking(request({ ...valid, date: "2030-01-06" }, "book"))).status,
+    400,
+  );
+  const success = await booking(request(valid, "book"));
+  assert.equal(success.status, 201);
+  assert.equal((await success.json()).calendar.eventCreated, true);
+  assert.ok(state.calendars.at(-1).requestBody.description.includes("&lt;img"));
+  assert.ok(!state.calendars.at(-1).requestBody.description.includes("<img"));
+  assert.equal(state.emails.at(-1).html, undefined);
+  assert.equal((await booking(request(valid, "book"))).status, 409);
+  state.failCalendar = true;
+  state.failEmail = true;
+  const partial = await booking(request({ ...valid, time: "11:00" }, "book"));
+  assert.equal(partial.status, 201);
+  const result = await partial.json();
+  assert.equal(result.calendar.eventCreated, false);
+  assert.equal(result.email.customerConfirmationSent, false);
+  state.failCalendar = false;
+  state.failEmail = false;
+  const response = await availability(
+    new Request("https://review.example/api/book/availability?date=2030-01-07"),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).bookedTimes, ["09:00"]);
+  assert.equal(
+    (
+      await availability(
+        new Request("https://review.example/api/book/availability?date=bad"),
+      )
+    ).status,
+    400,
+  );
+});

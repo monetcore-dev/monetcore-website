@@ -1,3 +1,10 @@
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/contact",
+  "Contact Monetcore",
+  "Discuss your business technology project with Monetcore System Solutions. Contact our Abuja team or request a consultation.",
+);
+
 import ContactForm from "../ContactForm";
 import SiteHeader from "../components/SiteHeader";
 

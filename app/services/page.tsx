@@ -1,3 +1,10 @@
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/services",
+  "Technology Services",
+  "Explore AI automation, custom software, business integrations and technology consulting from Monetcore System Solutions.",
+);
+
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 

@@ -1,3 +1,4 @@
+export const packageSelectionEvent = "monetcore-package-selected";
 /** Proposed commercial terms. Obtain business approval before public publication. */
 export const pricingConditions = [
   "All package prices and renewal amounts are proposed and require final Monetcore business approval before publication. Confirm the final scope and quotation before purchase.",

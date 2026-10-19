@@ -1,3 +1,4 @@
+import { rateLimit, isValidDate } from "@/app/lib/submissionSafety";
 import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
@@ -12,24 +13,6 @@ const allowedTimes = [
   "16:00",
 ];
 
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-
-  const [year, month, day] = value.split("-").map(Number);
-
-  const date = new Date(
-    Date.UTC(year, month - 1, day)
-  );
-
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
-}
-
 function getLagosDateParts() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos",
@@ -42,10 +25,7 @@ function getLagosDateParts() {
   }).formatToParts(new Date());
 
   const values = Object.fromEntries(
-    parts.map((part) => [
-      part.type,
-      part.value,
-    ])
+    parts.map((part) => [part.type, part.value]),
   );
 
   return {
@@ -58,19 +38,19 @@ export async function GET(request: Request) {
   if (isReviewPreview()) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
+  const limited = rateLimit(request, "availability", 60, 60_000);
+  if (limited) return limited;
   try {
     const { searchParams } = new URL(request.url);
 
-    const date =
-      searchParams.get("date")?.trim() || "";
+    const date = searchParams.get("date")?.trim() || "";
 
     if (!isValidDate(date)) {
       return NextResponse.json(
         {
-          error:
-            "Please provide a valid date.",
+          error: "Please provide a valid date.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,16 +59,13 @@ export async function GET(request: Request) {
     if (date < lagosNow.date) {
       return NextResponse.json(
         {
-          error:
-            "This booking date is in the past.",
+          error: "This booking date is in the past.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const bookingDate = new Date(
-      `${date}T12:00:00+01:00`
-    );
+    const bookingDate = new Date(`${date}T12:00:00+01:00`);
 
     const day = bookingDate.getUTCDay();
 
@@ -99,8 +76,7 @@ export async function GET(request: Request) {
         bookedTimes: [],
         unavailableTimes: [...allowedTimes],
         unavailable: true,
-        message:
-          "Consultations are available Monday to Friday.",
+        message: "Consultations are available Monday to Friday.",
       });
     }
 
@@ -111,37 +87,27 @@ export async function GET(request: Request) {
       .neq("status", "cancelled");
 
     if (error) {
-      console.error(
-        "Booking availability error:",
-        error
-      );
+      console.error("Booking availability error:");
 
       return NextResponse.json(
         {
-          error:
-            "Unable to check availability.",
+          error: "Unable to check availability.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    const bookedTimes = (data || []).map(
-      (booking) =>
-        String(booking.booking_time).slice(0, 5)
+    const bookedTimes = (data || []).map((booking) =>
+      String(booking.booking_time).slice(0, 5),
     );
 
     const pastTimes =
       date === lagosNow.date
-        ? allowedTimes.filter(
-            (time) => time <= lagosNow.time
-          )
+        ? allowedTimes.filter((time) => time <= lagosNow.time)
         : [];
 
     const unavailableTimes = Array.from(
-      new Set([
-        ...bookedTimes,
-        ...pastTimes,
-      ])
+      new Set([...bookedTimes, ...pastTimes]),
     );
 
     return NextResponse.json({
@@ -151,18 +117,14 @@ export async function GET(request: Request) {
       pastTimes,
       unavailableTimes,
     });
-  } catch (error) {
-    console.error(
-      "Availability API error:",
-      error
-    );
+  } catch {
+    console.error("Availability API error:");
 
     return NextResponse.json(
       {
-        error:
-          "Unable to check availability.",
+        error: "Unable to check availability.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

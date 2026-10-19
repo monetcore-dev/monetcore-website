@@ -1,3 +1,10 @@
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/about",
+  "About Monetcore",
+  "Meet Monetcore System Solutions, established in 2016, and our practical approach to software, automation and business technology.",
+);
+
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { FormEvent, useId, useState, useRef, useEffect } from "react";
 
 import {
   getWebsitePackage,
+  packageSelectionEvent,
   packagePrice,
   websitePackages,
 } from "./config/websitePackages";
@@ -17,6 +18,7 @@ export default function ContactForm({
   initialPackageId,
   quotationMode = false,
 }: ContactFormProps) {
+  const submitting = useRef(false);
   const planner = useProjectPlan();
   const incomingPlan = quotationMode ? null : planner?.draft;
   const planId = incomingPlan?.id ?? 0;
@@ -41,26 +43,52 @@ export default function ContactForm({
   function editField(field: "service" | "budget" | "message", value: string) {
     setEditedFields({ ...fields, [field]: value });
   }
-  const [selectedPackageId, setSelectedPackageId] = useState(
-    initialPackageId ?? "",
-  );
+  const initialPackage = initialPackageId ?? "";
+  const [packageSelection, setPackageSelection] = useState({
+    source: initialPackage,
+    value: initialPackage,
+  });
+  if (packageSelection.source !== initialPackage) {
+    setPackageSelection({ source: initialPackage, value: initialPackage });
+  }
+  const selectedPackageId =
+    packageSelection.source === initialPackage
+      ? packageSelection.value
+      : initialPackage;
+  function setSelectedPackageId(value: string) {
+    setPackageSelection({ source: initialPackage, value });
+  }
+  useEffect(() => {
+    if (!quotationMode) return;
+    const onSelection = (event: Event) => {
+      const id: unknown = (event as CustomEvent).detail;
+      if (typeof id === "string" && getWebsitePackage(id)) {
+        setPackageSelection({ source: initialPackage, value: id });
+      }
+    };
+    window.addEventListener(packageSelectionEvent, onSelection);
+    return () => window.removeEventListener(packageSelectionEvent, onSelection);
+  }, [quotationMode, initialPackage]);
+  const feedbackKey = `${planId}:${selectedPackageId}`;
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
 
   const [feedback, setFeedback] = useState("");
-  const [feedbackForPlan, setFeedbackForPlan] = useState(0);
+  const [feedbackForDraft, setFeedbackForDraft] = useState("");
   const [startedAt] = useState(() => Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFeedbackForPlan(planId);
+    if (submitting.current) return;
+    setFeedbackForDraft(feedbackKey);
 
     if (!fields.message.trim()) {
       setStatus("error");
       setFeedback("Please add meaningful project details before submitting.");
       return;
     }
+    submitting.current = true;
     setStatus("sending");
     setFeedback("");
 
@@ -100,6 +128,12 @@ export default function ContactForm({
         "Thank you. Your project enquiry has been sent to Monetcore.",
       );
 
+      // A package change during a pending request must not clear the newer draft.
+      if (
+        quotationMode &&
+        new FormData(form).get("packageId") !== data.packageId
+      )
+        return;
       form.reset();
       setEditedFields({
         planId,
@@ -109,12 +143,14 @@ export default function ContactForm({
       });
       if (quotationMode) setSelectedPackageId(initialPackageId ?? "");
     } catch (error) {
-      console.error("Contact form error:", error);
+      console.error("Enquiry submission failed.");
 
       setStatus("error");
       setFeedback(
         `We couldn't send your enquiry. ${error instanceof Error ? error.message : "Please try again."} You can email hello@monetcore.dev.`,
       );
+    } finally {
+      submitting.current = false;
     }
   }
 
@@ -312,7 +348,7 @@ export default function ContactForm({
         </button>
       </div>
 
-      {feedback && feedbackForPlan === planId && (
+      {feedback && feedbackForDraft === feedbackKey && (
         <p
           role={status === "error" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
