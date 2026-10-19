@@ -1,6 +1,5 @@
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
-import SiteFooter from "../components/SiteFooter";
 
 const leadFeatures = [
   "Capture new enquiries",
@@ -41,7 +40,7 @@ const outcomes = [
 
 export default function ProductsPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main id="main-content" className="min-h-screen bg-slate-50 text-slate-950">
       <SiteHeader />
 
       {/* HERO */}
@@ -506,7 +505,6 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      <SiteFooter />
     </main>
   );
 }

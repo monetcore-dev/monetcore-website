@@ -1,6 +1,5 @@
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
-import SiteFooter from "../components/SiteFooter";
 
 const values = [
   {
@@ -23,7 +22,7 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main id="main-content" className="min-h-screen bg-slate-50 text-slate-950">
       <SiteHeader />
 
       <section className="relative overflow-hidden px-6 pb-20 pt-36 lg:px-8 lg:pt-44">
@@ -240,7 +239,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <SiteFooter />
     </main>
   );
 }

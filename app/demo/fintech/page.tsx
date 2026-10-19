@@ -123,7 +123,8 @@ export default function MonePayDemo() {
   const validLoan = Number.isFinite(loanAmount) && loanAmount >= 10000 && loanAmount <= 1000000 && Number.isInteger(loanAmount);
   const loanTotal = validLoan ? loanAmount * (1 + 0.12 * months / 12) : 0;
 
-  return <main id="top" className="min-h-screen bg-white text-[#0b3028]" style={{fontFamily:'Inter, "Segoe UI", Arial, sans-serif'}}>
+  return <main id="main-content" className="min-h-screen bg-white text-[#0b3028]" style={{fontFamily:'Inter, "Segoe UI", Arial, sans-serif'}}>
+    <span id="top" />
     <style>{`
       .mp-float{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid rgba(145,255,212,.32);border-radius:999px;background:rgba(8,85,67,.82);box-shadow:0 12px 30px rgba(0,24,19,.24),inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(10px);color:#e9fff6;font-size:10px;font-weight:750;white-space:nowrap;letter-spacing:.01em;animation:mp-hover 5s ease-in-out infinite;will-change:transform}
       .mp-token-icon{display:grid;place-items:center;width:25px;height:25px;flex:none;border-radius:50%;background:#5ce7b6;color:#064638;font-size:14px;font-weight:900}
@@ -193,7 +194,7 @@ export default function MonePayDemo() {
     </div></section>
 
     <section id="about" className="mx-auto flex max-w-[1260px] flex-col items-start justify-between gap-8 px-5 py-20 sm:px-8 md:flex-row md:items-center"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-emerald-600">Powered by Monetcore</p><h2 className="mt-3 max-w-xl text-3xl font-extrabold tracking-[-.05em] sm:text-4xl">Your next fintech idea starts here.</h2><p className="mt-4 max-w-xl text-sm leading-7 text-slate-500">MonePay demonstrates how a polished financial product could look and feel. Built as a concept by Monetcore System Solutions.</p></div><Link href="/#contact" className="shrink-0 rounded-full bg-[#087657] px-7 py-4 text-sm font-bold text-white hover:bg-[#075f49]">Build with Monetcore ↗</Link></section>
-    <footer className="bg-[#062e26] px-5 py-9 text-white"><div className="mx-auto flex max-w-[1260px] flex-col items-start justify-between gap-5 sm:flex-row sm:items-center"><Logo light/><p className="max-w-xl text-xs leading-6 text-[#a5c8bd]">MonePay is a fictional demonstration by Monetcore System Solutions. It does not provide banking, lending, payment processing, or investment services. All balances and transactions are simulated.</p></div></footer>
+    <div className="bg-[#062e26] px-5 py-9 text-white"><div className="mx-auto flex max-w-[1260px] flex-col items-start justify-between gap-5 sm:flex-row sm:items-center"><Logo light/><p className="max-w-xl text-xs leading-6 text-[#a5c8bd]">MonePay is a fictional demonstration by Monetcore System Solutions. It does not provide banking, lending, payment processing, or investment services. All balances and transactions are simulated.</p></div></div>
 
          {action && <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-[#041c17]/75 p-3 backdrop-blur-sm sm:p-5" onMouseDown={(e) => { if (e.target === e.currentTarget) setAction(null); }}>
        <section role="dialog" aria-modal="true" aria-label={`${action} demonstration`} className="max-h-[92dvh] w-full max-w-[490px] overflow-y-auto rounded-[28px] bg-white p-5 text-[#0b3028] shadow-2xl sm:p-8">

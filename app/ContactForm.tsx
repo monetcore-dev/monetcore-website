@@ -139,6 +139,8 @@ export default function ContactForm() {
               Select a service
             </option>
 
+            <option value="Business Website">Business Website</option>
+
             <option value="Software Development">
               Software Development
             </option>
@@ -172,29 +174,11 @@ export default function ContactForm() {
               Select a budget range
             </option>
 
-            <option value="Under $500">
-              Under $500
-            </option>
-
-            <option value="$500 - $1,000">
-              $500 – $1,000
-            </option>
-
-            <option value="$1,000 - $2,500">
-              $1,000 – $2,500
-            </option>
-
-            <option value="$2,500 - $5,000">
-              $2,500 – $5,000
-            </option>
-
-            <option value="$5,000+">
-              $5,000+
-            </option>
-
-            <option value="Not sure">
-              Not sure yet
-            </option>
+            <option value="Under ₦100,000">Under ₦100,000</option>
+            <option value="₦100,000 - ₦200,000">₦100,000 – ₦200,000</option>
+            <option value="₦200,000 - ₦500,000">₦200,000 – ₦500,000</option>
+            <option value="₦500,000+">₦500,000+</option>
+            <option value="Not sure yet">Not sure yet — please advise</option>
           </select>
         </label>
       </div>

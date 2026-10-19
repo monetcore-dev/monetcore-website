@@ -1,10 +1,9 @@
 import BookingForm from "../BookingForm";
-import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 
 export default function BookPage() {
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main id="main-content" className="min-h-screen bg-slate-50">
       <SiteHeader />
 
       <section className="px-6 pb-24 pt-32 lg:px-8">
@@ -44,7 +43,6 @@ export default function BookPage() {
         </div>
       </section>
 
-      <SiteFooter />
     </main>
   );
 }
