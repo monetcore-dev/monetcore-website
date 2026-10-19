@@ -1,4 +1,3 @@
-import Link from "next/link";
 import ContactForm from "../ContactForm";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";

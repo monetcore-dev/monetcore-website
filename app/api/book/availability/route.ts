@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
 
 const allowedTimes = [
   "09:00",
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("bookings")
       .select("booking_time")
       .eq("booking_date", date)

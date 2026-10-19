@@ -22,7 +22,6 @@ export default function BookingForm() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
   const [availabilityStatus, setAvailabilityStatus] =
     useState<AvailabilityStatus>("idle");
@@ -43,7 +42,6 @@ export default function BookingForm() {
 
   async function checkAvailability(date: string) {
     if (!date) {
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
@@ -52,7 +50,6 @@ export default function BookingForm() {
 
     setAvailabilityStatus("loading");
     setAvailabilityMessage("");
-    setBookedTimes([]);
     setUnavailableTimes([]);
 
     try {
@@ -84,7 +81,6 @@ export default function BookingForm() {
           )
         : booked;
 
-      setBookedTimes(booked);
       setUnavailableTimes(unavailable);
       setAvailabilityStatus("ready");
 
@@ -98,7 +94,6 @@ export default function BookingForm() {
     } catch (error) {
       console.error("Availability error:", error);
 
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("error");
       setAvailabilityMessage(
@@ -125,7 +120,6 @@ async function handleDateChange(
   setAvailabilityMessage("");
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    setBookedTimes([]);
     setUnavailableTimes([]);
     setAvailabilityStatus("idle");
     return;
@@ -211,7 +205,6 @@ async function handleDateChange(
 
       setSelectedDate("");
       setSelectedTime("");
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
@@ -336,7 +329,6 @@ async function handleDateChange(
 
             <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {timeSlots.map((time) => {
-                const isBooked = bookedTimes.includes(time);
                 const isUnavailable = unavailableTimes.includes(time);
                 const active = selectedTime === time;
 
@@ -471,7 +463,7 @@ async function handleDateChange(
           </label>
 
           <label className="text-sm font-semibold text-slate-900 md:col-span-2">
-            Service you're interested in
+            Service you&apos;re interested in
 
             <select
               name="service"

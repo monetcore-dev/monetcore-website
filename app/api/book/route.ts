@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
 import {
-  googleCalendar,
-  monetcoreCalendarId,
+  getGoogleCalendar,
 } from "@/app/lib/googleCalendar";
 
 function cleanText(value: unknown, maxLength = 500) {
@@ -265,7 +264,7 @@ export async function POST(request: Request) {
     // Save booking first.
     // Supabase remains the source of truth.
     const { data: booking, error: bookingError } =
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from("bookings")
         .insert({
           consultation_type: consultationType,
@@ -329,6 +328,7 @@ export async function POST(request: Request) {
           durationMinutes * 60 * 1000
       );
 
+      const { googleCalendar, monetcoreCalendarId } = getGoogleCalendar();
       const calendarResponse =
         await googleCalendar.events.insert({
           calendarId: monetcoreCalendarId,
@@ -365,7 +365,7 @@ export async function POST(request: Request) {
         calendarEventCreated = true;
 
         const { error: calendarUpdateError } =
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from("bookings")
             .update({
               google_calendar_event_id:
@@ -467,7 +467,7 @@ https://monetcore.dev
 
           customerEmailSent = true;
 
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from("bookings")
             .update({
               confirmation_sent_at:
@@ -529,7 +529,7 @@ ${booking.id}
 
           adminEmailSent = true;
 
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from("bookings")
             .update({
               admin_notification_sent_at:
