@@ -40,3 +40,21 @@ iOS Safari, Android Chrome on real hardware, assistive-technology testing and
 real-world network performance remain to be reviewed. Screenshots were captured
 from the same local build. The Vercel branch preview requires authorized login;
 its deployment status can be checked separately from remote UI verification.
+
+## Android screenshot follow-up
+
+The follow-up keeps the desktop layout and further compacts phone presentation:
+a 64px navigation shell, smaller brand lockup, 96px hero top padding, reduced
+heading/body spacing, two-column service highlights and 44px section spacing.
+The showcase canvas is now 480px on phones (previously 610px), with smaller
+padding and two-column statistic cards. The selected dashboard fits within the
+canvas; taller app concepts retain keyboard/touch scrolling and external carousel
+controls. All figures are labelled fictional demo data; the SaaS badge says Demo.
+Each of the six selected slides receives an accessibility check, including labels
+on the dark dashboard and the website mockup's dark button.
+
+The mobile preview notice is at most 60px tall, has a 44px dismiss button, respects
+the bottom safe area and keeps the forms/bookings-disabled warning. Dismissing it
+does not enable preview submissions. Footer columns and process cards are also
+more compact. Updated screenshots include the undismissed notice at all five
+requested phone widths and the dashboard at 320, 390 and 430px.

@@ -124,7 +124,7 @@ export default function HeroShowcase() {
           aria-roledescription="slide"
           aria-label={`${active + 1} of ${slides.length}: ${slide.label}`}
           tabIndex={0}
-          className="showcase-canvas"
+          className={`showcase-canvas showcase-${slide.id}`}
         >
           {slide.id === "ai" && <AISlide />}
 
@@ -140,6 +140,9 @@ export default function HeroShowcase() {
         </div>
 
         <div className="showcase-footer">
+          <span className="showcase-data-label">
+            Illustrative demo · Fictional data
+          </span>
           <p className="showcase-category">{slide.category}</p>
           <h2>{slide.label}</h2>
           <p>{slide.description}</p>
@@ -447,7 +450,7 @@ function SaaSSlide() {
           </div>
 
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
-            Live
+            Demo
           </span>
         </div>
 

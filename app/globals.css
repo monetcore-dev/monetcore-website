@@ -2731,3 +2731,293 @@ summary {
     min-width: 0;
   }
 }
+
+.preview-notice-mobile {
+  display: none;
+}
+.showcase-data-label {
+  display: block;
+  color: #4c5c76;
+  font-size: 0.65rem;
+  margin-bottom: 6px;
+}
+/* Compact phone layout; desktop spacing and mockup presentation stay intact. */
+@media (max-width: 767px) {
+  .navigation-shell {
+    min-height: 64px;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+  .brand-lockup {
+    min-height: 44px;
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 36px;
+    border-radius: 10px 10px 10px 3px;
+    font-size: 20px;
+  }
+  .brand-lockup strong {
+    font-size: 0.73rem;
+  }
+  .brand-lockup small {
+    font-size: 0.44rem;
+    letter-spacing: 0.18em;
+  }
+  .mobile-menu-toggle {
+    padding: 8px 10px;
+    gap: 6px;
+    font-size: 0.72rem;
+  }
+  .primary-navigation.is-mobile-open {
+    max-height: calc(100dvh - 84px);
+  }
+  .mega-introduction {
+    padding: 16px;
+  }
+  .mega-introduction h2 {
+    margin-top: 8px;
+    font-size: 1.25rem;
+  }
+  .mega-introduction > a {
+    margin-top: 10px;
+  }
+  #corporate-hero {
+    padding: 96px 16px 40px;
+  }
+  #corporate-hero > .relative {
+    gap: 28px;
+  }
+  #corporate-hero h1 {
+    margin-top: 16px;
+    font-size: clamp(2rem, 8.6vw, 2.65rem);
+    line-height: 1.12;
+  }
+  #corporate-hero > .relative > div:first-child > p:first-child {
+    font-size: 0.65rem;
+    line-height: 1.7;
+    letter-spacing: 0.12em;
+  }
+  #corporate-hero > .relative > div:first-child > p {
+    margin-top: 16px;
+    font-size: 0.9rem;
+    line-height: 1.75;
+  }
+  #corporate-hero > .relative > div:first-child > p:first-child {
+    margin-top: 0;
+  }
+  #corporate-hero > .relative > div:first-child > .flex {
+    margin-top: 20px;
+    gap: 10px;
+  }
+  #corporate-hero > .relative > div:first-child > div.border-t {
+    margin-top: 20px;
+    padding-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    font-size: 0.65rem;
+  }
+  #corporate-hero .company-snapshot {
+    margin-top: 24px;
+    gap: 10px;
+  }
+  #corporate-hero .company-snapshot > div {
+    padding: 16px;
+  }
+  #corporate-hero .company-snapshot p:first-child {
+    font-size: 0.95rem;
+  }
+  #corporate-hero .company-snapshot p:last-child {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+  .showcase-toolbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .showcase-toolbar > span {
+    font-size: 0.58rem;
+  }
+  .showcase-canvas {
+    height: 480px;
+  }
+  .showcase-canvas > div {
+    padding: 12px;
+  }
+  .showcase-canvas .p-7,
+  .showcase-canvas .p-6,
+  .showcase-canvas .p-5 {
+    padding: 14px;
+  }
+  .showcase-canvas .p-4 {
+    padding: 10px;
+  }
+  .showcase-canvas .text-3xl {
+    font-size: 1.3rem;
+    line-height: 1.3;
+  }
+  .showcase-canvas .text-2xl {
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+  .showcase-canvas .text-xl {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  .showcase-canvas .mt-8 {
+    margin-top: 18px;
+  }
+  .showcase-canvas .mt-7,
+  .showcase-canvas .mt-6,
+  .showcase-canvas .mt-5 {
+    margin-top: 14px;
+  }
+  .showcase-canvas .gap-8 {
+    gap: 18px;
+  }
+  .showcase-canvas .grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .showcase-canvas .grid-cols-3 > :last-child {
+    grid-column: 1 / -1;
+  }
+  .showcase-ai .grid-cols-3 > :last-child,
+  .showcase-saas .grid-cols-3 > :last-child,
+  .showcase-dashboard .grid-cols-3 > :last-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .showcase-ai .grid-cols-3 > :last-child p,
+  .showcase-saas .grid-cols-3 > :last-child p,
+  .showcase-dashboard .grid-cols-3 > :last-child p {
+    margin: 0;
+  }
+  .showcase-canvas .flex-1 {
+    min-width: 0;
+  }
+  .showcase-canvas .justify-between {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .showcase-dashboard > div > .flex {
+    min-height: 0;
+  }
+  .showcase-dashboard .h-28,
+  .showcase-saas .h-28 {
+    height: 80px;
+  }
+  .showcase-footer {
+    padding: 12px 14px 6px;
+  }
+  .showcase-footer h2 {
+    margin-top: 4px;
+    font-size: 0.95rem;
+  }
+  .showcase-footer p {
+    line-height: 1.65;
+  }
+  .showcase-controls {
+    padding: 4px 8px;
+  }
+  .showcase-note {
+    margin-top: 10px;
+  }
+  .corporate-page > section:not(#corporate-hero) {
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+  .workflow-card {
+    min-height: 0;
+    padding: 20px;
+  }
+  .workflow-detail {
+    padding: 20px;
+  }
+  .solution-selector button {
+    min-height: 116px;
+    padding: 12px;
+  }
+  .solution-experience-grid {
+    gap: 20px;
+  }
+  .solution-description ul {
+    margin-block: 18px;
+    gap: 10px;
+  }
+  .project-enquiry-layout {
+    margin-top: 36px;
+  }
+  .site-footer > div {
+    padding-top: 36px;
+    padding-bottom: 28px;
+  }
+  .site-footer .footer-intro {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    gap: 20px;
+  }
+  .site-footer > div > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+  .site-footer > div > .grid > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .site-footer ul {
+    margin-top: 12px;
+  }
+  .site-footer ul > li {
+    margin-top: 0;
+  }
+  .review-preview {
+    padding-bottom: 68px;
+  }
+  .preview-notice {
+    left: 8px;
+    right: 8px;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    max-width: 430px;
+    padding: 4px 6px 4px 12px;
+    gap: 8px;
+    border-radius: 10px;
+    box-shadow: 0 4px 18px -10px #0c172d55;
+  }
+  .preview-notice strong {
+    font-size: 0.65rem;
+  }
+  .preview-notice .preview-notice-details {
+    display: none;
+  }
+  .preview-notice .preview-notice-mobile {
+    display: block;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    margin-top: 1px;
+  }
+}
+@media (max-width: 767px) {
+  .showcase-canvas [class*="text-[9px]"],
+  .showcase-canvas [class*="text-[10px]"] {
+    font-size: 0.65rem;
+    line-height: 1.5;
+  }
+  .technology-showcase .showcase-dashboard .text-slate-400,
+  .technology-showcase .showcase-saas .bg-slate-950 .text-slate-400 {
+    color: #c4cee2;
+  }
+  .showcase-canvas .text-emerald-600,
+  .showcase-canvas .text-emerald-500 {
+    color: #047857;
+  }
+}
+@media (max-width: 767px) {
+  .showcase-website .showcase-toolbar > span {
+    color: #fff;
+  }
+}

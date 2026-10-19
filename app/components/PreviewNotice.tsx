@@ -8,14 +8,15 @@ export default function PreviewNotice() {
   if (dismissed) return null;
   return (
     <aside aria-label="Preview safety notice" className="preview-notice">
-      <div>
+      <div className="preview-notice-copy">
         <strong>
           <span aria-hidden="true" /> Review preview
         </strong>
-        <p>
+        <p className="preview-notice-details">
           Forms and bookings are disabled. WhatsApp, email and phone links
           contact Monetcore directly.
         </p>
+        <p className="preview-notice-mobile">Forms &amp; bookings disabled.</p>
       </div>
       <button
         type="button"
