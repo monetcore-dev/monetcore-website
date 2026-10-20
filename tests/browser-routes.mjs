@@ -141,7 +141,8 @@ import fs from "node:fs";
     .getByRole("link", { name: /Custom Software Development/ })
     .hover();
   assert.ok(await panel.isVisible());
-  await p.locator("h1").click();
+  // The expanded menu overlays the hero; click the actual outside margin.
+  await p.mouse.click(4, 700);
   assert.equal(await nav.locator(".mega-panel:not([hidden])").count(), 0);
   await nav.getByRole("button", { name: "Products", exact: true }).click();
   await p.screenshot({ path: "/tmp/monetcore-premium-megamenu.png" });

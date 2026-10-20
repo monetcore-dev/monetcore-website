@@ -1,3 +1,4 @@
+import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Layers3, Check, ArrowUpRight } from "lucide-react";
@@ -19,6 +20,7 @@ export default function ProductDetail({
   return (
     <>
       <SiteHeader />
+      <OfferingSchema kind="products" slug={item.slug} title={item.title} />
       <main id="main-content" className={`offering-page offering-${item.demo}`}>
         <section className="offering-hero">
           <div className="offering-wrap offering-hero-grid">

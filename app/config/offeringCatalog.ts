@@ -394,3 +394,32 @@ export function enquiryHref(
 ) {
   return `${booking ? "/book" : "/contact"}?interest=${encodeURIComponent(`${kind}:${slug}`)}${booking ? "" : "#consultation"}`;
 }
+
+/** Resolve only catalog identifiers; never echo arbitrary query text into forms. */
+export function resolveInterest(value: unknown, booking = false) {
+  if (typeof value !== "string") return undefined;
+  const [kind, slug, extra] = value.split(":");
+  if (extra !== undefined) return undefined;
+  const product = kind === "product" ? findProduct(slug) : undefined;
+  const service =
+    kind === "service"
+      ? findService(slug)
+      : product
+        ? findService(product.related)
+        : undefined;
+  if (!service) return undefined;
+  const bookingMap: Record<string, string> = {
+    "AI Solution": "AI Automation",
+    "Software Development": "Custom Software",
+    "Business Automation": "Business Integrations",
+    "Business Website": "Website Development",
+  };
+  const title = product?.title ?? service.title;
+  return {
+    id: value,
+    service: booking
+      ? (bookingMap[service.formService] ?? service.formService)
+      : service.formService,
+    message: `I'd like to discuss ${title}.\n${product ? `I understand this is a ${product.status.toLowerCase()}; please confirm availability and scope.` : "Please help me define a suitable scope and quotation."}`,
+  };
+}

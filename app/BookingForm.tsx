@@ -15,7 +15,28 @@ const timeSlots = [
   "16:00",
 ];
 
-export default function BookingForm() {
+import {
+  bookingServiceOptions,
+  type EnquiryInterest,
+} from "./config/enquiryInterests";
+
+export default function BookingForm({
+  initialInterest,
+}: { initialInterest?: EnquiryInterest } = {}) {
+  const source = initialInterest?.id ?? "";
+  const [editedEnquiry, setEditedEnquiry] = useState({
+    source,
+    service: initialInterest?.service ?? "",
+    message: initialInterest?.message ?? "",
+  });
+  const enquiry =
+    editedEnquiry.source === source
+      ? editedEnquiry
+      : {
+          source,
+          service: initialInterest?.service ?? "",
+          message: initialInterest?.message ?? "",
+        };
   const submitting = useRef(false);
   const availabilityRequest = useRef(0);
   const [status, setStatus] = useState<Status>("idle");
@@ -203,6 +224,11 @@ export default function BookingForm() {
       );
 
       form.reset();
+      setEditedEnquiry({
+        source,
+        service: initialInterest?.service ?? "",
+        message: initialInterest?.message ?? "",
+      });
 
       setSelectedDate("");
       setSelectedTime("");
@@ -453,20 +479,21 @@ export default function BookingForm() {
 
           <label className="text-sm font-semibold text-slate-900 md:col-span-2">
             Service you&apos;re interested in
-            <select name="service" defaultValue="" className={inputStyle}>
+            <select
+              name="service"
+              value={enquiry.service}
+              onChange={(event) =>
+                setEditedEnquiry({ ...enquiry, service: event.target.value })
+              }
+              className={inputStyle}
+            >
               <option value="">Select a service</option>
 
-              <option value="AI Automation">AI Automation</option>
-
-              <option value="Custom Software">Custom Software</option>
-
-              <option value="AI Sales Systems">AI Sales Systems</option>
-
-              <option value="Business Integrations">
-                Business Integrations
-              </option>
-
-              <option value="Other">Other</option>
+              {bookingServiceOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
             </select>
           </label>
         </div>
@@ -475,6 +502,10 @@ export default function BookingForm() {
           What would you like to discuss?
           <textarea
             name="message"
+            value={enquiry.message}
+            onChange={(event) =>
+              setEditedEnquiry({ ...enquiry, message: event.target.value })
+            }
             rows={5}
             maxLength={3000}
             placeholder="Tell us briefly about your project, problem, or automation opportunity."

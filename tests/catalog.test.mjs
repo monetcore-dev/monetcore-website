@@ -93,3 +93,33 @@ test("assessment handles all challenge combinations and rejects unrecognized-onl
     );
   }
 });
+
+test("contextual enquiries accept only known identifiers and map to supported form options", async () => {
+  const { resolveInterest } = await import("../app/config/offeringCatalog.ts");
+  const { contactServiceOptions, bookingServiceOptions } =
+    await import("../app/config/enquiryInterests.ts");
+  for (const [kind, items] of [
+    ["service", services],
+    ["product", products],
+  ])
+    for (const item of items) {
+      const id = `${kind}:${item.slug}`;
+      const contact = resolveInterest(id);
+      const booking = resolveInterest(id, true);
+      assert.ok(contactServiceOptions.includes(contact.service));
+      assert.ok(bookingServiceOptions.includes(booking.service));
+      assert.ok(contact.message.includes(item.title));
+      assert.ok(booking.message.includes(item.title));
+    }
+  for (const invalid of [
+    undefined,
+    null,
+    ["service:ai-automation"],
+    "<script>alert(1)</script>",
+    "product:missing",
+    "service:missing",
+    "service:ai-automation:extra",
+    "unknown:crm",
+  ])
+    assert.equal(resolveInterest(invalid), undefined);
+});

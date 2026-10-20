@@ -289,3 +289,7 @@ docs/staging-preparation-report.md
 ```
 
 Only the two app files change application behavior. The schema inspection SQL is metadata-only preparation and was not executed by Codex. No dependency, provider binding, paid service or production setting changed. The development commit/preview outcome is reported in the delivery message; production deployment remains unapproved.
+
+## 16. Corporate services/product expansion — development preview only
+
+The separately authorized [offering expansion](offering-expansion-report.md) adds seven service pages, six honestly labelled product pages and local simulations, with contextual links into existing forms. APIs, server integration helpers, production configuration, pricing and preview blocking are unchanged. Local demos do not satisfy the remaining real integration, concurrency, security/configuration or recovery launch gates. No production launch or external staging integration test is authorized by completion of these pages.

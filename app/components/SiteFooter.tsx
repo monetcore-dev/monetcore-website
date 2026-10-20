@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { serviceNavigation } from "../config/offeringNavigation";
 
 const columns = [
   {
@@ -14,10 +15,8 @@ const columns = [
   {
     title: "Services",
     links: [
-      ["Smart websites", "/website-packages"],
-      ["AI automation", "/services#ai-automation"],
-      ["Custom software", "/services#custom-software"],
-      ["Smart business tools", "/products"],
+      ...serviceNavigation.map((item) => [item.title, item.href]),
+      ["Website packages", "/website-packages"],
     ],
   },
   {

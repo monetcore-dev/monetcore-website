@@ -1,6 +1,6 @@
 import { chromium } from "playwright-core";
 import assert from "node:assert/strict";
-const base = process.env.QA_BASE_URL || "http://127.0.0.1:6000";
+const base = process.env.QA_BASE_URL || "http://127.0.0.1:4600";
 if (!["127.0.0.1", "localhost"].includes(new URL(base).hostname))
   throw new Error("Local preview only");
 const b = await chromium.launch({

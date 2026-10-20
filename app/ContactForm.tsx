@@ -12,10 +12,20 @@ import {
 import { useProjectPlan } from "./components/ProjectPlanContext";
 import { enquiryBudgets } from "./config/projectPlanner";
 
-type ContactFormProps = { initialPackageId?: string; quotationMode?: boolean };
+import {
+  contactServiceOptions,
+  type EnquiryInterest,
+} from "./config/enquiryInterests";
+
+type ContactFormProps = {
+  initialPackageId?: string;
+  quotationMode?: boolean;
+  initialInterest?: EnquiryInterest;
+};
 
 export default function ContactForm({
   initialPackageId,
+  initialInterest,
   quotationMode = false,
 }: ContactFormProps) {
   const submitting = useRef(false);
@@ -23,22 +33,28 @@ export default function ContactForm({
   const incomingPlan = quotationMode ? null : planner?.draft;
   const planId = incomingPlan?.id ?? 0;
   const messageCounterId = useId();
-  const defaultService = quotationMode ? "Business Website" : "";
+  const interestSource = quotationMode ? "" : (initialInterest?.id ?? "");
+  const defaultService = quotationMode
+    ? "Business Website"
+    : (initialInterest?.service ?? "");
   const [editedFields, setEditedFields] = useState({
     planId: 0,
+    interestSource,
     service: defaultService,
     budget: "",
-    message: "",
+    message: initialInterest?.message ?? "",
   });
   // A new draft replaces only the planner fields; uncontrolled contact details keep their DOM state.
   const fields =
-    editedFields.planId === planId
+    editedFields.planId === planId &&
+    editedFields.interestSource === interestSource
       ? editedFields
       : {
           planId,
+          interestSource,
           service: incomingPlan?.service ?? defaultService,
           budget: incomingPlan?.budget ?? "",
-          message: incomingPlan?.message ?? "",
+          message: incomingPlan?.message ?? initialInterest?.message ?? "",
         };
   function editField(field: "service" | "budget" | "message", value: string) {
     setEditedFields({ ...fields, [field]: value });
@@ -69,7 +85,7 @@ export default function ContactForm({
     window.addEventListener(packageSelectionEvent, onSelection);
     return () => window.removeEventListener(packageSelectionEvent, onSelection);
   }, [quotationMode, initialPackage]);
-  const feedbackKey = `${planId}:${selectedPackageId}`;
+  const feedbackKey = `${interestSource}:${planId}:${selectedPackageId}`;
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
@@ -137,6 +153,7 @@ export default function ContactForm({
       form.reset();
       setEditedFields({
         planId,
+        interestSource,
         service: defaultService,
         budget: "",
         message: "",
@@ -259,17 +276,11 @@ export default function ContactForm({
           >
             <option value="">Select a service</option>
 
-            <option value="Business Website">Business Website</option>
-
-            <option value="Software Development">Software Development</option>
-
-            <option value="AI Solution">AI Solution</option>
-
-            <option value="Business Automation">Business Automation</option>
-
-            <option value="Digital Product">Digital Product</option>
-
-            <option value="Other">Other</option>
+            {contactServiceOptions.map((value) => (
+              <option value={value} key={value}>
+                {value}
+              </option>
+            ))}
           </select>
         </label>
 

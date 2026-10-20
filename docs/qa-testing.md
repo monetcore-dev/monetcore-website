@@ -69,3 +69,13 @@ selection of a replacement slot. API responses are intercepted; the server must
 retain preview safeguards. This program is also included in `test:browser`.
 Server tests cover all three tracking operations with returned/thrown database
 errors, sanitized logs and internal Calendar-id persistence without public exposure.
+
+Services/products expansion adds three browser programs to `test:browser`:
+`browser-service-experiences.mjs`, `browser-product-experiences.mjs`, and
+`browser-offering-qa.mjs`. They cover local demos, all 13 detail routes, responsive
+layouts, automated accessibility and 26 contextual form prefills. Use the same
+`QA_BASE_URL` for all programs (default loopback port 4600). Demo checks assert zero
+application API calls; quotation/booking regression requests remain intercepted.
+`npm test` also exercises catalog integrity, 540 campaign combinations, all 32
+assessment combinations and validated enquiry routing. Do not interpret these as
+live integration or real-device tests. See `docs/offering-expansion-report.md`.

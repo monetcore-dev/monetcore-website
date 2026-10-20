@@ -3,7 +3,7 @@ export const solutionOptions = [
     id: "ai",
     title: "AI Automation",
     formService: "AI Solution",
-    href: "/services#ai-automation",
+    href: "/services/ai-automation",
     description:
       "Explore customer responses and repetitive workflows, with the right review and integrations.",
     features: [
@@ -18,7 +18,7 @@ export const solutionOptions = [
     id: "software",
     title: "Custom Software Development",
     formService: "Software Development",
-    href: "/services#custom-software",
+    href: "/services/software-development",
     description:
       "Shape applications, dashboards and business tools around your team and the work they need to do.",
     features: [
@@ -48,7 +48,7 @@ export const solutionOptions = [
     id: "integrations",
     title: "Business Integrations",
     formService: "Business Automation",
-    href: "/services#business-integrations",
+    href: "/services/business-integrations",
     description:
       "Connect existing tools and data sources so your team can work with a clearer flow of information.",
     features: [

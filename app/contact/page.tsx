@@ -1,3 +1,4 @@
+import { resolveInterest } from "../config/offeringCatalog";
 import { pageMetadata } from "../lib/metadata";
 export const metadata = pageMetadata(
   "/contact",
@@ -8,9 +9,17 @@ export const metadata = pageMetadata(
 import ContactForm from "../ContactForm";
 import SiteHeader from "../components/SiteHeader";
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ interest?: string | string[] }>;
+}) {
+  const initialInterest = resolveInterest((await searchParams).interest, false);
   return (
-    <main id="main-content" className="corporate-page min-h-screen bg-slate-50 text-slate-950">
+    <main
+      id="main-content"
+      className="corporate-page min-h-screen bg-slate-50 text-slate-950"
+    >
       <SiteHeader />
 
       <section className="relative overflow-hidden px-6 pb-20 pt-36 lg:px-8 lg:pt-44">
@@ -34,8 +43,8 @@ export default function ContactPage() {
 
             <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">
               Tell us about the business problem, workflow, software product, or
-              automation you want to improve. We&apos;ll help you explore the right
-              technology approach.
+              automation you want to improve. We&apos;ll help you explore the
+              right technology approach.
             </p>
           </div>
         </div>
@@ -71,7 +80,7 @@ export default function ContactPage() {
             </div>
 
             <div className="rounded-[2rem] border border-blue-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10 lg:p-12">
-              <ContactForm />
+              <ContactForm initialInterest={initialInterest} />
             </div>
           </div>
         </div>
@@ -275,7 +284,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
     </main>
   );
 }

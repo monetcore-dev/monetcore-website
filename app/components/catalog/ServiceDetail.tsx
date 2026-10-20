@@ -1,3 +1,4 @@
+import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -36,6 +37,7 @@ export default function ServiceDetail({
   return (
     <>
       <SiteHeader />
+      <OfferingSchema kind="services" slug={item.slug} title={item.title} />
       <main id="main-content" className={`offering-page offering-${item.demo}`}>
         <section className="offering-hero">
           <div className="offering-wrap offering-hero-grid">

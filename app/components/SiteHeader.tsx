@@ -68,7 +68,7 @@ const menus = [
       {
         title: "Existing Digital Applications",
         description: "MonePay · fictional interactive prototype.",
-        href: "/demo/fintech",
+        href: "/products#digital-applications",
         icon: MonitorPlay,
       },
     ],

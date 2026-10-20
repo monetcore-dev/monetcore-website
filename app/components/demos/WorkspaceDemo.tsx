@@ -41,6 +41,7 @@ export default function WorkspaceDemo() {
   const [filter, setFilter] = useState("All");
   const [records, setRecords] = useState(initialRecords);
   const [notice, setNotice] = useState("");
+  const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const id = useId();
   const visible = records.filter(
     (r) =>
@@ -60,6 +61,7 @@ export default function WorkspaceDemo() {
             setSearch("");
             setFilter("All");
             setNotice("Demo workspace reset.");
+            setCompletedTasks([]);
           }}
         >
           Reset workspace
@@ -158,16 +160,20 @@ export default function WorkspaceDemo() {
               <>
                 <p>
                   Next task:{" "}
-                  {r.stage === "Won"
-                    ? "Prepare onboarding"
-                    : "Review requirements"}
+                  {completedTasks.includes(r.id)
+                    ? "Completed locally"
+                    : r.stage === "Won"
+                      ? "Prepare onboarding"
+                      : "Review requirements"}
                 </p>
                 <button
-                  onClick={() =>
+                  disabled={completedTasks.includes(r.id)}
+                  onClick={() => {
+                    setCompletedTasks((ids) => [...ids, r.id]);
                     setNotice(
                       `Fictional review task for ${r.name} marked complete. No notification sent.`,
-                    )
-                  }
+                    );
+                  }}
                 >
                   Complete sample task
                 </button>

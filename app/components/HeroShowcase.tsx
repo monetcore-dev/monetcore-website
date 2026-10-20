@@ -15,7 +15,7 @@ const slides = [
     id: "ai",
     label: "AI Lead Automation",
     description: "Capture, organise and explore assisted follow-up workflows.",
-    href: "/products#ai-lead-automation",
+    href: "/products/ai-lead-automation",
     category: "External demo & product concept",
   },
   {
@@ -31,7 +31,7 @@ const slides = [
     label: "Mobile Applications",
     description:
       "Explore an illustrative mobile experience built around daily tasks.",
-    href: "/services#custom-software",
+    href: "/services/software-development",
     category: "Custom application capability",
   },
   {
@@ -39,7 +39,7 @@ const slides = [
     label: "SaaS Products",
     description:
       "An illustrative software workspace for connected business operations.",
-    href: "/services#custom-software",
+    href: "/services/software-development",
     category: "Software platform concept",
   },
   {
@@ -47,7 +47,7 @@ const slides = [
     label: "Customer Dashboards",
     description:
       "Make business information easier to see and act on. Illustrative data.",
-    href: "/services#custom-software",
+    href: "/services/software-development",
     category: "Dashboard capability",
   },
   {

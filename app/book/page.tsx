@@ -1,3 +1,4 @@
+import { resolveInterest } from "../config/offeringCatalog";
 import { pageMetadata } from "../lib/metadata";
 export const metadata = pageMetadata(
   "/book",
@@ -8,7 +9,12 @@ export const metadata = pageMetadata(
 import BookingForm from "../BookingForm";
 import SiteHeader from "../components/SiteHeader";
 
-export default function BookPage() {
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ interest?: string | string[] }>;
+}) {
+  const initialInterest = resolveInterest((await searchParams).interest, true);
   return (
     <main id="main-content" className="corporate-page min-h-screen bg-slate-50">
       <SiteHeader />
@@ -45,11 +51,10 @@ export default function BookPage() {
               </div>
             </div>
 
-            <BookingForm />
+            <BookingForm initialInterest={initialInterest} />
           </div>
         </div>
       </section>
-
     </main>
   );
 }

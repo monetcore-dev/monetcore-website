@@ -20,6 +20,8 @@ import {
   Mail,
   Phone,
   CircleHelp,
+  Megaphone,
+  Smartphone,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
 import SolutionExplorer from "./components/SolutionExplorer";
@@ -32,7 +34,16 @@ import { corporateSolutions } from "./config/corporateSolutions";
 import { formatNaira, websitePackages } from "./config/websitePackages";
 
 const starter = websitePackages[0];
-const solutionIcons = [Cpu, Code2, Workflow, PlugZap, Globe2, Compass];
+const solutionIcons = [
+  Cpu,
+  Code2,
+  Workflow,
+  PlugZap,
+  Globe2,
+  Compass,
+  Megaphone,
+  Smartphone,
+];
 export const metadata: Metadata = {
   title: {
     absolute: "Monetcore System Solutions | Software, AI & Business Technology",
