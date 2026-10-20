@@ -151,26 +151,21 @@ import fs from "node:fs";
     path: "/tmp/monetcore-premium-desktop.png",
     fullPage: true,
   });
-  const c = p.getByRole("region", { name: "Technology and product showcases" });
-  let height;
-  for (const label of [
-    "AI Lead Automation",
-    "Website Development",
-    "Mobile Applications",
-    "SaaS Products",
-    "Customer Dashboards",
-    "MonePay Fintech Demo",
-  ]) {
-    await c.getByRole("button", { name: "Show " + label, exact: true }).click();
-    const h = (await c.boundingBox()).height;
-    if (height)
-      assert.ok(
-        Math.abs(height - h) < 2,
-        "carousel shift " + label + " " + height + " " + h,
-      );
-    height = h;
-    const href = await c.locator(".showcase-footer a").getAttribute("href");
-    assert.equal((await p.request.get(base + href)).status(), 200);
+  const core = p.getByRole("region", {
+    name: "Monetcore AI Core",
+    exact: true,
+  });
+  assert.equal(await core.locator(".ai-core-node").count(), 5);
+  const initialHeight = (await core.boundingBox()).height;
+  for (const node of await core.locator(".ai-core-node").all()) {
+    await node.focus();
+    assert.equal(
+      (
+        await p.request.get(new URL(await node.getAttribute("href"), base).href)
+      ).status(),
+      200,
+    );
+    assert.equal((await core.boundingBox()).height, initialHeight);
   }
   for (const width of [375, 768, 1024]) {
     await p.setViewportSize({ width, height: 900 });
@@ -223,7 +218,7 @@ import fs from "node:fs";
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS eight pages, all internal links, nine responsive widths, local fonts, desktop/mobile mega-menu keys/focus/outside click/navigation, stable carousel and package preselection.",
+    "PASS eight pages, all internal links, nine responsive widths, local fonts, desktop/mobile mega-menu keys/focus/outside click/navigation, stable AI Core node panel and package preselection.",
   );
   await b.close();
 })().catch((e) => {

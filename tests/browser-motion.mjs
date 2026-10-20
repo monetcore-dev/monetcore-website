@@ -28,77 +28,31 @@ import assert from "node:assert/strict";
   await p.evaluate(() => document.fonts.ready);
   await p.clock.runFor(100);
   const region = p.getByRole("region", {
-    name: "Technology and product showcases",
+    name: "Monetcore AI Core",
+    exact: true,
   });
+  const initialBox = await region.boundingBox();
   await region
-    .getByRole("button", { name: "Next showcase", exact: true })
+    .getByRole("button", { name: "Pause AI Core animation", exact: true })
     .click();
-  assert.match(
-    await region.getByRole("group").getAttribute("aria-label"),
-    /Website Development/,
-  );
+  assert.equal(await region.getAttribute("data-paused"), "true");
+  await p.clock.fastForward(14000);
+  assert.equal((await region.boundingBox()).height, initialBox.height);
   await region
-    .getByRole("button", { name: "Previous showcase", exact: true })
-    .click();
-  assert.match(
-    await region.getByRole("group").getAttribute("aria-label"),
-    /AI Lead Automation/,
-  );
-  await region
-    .getByRole("button", { name: "Resume rotation", exact: true })
+    .getByRole("button", { name: "Resume AI Core animation", exact: true })
     .click();
   await p.locator("h1").click();
   await p.mouse.move(0, 0);
-  await p.clock.runFor(100);
-  const initialBox = await region.boundingBox();
-  await p.clock.fastForward(7000);
-  await p.waitForFunction(() =>
-    document
-      .querySelector('[aria-roledescription="slide"]')
-      .getAttribute("aria-label")
-      .includes("Website Development"),
-  );
-  assert.ok(
-    Math.abs((await region.boundingBox()).height - initialBox.height) < 2,
-  );
-  await region.hover();
-  await p.clock.runFor(100);
-  const name = await region.getByRole("group").getAttribute("aria-label");
-  await p.clock.fastForward(14000);
-  assert.equal(
-    await region.getByRole("group").getAttribute("aria-label"),
-    name,
-  );
-  await region
-    .getByRole("button", { name: "Pause rotation", exact: true })
-    .click();
+  assert.equal(await region.getAttribute("data-paused"), "false");
+  await p.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(
     await region
-      .getByRole("button", { name: "Resume rotation", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
+      .locator(".ai-core-orbit-track")
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName),
+    "none",
   );
-  await p.locator("h1").click();
-  await p.mouse.move(0, 0);
-  await p.clock.fastForward(14000);
-  assert.equal(
-    await region.getByRole("group").getAttribute("aria-label"),
-    name,
-  );
-  await region
-    .getByRole("button", { name: "Resume rotation", exact: true })
-    .click();
-  await p.locator("h1").click();
-  await p.mouse.move(0, 0);
-  await p.clock.runFor(100);
-  await p.emulateMedia({ reducedMotion: "reduce" });
-  await p.clock.runFor(100);
-  const reduced = await region.getByRole("group").getAttribute("aria-label");
-  await p.clock.fastForward(14000);
-  assert.equal(
-    await region.getByRole("group").getAttribute("aria-label"),
-    reduced,
-  );
+  assert.ok(await region.getByText("Static view", { exact: true }).isVisible());
   assert.ok(fonts.length >= 2);
   assert.ok(fonts.every((url) => new URL(url).hostname === "127.0.0.1"));
   const previousStep = p.getByRole("button", {
@@ -133,7 +87,7 @@ import assert from "node:assert/strict";
   const cls = await p.evaluate(() => window.__layoutShift);
   assert.ok(cls < 0.01, "layout shift " + cls);
   console.log(
-    "PASS automatic rotation, hover pause, reduced motion, stable height, local font requests; observed layout shift:",
+    "PASS AI Core pause/resume, reduced motion, stable height, local fonts and existing workflow/FAQ keys; observed layout shift:",
     cls,
   );
   await b.close();

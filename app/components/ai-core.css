@@ -1,0 +1,447 @@
+.ai-core {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #384b7d;
+  border-radius: 28px;
+  color: #eef2ff;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    #192652 0%,
+    #101b3a 48%,
+    #0a1228 100%
+  );
+  box-shadow: 0 30px 80px -40px #1e3a8a60;
+}
+.ai-core-heading {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #8b9bcb26;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 70px;
+}
+.ai-core-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-core-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a5b4fc;
+  box-shadow: 0 0 16px #818cf8;
+}
+.ai-core-pause {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 82px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #6276aa;
+  border-radius: 10px;
+  background: #172447;
+  color: #e0e7ff;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.ai-core-pause:hover {
+  background: #25376a;
+}
+.ai-core-static {
+  display: none;
+  color: #c7d2fe;
+  font-size: 0.72rem;
+}
+.ai-core-stage {
+  position: relative;
+  height: 395px;
+}
+.ai-core-scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ai-core-halo {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 12%;
+  bottom: 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #4f46e533, transparent 67%);
+}
+.ai-core-connections {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  opacity: 0.8;
+}
+.ai-core-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(62deg) rotateZ(-25deg);
+}
+.ai-core-orbit-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid #93c5fd66;
+  border-top: 2px solid #93c5fd;
+  border-bottom-color: #6366f155;
+  animation: aiCoreOrbit 55s linear infinite;
+}
+.ai-core-orbit.orbit-two {
+  width: 66%;
+  height: 66%;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(45deg);
+}
+.orbit-two .ai-core-orbit-track {
+  border-color: #a78bfa55;
+  border-right: 2px solid #a78bfa;
+  animation-duration: 75s;
+  animation-direction: reverse;
+}
+.ai-core-orbit.orbit-three {
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%) rotateY(60deg) rotateZ(-30deg);
+}
+.orbit-three .ai-core-orbit-track {
+  border-color: #6366f155;
+  border-bottom: 2px solid #818cf8;
+  animation-duration: 90s;
+}
+.ai-core-sphere {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 136px;
+  height: 136px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 25%,
+    #c7d2fe 0%,
+    #60a5fa 10%,
+    #3b5ad8 30%,
+    #3730a3 60%,
+    #0c173b 90%
+  );
+  box-shadow:
+    inset -12px -14px 24px #050b2490,
+    inset 3px 4px 13px #bfdbfe80,
+    0 0 45px #6366f140;
+  border: 1px solid #a5b4fc80;
+  overflow: hidden;
+}
+.ai-core-surface {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 38% 28%, #bfdbfe55, transparent 62%);
+  animation: aiCoreBreathe 7s ease-in-out infinite;
+}
+.ai-core-sphere-grid {
+  position: absolute;
+  inset: 12%;
+  border: 1px solid #c7d2fe55;
+  border-radius: 50%;
+  transform: rotate(-25deg) scaleX(0.55);
+}
+.ai-core-sphere-grid:after {
+  content: "";
+  position: absolute;
+  inset: 22% -36%;
+  border: 1px solid #c7d2fe55;
+  border-radius: 50%;
+}
+.ai-core-sphere-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: white;
+  text-shadow: 0 2px 10px #111b4a;
+}
+.ai-core-sphere-label span {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+.ai-core-particle {
+  animation: aiCoreData 12s linear infinite;
+  opacity: 0;
+}
+.ai-core-caption {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 4%;
+  text-align: center;
+  color: #c7d2fe;
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+.ai-core-nodes {
+  position: absolute;
+  inset: 0;
+}
+.ai-core-node-slot {
+  position: absolute;
+  left: var(--node-x);
+  top: var(--node-y);
+  width: 148px;
+  margin-left: -74px;
+  margin-top: -25px;
+  animation: aiCoreFloat 10s ease-in-out infinite;
+}
+.ai-core-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 10px;
+  border: 1px solid #526795;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1c2d55, #14203e);
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #f1f5ff;
+  text-align: left;
+  box-shadow: 0 8px 24px -15px #050b24;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+.ai-core-node > svg {
+  flex-shrink: 0;
+  color: #bfdbfe;
+}
+.ai-core-node > span {
+  line-height: 1.4;
+}
+.ai-core-node-arrow {
+  opacity: 0.7;
+}
+.ai-core-node:hover,
+.ai-core-node.is-active,
+.ai-core-node:focus-visible {
+  border-color: #a5b4fc;
+  background: #293c70;
+}
+.ai-core-node:focus-visible,
+.ai-core-pause:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 4px;
+}
+.ai-core-detail {
+  position: relative;
+  z-index: 1;
+  min-height: 105px;
+  margin: 0 20px;
+  padding: 17px 20px;
+  border: 1px solid #4b608b;
+  border-radius: 16px;
+  background: #172447;
+}
+.ai-core .ai-core-detail p {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #f1f5ff;
+  margin: 0 0 5px;
+  line-height: 1.5;
+}
+.ai-core-detail > span {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.65;
+  color: #cbd5ed;
+}
+.ai-core .ai-core-disclosure {
+  margin: 0;
+  padding: 15px 20px 18px;
+  font-size: 0.62rem;
+  line-height: 1.6;
+  color: #c7d2fe;
+  text-align: center;
+}
+.ai-core[data-paused="true"] .ai-core-moving,
+.ai-core:hover .ai-core-moving,
+.ai-core:focus-within .ai-core-moving {
+  animation-play-state: paused;
+}
+@keyframes aiCoreOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes aiCoreBreathe {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+@keyframes aiCoreFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes aiCoreData {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ai-core {
+    max-width: 600px;
+    margin-inline: auto;
+  }
+}
+@media (max-width: 767px) {
+  .ai-core {
+    border-radius: 22px;
+  }
+  .ai-core-heading {
+    min-height: 64px;
+    padding: 12px 16px;
+    font-size: 0.8rem;
+  }
+  .ai-core-stage {
+    height: auto;
+    padding: 190px 14px 14px;
+  }
+  .ai-core-scene {
+    inset: 0 0 auto;
+    height: 185px;
+  }
+  .ai-core-connections {
+    opacity: 0.5;
+  }
+  .ai-core-sphere {
+    width: 104px;
+    height: 104px;
+  }
+  .ai-core-orbit {
+    width: 64%;
+    height: 90%;
+  }
+  .ai-core-orbit.orbit-two {
+    width: 60%;
+    height: 88%;
+  }
+  .ai-core-orbit.orbit-three {
+    width: 45%;
+    height: 85%;
+  }
+  .ai-core-caption {
+    bottom: 6%;
+    font-size: 0.43rem;
+  }
+  .ai-core-nodes {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .ai-core-node-slot {
+    position: static;
+    width: auto;
+    margin: 0;
+    animation: none;
+  }
+  .ai-core-node-slot:last-child {
+    grid-column: 1/-1;
+  }
+  .ai-core-node {
+    min-height: 50px;
+    font-size: 0.75rem;
+    padding: 10px;
+  }
+  .ai-core-node-arrow {
+    margin-left: auto;
+  }
+  .ai-core-detail {
+    margin: 0 14px;
+    padding: 14px;
+    min-height: 105px;
+  }
+  .ai-core-detail > span {
+    font-size: 0.75rem;
+  }
+  .ai-core .ai-core-disclosure {
+    font-size: 0.6rem;
+    padding: 13px 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-core .ai-core-moving {
+    animation: none !important;
+  }
+  .ai-core-node {
+    transition: none;
+  }
+  .ai-core-particle {
+    display: none;
+  }
+  .ai-core-pause {
+    display: none;
+  }
+  .ai-core-static {
+    display: inline;
+  }
+}
+.ai-core-node > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .ai-core-detail {
+    height: 116px;
+    min-height: 116px;
+  }
+}
+@media (max-width: 359px) {
+  .ai-core-node-arrow {
+    display: none;
+  }
+}

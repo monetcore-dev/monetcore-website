@@ -187,17 +187,15 @@ assert.equal(
   0,
 );
 await page.unrouteAll({ behavior: "wait" });
-// Scan every selected slide, not only the default carousel state.
+// Scan every focused capability detail, not only the default visualization.
 for (const width of [390, 1440]) {
   await page.setViewportSize({ width, height: 900 });
   await page.goto(base);
   await page.getByRole("button", { name: "Dismiss preview notice" }).click();
-  for (const button of await page
-    .locator('.showcase-controls button[aria-label^="Show "]')
-    .all()) {
-    await button.click();
+  for (const node of await page.locator(".ai-core-node").all()) {
+    await node.focus();
     const a = await new AxeBuilder({ page })
-      .include(".technology-showcase")
+      .include(".ai-core")
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
       .analyze();
     assert.deepEqual(
@@ -241,5 +239,5 @@ fs.mkdirSync("/tmp/monetcore-qa-browser", { recursive: true });
 await context.close();
 await browser.close();
 console.log(
-  "PASS SEO, headers, contacts, preview isolation, planner persistence, booking race, duplicate submission, false success, every carousel slide and light/dark responsive accessibility.",
+  "PASS SEO, headers, contacts, preview isolation, planner persistence, booking race, duplicate submission, false success, every AI Core capability detail and light/dark responsive accessibility.",
 );

@@ -29,7 +29,7 @@ import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
-import HeroShowcase from "./components/HeroShowcase";
+import AICore from "./components/AICore";
 import { corporateSolutions } from "./config/corporateSolutions";
 import { formatNaira, websitePackages } from "./config/websitePackages";
 
@@ -163,7 +163,7 @@ export default function Home() {
               </div>
             </div>
             <div className="min-w-0">
-              <HeroShowcase />
+              <AICore />
             </div>
           </div>
           <div className="company-snapshot relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">

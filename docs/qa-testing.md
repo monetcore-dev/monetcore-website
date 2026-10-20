@@ -79,3 +79,11 @@ application API calls; quotation/booking regression requests remain intercepted.
 `npm test` also exercises catalog integrity, 540 campaign combinations, all 32
 assessment combinations and validated enquiry routing. Do not interpret these as
 live integration or real-device tests. See `docs/offering-expansion-report.md`.
+
+The homepage AI Core replaces carousel-specific assertions in routes/audit/motion.
+Run `QA_BASE_URL=http://127.0.0.1:4600 node tests/browser-ai-core.mjs` against a
+local optimized preview-mode build. It covers eight responsive widths, five native
+link destinations via keyboard and touch, descriptions, pause/reduced motion,
+axe checks, browser errors, layout stability and zero API calls. Screenshots are
+written to `/workspace/artifacts/ai-core/`. This program is included in
+`test:browser`; see `docs/ai-core-hero-review.md` for the executed subset/results.
