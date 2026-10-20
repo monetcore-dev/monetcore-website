@@ -5,3 +5,12 @@ export function isReviewPreview() {
 
 export const previewFormMessage =
   "Review preview: form submissions and booking availability are disabled. No enquiry, email or booking has been sent. WhatsApp, telephone and email links contact Monetcore directly.";
+
+/** Server-only opt-in; never changes production behavior or booking guards. */
+export function isStagingContactEnabled() {
+  return (
+    isReviewPreview() &&
+    process.env.STAGING_CONTACT_ENABLED === "true" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "feature/monetcore-stage1-websites"
+  );
+}

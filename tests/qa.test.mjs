@@ -146,7 +146,7 @@ test("production SEO allows public routes; preview uses three independent indexi
   assert.equal(isReviewPreview(), false);
   assert.equal(robots().rules.allow, "/");
   assert.equal(sitemap().length, 21);
-  assert.equal(new Set(sitemap().map(item => item.url)).size, 21);
+  assert.equal(new Set(sitemap().map((item) => item.url)).size, 21);
   assert.ok(sitemap().every((x) => x.url.startsWith("https://monetcore.dev")));
   assert.ok(
     !(await nextConfig.headers())[0].headers.some(
@@ -475,4 +475,101 @@ test("slot conflict gives selection guidance without repeating Calendar or notif
     [state.bookings.length, state.calendars.length, state.emails.length],
     before,
   );
+});
+
+test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP acceptance; booking stays blocked", async () => {
+  const keys = [
+    "VERCEL_ENV",
+    "VERCEL_GIT_COMMIT_REF",
+    "STAGING_CONTACT_ENABLED",
+    "MONETCORE_EMAIL",
+    "MONETCORE_EMAIL_PASSWORD",
+  ];
+  const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const initial = state.emails.length;
+  const valid = {
+    ...base,
+    startedAt: Date.now() - 5000,
+    company: "Synthetic Test Ltd",
+    service: "AI Automation",
+    budget: "₦100,000 - ₦200,000",
+    message: "Synthetic AI Receptionist enquiry; planner outline preserved.",
+  };
+  try {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_GIT_COMMIT_REF = "feature/monetcore-stage1-websites";
+    process.env.MONETCORE_EMAIL = "hello@monetcore.dev";
+    process.env.MONETCORE_EMAIL_PASSWORD = "mock-only";
+    delete process.env.STAGING_CONTACT_ENABLED;
+    assert.equal((await contact(request(valid))).status, 403);
+    process.env.STAGING_CONTACT_ENABLED = "true";
+    process.env.VERCEL_GIT_COMMIT_REF = "another-branch";
+    assert.equal((await contact(request(valid))).status, 403);
+    process.env.VERCEL_GIT_COMMIT_REF = "feature/monetcore-stage1-websites";
+    process.env.MONETCORE_EMAIL = "unapproved@example.invalid";
+    assert.equal((await contact(request(valid))).status, 503);
+    assert.equal(state.emails.length, initial);
+    process.env.MONETCORE_EMAIL = "hello@monetcore.dev";
+    assert.equal(
+      (await contact(request({ ...valid, email: "invalid" }))).status,
+      400,
+    );
+    assert.equal(
+      (
+        await contact(
+          request(valid, "contact", { origin: "https://other.invalid" }),
+        )
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await contact(
+          request({
+            ...valid,
+            packageId: "starter",
+            consent: true,
+            to: "unapproved@example.invalid",
+          }),
+        )
+      ).status,
+      200,
+    );
+    const mail = state.emails.at(-1);
+    assert.equal(mail.to, "hello@monetcore.dev");
+    assert.match(mail.subject, /^\[STAGING TEST\]/);
+    for (const detail of [
+      valid.name,
+      valid.email,
+      valid.company,
+      valid.service,
+      valid.budget,
+      valid.message,
+      "Smart Starter",
+    ])
+      assert.ok(mail.text.includes(detail));
+    state.rejectEmail = true;
+    assert.equal((await contact(request(valid))).status, 500);
+    state.rejectEmail = false;
+    state.failEmail = true;
+    assert.equal((await contact(request(valid))).status, 500);
+    state.failEmail = false;
+    assert.equal((await booking(request(valid, "book"))).status, 403);
+    assert.equal(
+      (
+        await availability(
+          new Request(
+            "https://review.example/api/book/availability?date=2099-01-05",
+          ),
+        )
+      ).status,
+      403,
+    );
+  } finally {
+    state.rejectEmail = false;
+    state.failEmail = false;
+    for (const key of keys)
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+  }
 });

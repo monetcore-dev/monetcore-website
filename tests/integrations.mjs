@@ -8,6 +8,7 @@ export const state = {
   calendars: [],
   failCalendar: false,
   failEmail: false,
+  rejectEmail: false,
   failDatabase: false,
   available: ["09:00"],
 };
@@ -18,6 +19,10 @@ const mailer = {
       async sendMail(message) {
         if (state.failEmail) throw new Error("mock mail failure");
         state.emails.push(message);
+        return {
+          accepted: state.rejectEmail ? [] : [message.to],
+          rejected: state.rejectEmail ? [message.to] : [],
+        };
       },
     };
   },

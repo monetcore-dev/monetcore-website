@@ -3,7 +3,11 @@ import {
   enforceRateLimit,
   validateSubmission,
 } from "@/app/lib/submissionSafety";
-import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
+import {
+  isReviewPreview,
+  isStagingContactEnabled,
+  previewFormMessage,
+} from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import {
@@ -13,7 +17,8 @@ import {
 } from "@/app/config/websitePackages";
 
 export async function POST(request: Request) {
-  if (isReviewPreview()) {
+  const staging = isStagingContactEnabled();
+  if (isReviewPreview() && !staging) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
   try {
@@ -57,6 +62,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Staging may use only the explicitly approved mailbox, never a submitted recipient.
+    if (staging && process.env.MONETCORE_EMAIL !== "hello@monetcore.dev") {
+      return NextResponse.json(
+        {
+          error:
+            "Staging email is not configured. Please contact the site administrator.",
+        },
+        { status: 503 },
+      );
+    }
+
     // Make sure server-side email credentials exist
     if (!process.env.MONETCORE_EMAIL || !process.env.MONETCORE_EMAIL_PASSWORD) {
       console.error("Missing Monetcore email environment variables.");
@@ -84,11 +100,11 @@ export async function POST(request: Request) {
       },
     });
 
-    await transporter.sendMail({
+    const delivery = await transporter.sendMail({
       from: `"Monetcore Website" <${process.env.MONETCORE_EMAIL}>`,
-      to: process.env.MONETCORE_EMAIL,
+      to: staging ? "hello@monetcore.dev" : process.env.MONETCORE_EMAIL,
       replyTo: email,
-      subject: `New Monetcore Project Enquiry — ${name}`,
+      subject: `${staging ? "[STAGING TEST] " : ""}New Monetcore Project Enquiry — ${name}`,
       text: `
 New project enquiry from monetcore.dev
 
@@ -111,6 +127,19 @@ Project Details:
 ${message}
       `,
     });
+
+    if (
+      staging &&
+      (!Array.isArray(delivery?.accepted) ||
+        !delivery.accepted.some(
+          (address) =>
+            typeof address === "string" &&
+            address.toLowerCase() === "hello@monetcore.dev",
+        ) ||
+        (Array.isArray(delivery.rejected) && delivery.rejected.length > 0))
+    ) {
+      throw new Error("SMTP did not confirm staging acceptance");
+    }
 
     return NextResponse.json({
       success: true,
