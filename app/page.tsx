@@ -286,7 +286,7 @@ export default function Home() {
                 </p>
                 <div className="mt-7 flex flex-wrap gap-4">
                   <Link
-                    href="/products#ai-lead-automation"
+                    href="/products/ai-lead-automation"
                     className="font-bold text-blue-200 hover:underline"
                   >
                     Product details →
@@ -297,7 +297,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="font-bold text-blue-200 hover:underline"
                   >
-                    Open external demo ↗
+                    Explore Demo ↗
                   </a>
                 </div>
               </article>
@@ -318,16 +318,16 @@ export default function Home() {
                 </p>
                 <div className="mt-7 flex flex-wrap gap-4">
                   <Link
-                    href="/products"
+                    href="/products/smart-booking"
                     className="font-bold text-blue-200 hover:underline"
                   >
-                    Product information →
+                    Product details →
                   </Link>
                   <Link
                     href="/book"
                     className="font-bold text-blue-200 hover:underline"
                   >
-                    Consultation booking →
+                    Book a Consultation →
                   </Link>
                 </div>
               </article>
@@ -421,7 +421,7 @@ export default function Home() {
                   className="text-blue-700"
                 />
                 <h3 className="mt-5 text-xl font-bold">
-                  Consultation booking →
+                  Book a Consultation →
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
                   Explore our existing form. This is a real request flow outside

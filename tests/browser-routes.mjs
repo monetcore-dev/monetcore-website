@@ -201,7 +201,10 @@ import fs from "node:fs";
   await nav.getByRole("link", { name: /Smart Website Packages/ }).click();
   await p.waitForURL("**/website-packages");
   await p
-    .getByRole("link", { name: "Choose Package: Smart Starter", exact: true })
+    .getByRole("link", {
+      name: "Request a Quotation: Smart Starter",
+      exact: true,
+    })
     .click();
   await p.waitForURL((url) => url.searchParams.get("package") === "starter");
   await p.waitForFunction(

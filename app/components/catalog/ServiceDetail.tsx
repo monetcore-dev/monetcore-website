@@ -68,7 +68,7 @@ export default function ServiceDetail({
                 </Link>
                 {demo && (
                   <a className="offering-text-link" href="#experience">
-                    Explore the demo ↓
+                    Explore Demo ↓
                   </a>
                 )}
               </div>
@@ -282,7 +282,7 @@ export default function ServiceDetail({
                 className="offering-primary"
                 href={enquiryHref("service", item.slug)}
               >
-                Discuss Your Project
+                Request a Quotation
               </Link>
               <Link
                 className="offering-secondary"

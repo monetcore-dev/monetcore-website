@@ -183,6 +183,10 @@ export default function ContactForm({
       }
       className="mt-12 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
     >
+      <p className="text-sm leading-6 text-slate-600">
+        Tell us about your project. Our team will review your requirements and
+        contact you to discuss the next steps.
+      </p>
       {incomingPlan && fields.message && (
         <p className="enquiry-plan-notice" role="status">
           Your planner outline is ready to review. You can edit these details

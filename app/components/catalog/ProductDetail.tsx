@@ -38,15 +38,14 @@ export default function ProductDetail({
               <div className="offering-actions">
                 {demo && (
                   <a className="offering-primary" href="#experience">
-                    Explore the Demo{" "}
-                    <ArrowUpRight size={16} aria-hidden="true" />
+                    Explore Demo <ArrowUpRight size={16} aria-hidden="true" />
                   </a>
                 )}
                 <Link
                   className="offering-secondary"
                   href={enquiryHref("product", item.slug)}
                 >
-                  Express Interest
+                  Request a Quotation
                 </Link>
               </div>
             </div>
@@ -111,6 +110,23 @@ export default function ProductDetail({
                 clears demo changes.
               </p>
               {demo}
+              <div className="mt-8 rounded-2xl border border-slate-200 p-5 sm:p-6">
+                <h3>Interested in this solution?</h3>
+                <div className="offering-actions">
+                  <Link
+                    className="offering-primary"
+                    href={enquiryHref("product", item.slug)}
+                  >
+                    Request This Solution
+                  </Link>
+                  <Link
+                    className="offering-secondary"
+                    href={enquiryHref("product", item.slug, true)}
+                  >
+                    Book a Consultation
+                  </Link>
+                </div>
+              </div>
             </div>
           </section>
         )}

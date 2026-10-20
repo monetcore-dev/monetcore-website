@@ -40,7 +40,7 @@ export default function OfferingOverview({
             </p>
             <div className="offering-actions">
               <Link className="offering-primary" href="/contact#consultation">
-                Discuss Your Project
+                Request a Quotation
               </Link>
               <Link
                 className="offering-secondary"
@@ -98,7 +98,7 @@ export default function OfferingOverview({
                             className="offering-text-link"
                             href={enquiryHref("service", s.slug)}
                           >
-                            Request a quote
+                            Request a Quotation
                           </Link>
                         </div>
                       </article>
@@ -127,7 +127,7 @@ export default function OfferingOverview({
                           className="offering-text-link"
                           href={enquiryHref("product", p.slug)}
                         >
-                          Express interest
+                          Request a Quotation
                         </Link>
                       </div>
                     </article>
@@ -184,7 +184,7 @@ export default function OfferingOverview({
                     payment, savings and loan experiences. No money moves.
                   </p>
                   <Link className="offering-text-link" href="/demo/fintech">
-                    Explore MonePay demonstration ↗
+                    Explore Demo ↗
                   </Link>
                 </article>
                 <article className="offering-card">
@@ -200,7 +200,7 @@ export default function OfferingOverview({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Explore external prototype ↗
+                    Explore Demo ↗
                   </a>
                 </article>
                 <article className="offering-card">

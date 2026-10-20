@@ -50,10 +50,7 @@ import assert from "node:assert/strict";
     const msg = u.searchParams.get("text");
     for (const s of [name, price, renewal, "proposed"])
       assert.ok(msg.includes(s), s + " WhatsApp");
-    for (const label of [
-      "Choose Package: " + name,
-      "Request quotation for " + name,
-    ]) {
+    for (const label of ["Request a Quotation: " + name]) {
       await card.getByRole("link", { name: label, exact: true }).click();
       await p.waitForURL((url) => url.searchParams.get("package") === id);
       await p.waitForFunction(
@@ -167,7 +164,7 @@ import assert from "node:assert/strict";
     ["Smart Starter", "starter"],
   ]) {
     await p
-      .getByRole("link", { name: "Choose Package: " + name, exact: true })
+      .getByRole("link", { name: "Request a Quotation: " + name, exact: true })
       .click();
     await p.waitForURL((url) => url.searchParams.get("package") === id);
     await p.waitForFunction(
@@ -191,7 +188,10 @@ import assert from "node:assert/strict";
   }
   await p.locator('[name="packageId"]').selectOption("pro");
   await p
-    .getByRole("link", { name: "Choose Package: Smart Starter", exact: true })
+    .getByRole("link", {
+      name: "Request a Quotation: Smart Starter",
+      exact: true,
+    })
     .click();
   await p.waitForFunction(
     () => document.querySelector('[name="packageId"]').value === "starter",
