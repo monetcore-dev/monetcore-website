@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { services, findService } from "../../config/offeringCatalog";
 import { pageMetadata } from "../../lib/metadata";
-import OfferingShell from "../../components/catalog/OfferingShell";
+import ServiceDetail from "../../components/catalog/ServiceDetail";
 export const dynamicParams = false;
 export function generateStaticParams() {
   return services.map(({ slug }) => ({ slug }));
@@ -23,5 +23,5 @@ export default async function ServicePage({
   const { slug } = await params;
   const item = findService(slug);
   if (!item) notFound();
-  return <OfferingShell title={item.title} intro={item.intro} />;
+  return <ServiceDetail item={item} />;
 }
