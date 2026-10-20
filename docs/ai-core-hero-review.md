@@ -51,3 +51,11 @@ One Lighthouse mobile-simulation run against the optimized local preview build: 
 A separate two-second headless Chromium desktop sample recorded 6 layouts totaling 1.183ms, 0.134ms script time and 17.096ms task time across the page. This is a small diagnostic sample, not a GPU/FPS benchmark or physical-device guarantee. CSS uses transform/opacity for continuous movement and has no JavaScript animation loop.
 
 Artifacts: `/workspace/artifacts/ai-core/lighthouse-home.json`, `animation-performance.json`, `hero-desktop-1440.png`, `hero-mobile-390.png`, and compact `core-desktop-1440.png` / `core-mobile-390.png`. Browser tests used Chromium desktop and mobile/touch emulation; actual Android Chrome and iPhone Safari remain unverified. No external integration tests were performed.
+
+## Approved animation refinement — 20 October 2026
+
+The existing design is preserved. Only the core component, its scoped CSS and its browser regression tests change, plus this record. The sphere now floats through a centered 5px vertical range over six seconds; its existing surface glow breathes over five seconds. Independent ring periods are 90/120/150 seconds. Transform/opacity pulses sample the existing quadratic connection curves, stagger over 16 seconds and remain invisible for the final half-cycle. All five service labels are stationary. No dependencies or JavaScript animation loop were added.
+
+Executed successfully: ESLint, TypeScript, optimized preview-mode production build and browser-ai-core on local port 6210. Browser checks cover 320/360/375/390/430/768/1024/1440px, actual animation timeline sampling at mobile/desktop, centered 5px travel, glow/ring timing, curve midpoint alignment, quiet pulse intervals, all-layer Pause freezing, hover/focus pause, reduced-motion disabling every decorative animation, all five keyboard/touch destinations and focused-node axe checks. No application API requests or browser/hydration exceptions were observed; final navigation CLS was 0. Tests use Chromium emulation, not physical devices. Test-only timeline seeking is discarded with a reload before verifying native CSS pause behavior.
+
+Updated desktop/mobile screenshots are in `/workspace/artifacts/ai-core/`. No backend, pricing, homepage content/layout, navigation or other sections were changed.

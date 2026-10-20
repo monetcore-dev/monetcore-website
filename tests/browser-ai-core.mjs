@@ -125,6 +125,76 @@ try {
   await page.waitForTimeout(250);
   const second = await track.evaluate((el) => getComputedStyle(el).transform);
   assert.notEqual(first, second);
+  // Inspect actual browser animation timelines without waiting entire slow cycles.
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.mouse.move(0, 0);
+    const measurement = await core.evaluate((el) => {
+      const sphere = el.querySelector(".ai-core-sphere");
+      const animation = sphere.getAnimations()[0];
+      animation.pause();
+      animation.currentTime = 0;
+      const low = sphere.getBoundingClientRect();
+      animation.currentTime = 3000;
+      const high = sphere.getBoundingClientRect();
+      animation.play();
+      const scene = el.querySelector(".ai-core-scene").getBoundingClientRect();
+      return {
+        travel: low.y - high.y,
+        centerX: low.x + low.width / 2 - (scene.x + scene.width / 2),
+        centerY:
+          (low.y + high.y) / 2 + low.height / 2 - (scene.y + scene.height / 2),
+        glowCycle: el
+          .querySelector(".ai-core-surface")
+          .getAnimations()[0]
+          .effect.getTiming().duration,
+        orbits: [...el.querySelectorAll(".ai-core-orbit-track")].map(
+          (n) => n.getAnimations()[0].effect.getTiming().duration,
+        ),
+        labels: [...el.querySelectorAll(".ai-core-node-slot")].map(
+          (n) => n.getAnimations().length,
+        ),
+      };
+    });
+    assert.ok(Math.abs(measurement.travel - 5) < 0.1);
+    assert.ok(
+      Math.abs(measurement.centerX) < 1 && Math.abs(measurement.centerY) < 1,
+    );
+    assert.equal(measurement.glowCycle, 5000);
+    assert.deepEqual(measurement.orbits, [90000, 120000, 150000]);
+    assert.deepEqual(measurement.labels, [0, 0, 0, 0, 0]);
+    const pulses = await core
+      .locator(".ai-core-particle")
+      .evaluateAll((nodes) =>
+        nodes.map((el) => {
+          const animation = el.getAnimations()[0];
+          const saved = animation.currentTime;
+          animation.pause();
+          const delay = animation.effect.getTiming().delay;
+          animation.currentTime = delay + 20000;
+          const matrix = new DOMMatrix(getComputedStyle(el).transform);
+          const aligned =
+            Math.abs(
+              matrix.e -
+                (parseFloat(el.style.getPropertyValue("--dx")) * 0.5 + 12.5),
+            ) < 0.1 &&
+            Math.abs(
+              matrix.f - parseFloat(el.style.getPropertyValue("--dy")) * 0.5,
+            ) < 0.1;
+          animation.currentTime = delay + 28000;
+          const quiet = Number(getComputedStyle(el).opacity) === 0;
+          animation.currentTime = saved;
+          animation.play();
+          return { aligned, quiet };
+        }),
+      );
+    assert.ok(
+      pulses.every((p) => p.aligned && p.quiet),
+      "Pulses follow the curved lines and have quiet intervals",
+    );
+  }
+  // Reload after test-only timeline seeking so native CSS owns playback again.
+  await page.goto(base);
   await core.getByRole("button", { name: "Pause AI Core animation" }).click();
   await page.locator("h1").click();
   await page.mouse.move(0, 0);
@@ -132,11 +202,32 @@ try {
     await track.evaluate((el) => getComputedStyle(el).animationPlayState),
     "paused",
   );
+  const allStopped = await core
+    .locator(".ai-core-moving")
+    .evaluateAll((nodes) =>
+      nodes.map((el) => ({
+        state: getComputedStyle(el).animationPlayState,
+        transform: getComputedStyle(el).transform,
+        opacity: getComputedStyle(el).opacity,
+      })),
+    );
+  assert.ok(allStopped.every((item) => item.state === "paused"));
   const stopped = await track.evaluate((el) => getComputedStyle(el).transform);
   await page.waitForTimeout(250);
   assert.equal(
     await track.evaluate((el) => getComputedStyle(el).transform),
     stopped,
+  );
+  assert.deepEqual(
+    await core.locator(".ai-core-moving").evaluateAll((nodes) =>
+      nodes.map((el) => ({
+        state: getComputedStyle(el).animationPlayState,
+        transform: getComputedStyle(el).transform,
+        opacity: getComputedStyle(el).opacity,
+      })),
+    ),
+    allStopped,
+    "Pause must freeze every decorative layer",
   );
   await core.getByRole("button", { name: "Resume AI Core animation" }).click();
   await page.locator("h1").click();
@@ -154,6 +245,13 @@ try {
   assert.equal(
     await track.evaluate((el) => getComputedStyle(el).animationName),
     "none",
+  );
+  assert.ok(
+    await core
+      .locator(".ai-core-moving")
+      .evaluateAll((nodes) =>
+        nodes.every((el) => getComputedStyle(el).animationName === "none"),
+      ),
   );
   assert.ok(await core.getByText("Static view", { exact: true }).isVisible());
   assert.equal(

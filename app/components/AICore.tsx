@@ -132,7 +132,7 @@ export default function AICore() {
                   {
                     "--dx": `${n.x - 300}px`,
                     "--dy": `${n.y - 300}px`,
-                    animationDelay: `-${i * 1.7}s`,
+                    animationDelay: `-${i * 3.2}s`,
                   } as CSSProperties
                 }
               />
@@ -147,7 +147,7 @@ export default function AICore() {
           <div className="ai-core-orbit orbit-three">
             <div className="ai-core-orbit-track ai-core-moving" />
           </div>
-          <div className="ai-core-sphere">
+          <div className="ai-core-sphere ai-core-moving">
             <div className="ai-core-surface ai-core-moving" />
             <div className="ai-core-sphere-grid" />
             <div className="ai-core-sphere-label">
@@ -168,12 +168,11 @@ export default function AICore() {
             return (
               <div
                 key={n.title}
-                className={`ai-core-node-slot ai-core-node-${i} ai-core-moving`}
+                className={`ai-core-node-slot ai-core-node-${i}`}
                 style={
                   {
                     "--node-x": `${n.x / 6}%`,
                     "--node-y": `${n.y / 6}%`,
-                    animationDelay: `-${i * 2}s`,
                   } as CSSProperties
                 }
               >

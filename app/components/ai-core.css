@@ -103,7 +103,7 @@
   border: 1px solid #93c5fd66;
   border-top: 2px solid #93c5fd;
   border-bottom-color: #6366f155;
-  animation: aiCoreOrbit 55s linear infinite;
+  animation: aiCoreOrbit 90s linear infinite;
 }
 .ai-core-orbit.orbit-two {
   width: 66%;
@@ -113,7 +113,7 @@
 .orbit-two .ai-core-orbit-track {
   border-color: #a78bfa55;
   border-right: 2px solid #a78bfa;
-  animation-duration: 75s;
+  animation-duration: 120s;
   animation-direction: reverse;
 }
 .ai-core-orbit.orbit-three {
@@ -124,7 +124,7 @@
 .orbit-three .ai-core-orbit-track {
   border-color: #6366f155;
   border-bottom: 2px solid #818cf8;
-  animation-duration: 90s;
+  animation-duration: 150s;
 }
 .ai-core-sphere {
   position: absolute;
@@ -148,12 +148,13 @@
     0 0 45px #6366f140;
   border: 1px solid #a5b4fc80;
   overflow: hidden;
+  animation: aiCoreFloat 6s ease-in-out infinite;
 }
 .ai-core-surface {
   position: absolute;
   inset: 0;
   background: radial-gradient(circle at 38% 28%, #bfdbfe55, transparent 62%);
-  animation: aiCoreBreathe 7s ease-in-out infinite;
+  animation: aiCoreBreathe 5s ease-in-out infinite;
 }
 .ai-core-sphere-grid {
   position: absolute;
@@ -186,7 +187,7 @@
   letter-spacing: 0.2em;
 }
 .ai-core-particle {
-  animation: aiCoreData 12s linear infinite;
+  animation: aiCoreData 16s linear infinite;
   opacity: 0;
 }
 .ai-core-caption {
@@ -211,7 +212,6 @@
   width: 148px;
   margin-left: -74px;
   margin-top: -25px;
-  animation: aiCoreFloat 10s ease-in-out infinite;
 }
 .ai-core-node {
   position: relative;
@@ -306,26 +306,42 @@
     transform: scale(1.08);
   }
 }
+/* Keep centering in every frame; only the sphere moves, never its links. */
 @keyframes aiCoreFloat {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate(-50%, calc(-50% + 2.5px));
   }
   50% {
-    transform: translateY(-4px);
+    transform: translate(-50%, calc(-50% - 2.5px));
   }
 }
+/* Sample the existing quadratic connection curve with transform-only movement.
+   The final half of each cycle is quiet; staggered pulses stay occasional. */
 @keyframes aiCoreData {
   0% {
     transform: translate(0, 0);
     opacity: 0;
   }
-  15% {
-    opacity: 0.85;
-  }
-  80% {
+  12.5% {
+    transform: translate(
+      calc(var(--dx) * 0.25 + 9.375px),
+      calc(var(--dy) * 0.25)
+    );
     opacity: 0.65;
   }
+  25% {
+    transform: translate(calc(var(--dx) * 0.5 + 12.5px), calc(var(--dy) * 0.5));
+    opacity: 0.65;
+  }
+  37.5% {
+    transform: translate(
+      calc(var(--dx) * 0.75 + 9.375px),
+      calc(var(--dy) * 0.75)
+    );
+    opacity: 0.5;
+  }
+  50%,
   100% {
     transform: translate(var(--dx), var(--dy));
     opacity: 0;
