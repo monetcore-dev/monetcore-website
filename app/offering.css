@@ -1,0 +1,12 @@
+.offering-page { background:#fff; color:#0f172a; }
+.offering-wrap { width:min(1180px,calc(100% - 40px)); margin-inline:auto; }
+.offering-hero { padding:152px 0 72px; background:radial-gradient(ellipse at top right,#e0e7ff,transparent 60%),linear-gradient(145deg,#f8fafc,#eff6ff); border-bottom:1px solid #dbeafe; }
+.offering-hero h1 { max-width:850px; font-size:clamp(2.3rem,5vw,4.6rem); line-height:1.1; letter-spacing:-.045em; margin:20px 0; }
+.offering-hero p:not(.offering-eyebrow) { max-width:700px; font-size:1.1rem;line-height:1.8;color:#475569; }
+.offering-eyebrow { color:#3730a3;font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.72rem; }
+.offering-primary,.offering-secondary { display:inline-flex;align-items:center;justify-content:center; min-height:48px; padding:12px 20px;border-radius:12px;font-weight:700;font-size:.9rem;text-align:center; }
+.offering-primary { background:#1d4ed8;color:white; } .offering-primary:hover { background:#1e40af; }
+.offering-secondary { border:1px solid #cbd5e1;background:white;color:#1e293b; }
+.offering-actions { display:flex;gap:12px;flex-wrap:wrap;margin-top:28px; }
+.offering-page :focus-visible {outline:3px solid #4f46e5;outline-offset:4px;}
+@media(max-width:767px) { .offering-hero {padding:112px 0 42px;} .offering-wrap {width:calc(100% - 32px);} }

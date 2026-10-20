@@ -1,0 +1,27 @@
+import { notFound } from "next/navigation";
+import { products, findProduct } from "../../config/offeringCatalog";
+import { pageMetadata } from "../../lib/metadata";
+import OfferingShell from "../../components/catalog/OfferingShell";
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return products.map(({ slug }) => ({ slug }));
+}
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const item = findProduct(slug);
+  return item ? pageMetadata(`/products/${slug}`, item.title, item.intro) : {};
+}
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const item = findProduct(slug);
+  if (!item) notFound();
+  return <OfferingShell title={item.title} intro={item.disclosure} />;
+}

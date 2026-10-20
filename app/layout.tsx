@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import "./offering.css";
 import SiteFooter from "./components/SiteFooter";
 import PreviewNotice from "./components/PreviewNotice";
 import { isReviewPreview } from "./lib/previewSafety";

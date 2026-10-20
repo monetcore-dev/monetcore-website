@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { services, products } from "../config/offeringCatalog";
 export const siteOrigin = "https://monetcore.dev";
 export const publicRoutes = [
   "/",
@@ -9,6 +10,8 @@ export const publicRoutes = [
   "/book",
   "/website-packages",
   "/demo/fintech",
+  ...services.map((item) => `/services/${item.slug}`),
+  ...products.map((item) => `/products/${item.slug}`),
 ];
 export function pageMetadata(
   path: string,

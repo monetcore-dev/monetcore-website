@@ -21,6 +21,11 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  serviceNavigation,
+  productNavigation,
+} from "../config/offeringNavigation";
+
 const menus = [
   {
     id: "solutions",
@@ -28,44 +33,12 @@ const menus = [
     eyebrow: "Technology, with purpose",
     description:
       "The right expertise for your next business challenge. Start with what you want to achieve.",
-    links: [
-      {
-        title: "AI Automation",
-        description: "Practical intelligence for everyday workflows.",
-        href: "/services#ai-automation",
-        icon: Cpu,
-      },
-      {
-        title: "Custom Software Development",
-        description: "Applications, portals and tools built around you.",
-        href: "/services#custom-software",
-        icon: Code2,
-      },
-      {
-        title: "Website Development",
-        description: "A professional digital home for your business.",
-        href: "/website-packages",
-        icon: Globe2,
-      },
-      {
-        title: "Business Integrations",
-        description: "Connect your platforms, data and operations.",
-        href: "/services#business-integrations",
-        icon: PlugZap,
-      },
-      {
-        title: "Technology Consulting",
-        description: "Clarity on your scope, systems and next step.",
-        href: "/contact#consultation",
-        icon: Compass,
-      },
-      {
-        title: "AI Sales Systems",
-        description: "Organise leads and explore assisted follow-ups.",
-        href: "/services#ai-sales-systems",
-        icon: Workflow,
-      },
-    ],
+    links: serviceNavigation.map((item, index) => ({
+      ...item,
+      icon: [Cpu, Code2, Globe2, PlugZap, MonitorPlay, Workflow, Compass][
+        index
+      ],
+    })),
     overview: "/services",
     overviewLabel: "Explore all services",
   },
@@ -77,38 +50,24 @@ const menus = [
       "Explore our product information, digital applications and clearly labelled demonstrations.",
     links: [
       {
-        title: "Monetcore Products",
-        description: "Discover the existing product portfolio.",
+        title: "Products Overview",
+        description: "Capabilities, concepts and honest product status.",
         href: "/products",
         icon: Layers3,
       },
-      {
-        title: "AI Lead Automation",
-        description: "Product information and an external demo.",
-        href: "/products#ai-lead-automation",
-        icon: Cpu,
-      },
-      {
-        title: "Smart Booking",
-        description: "Explore the integration-dependent booking solution.",
-        href: "/products#smart-booking",
-        icon: CalendarDays,
-      },
+      ...productNavigation.map((item, index) => ({
+        ...item,
+        icon: [Cpu, CalendarDays, Mail, Layers3, Workflow, Compass][index],
+      })),
       {
         title: "Smart Website Packages",
-        description: "Compare proposed NGN packages and inclusions.",
+        description: "Proposed Naira packages and inclusions.",
         href: "/website-packages",
         icon: Globe2,
       },
       {
-        title: "Digital Applications",
-        description: "Custom apps, dashboards and business software.",
-        href: "/services#custom-software",
-        icon: Code2,
-      },
-      {
-        title: "MonePay Demonstration",
-        description: "An interactive fintech concept, with simulated data.",
+        title: "Existing Digital Applications",
+        description: "MonePay · fictional interactive prototype.",
         href: "/demo/fintech",
         icon: MonitorPlay,
       },
