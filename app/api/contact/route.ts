@@ -1,6 +1,6 @@
 import {
   readSubmission,
-  rateLimit,
+  enforceRateLimit,
   validateSubmission,
 } from "@/app/lib/submissionSafety";
 import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
   try {
-    const limited = rateLimit(request, "contact");
+    const limited = await enforceRateLimit(request, "contact");
     if (limited) return limited;
     const body = await readSubmission(request);
     if (body instanceof Response) return body;
@@ -73,6 +73,11 @@ export async function POST(request: Request) {
       host: "mail.privateemail.com",
       port: 465,
       secure: true,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+      disableFileAccess: true,
+      disableUrlAccess: true,
       auth: {
         user: process.env.MONETCORE_EMAIL,
         pass: process.env.MONETCORE_EMAIL_PASSWORD,

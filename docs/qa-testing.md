@@ -48,3 +48,10 @@ Do not change preview guards to obtain a higher preview SEO score.
 
 These checks are Chromium simulations, not physical Android/iPhone, Safari,
 Firefox, screen-reader certification or field Core Web Vitals measurements.
+
+Phase 3.9 additionally tests shared-limiter command construction, pseudonymous
+keys, platform-header selection, endpoint separation, fail-closed errors and SMTP
+transport safeguards. REST responses are mocked: no Redis provisioning or real
+concurrency/expiry guarantee is established by these tests. Before approved staging
+runs, read `docs/phase-3.9-production-readiness.md` for configuration requirements,
+recipient isolation, database invariants and approval gates.

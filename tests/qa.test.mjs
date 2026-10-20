@@ -259,3 +259,110 @@ test("booking, unique-slot conflict, unavailable date and partial integration fa
     400,
   );
 });
+
+test("shared limiter uses an atomic expiring pseudonymous counter and fails closed", async () => {
+  const { enforceRateLimit } = await import("../app/lib/submissionSafety.ts");
+  const names = [
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "RATE_LIMIT_KEY_SECRET",
+    "RATE_LIMIT_REQUIRED",
+    "VERCEL",
+    "VERCEL_ENV",
+  ];
+  const saved = Object.fromEntries(
+    names.map((name) => [name, process.env[name]]),
+  );
+  const originalFetch = globalThis.fetch;
+  try {
+    for (const name of names) delete process.env[name];
+    assert.equal(await enforceRateLimit(request(base), "fallback"), null);
+    process.env.RATE_LIMIT_REQUIRED = "true";
+    assert.equal(
+      (await enforceRateLimit(request(base), "required")).status,
+      503,
+    );
+    process.env.UPSTASH_REDIS_REST_URL = "https://staging-example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "mock-token";
+    process.env.RATE_LIMIT_KEY_SECRET =
+      "mock-secret-only-for-tests-32-characters";
+    process.env.VERCEL = "1";
+    let calls = [];
+    let result = [1, 60000];
+    globalThis.fetch = async (url, options) => {
+      calls.push({ url, options });
+      return Response.json({ result });
+    };
+    const req = request(base, "contact", {
+      "x-vercel-forwarded-for": "192.0.2.42",
+      "x-forwarded-for": "spoofed",
+    });
+    assert.equal(await enforceRateLimit(req, "contact", 2, 60000), null);
+    const command = JSON.parse(calls[0].options.body);
+    const firstKey = command[3];
+    await enforceRateLimit(
+      request(base, "contact", {
+        "x-vercel-forwarded-for": "192.0.2.42",
+        "x-forwarded-for": "changed-spoof",
+      }),
+      "contact",
+      2,
+      60000,
+    );
+    assert.equal(JSON.parse(calls[1].options.body)[3], firstKey);
+    calls = [calls[0]];
+    assert.equal(command[0], "EVAL");
+    assert.match(command[1], /PEXPIRE/);
+    assert.match(command[3], /^monetcore:v1:contact:[a-f0-9]{64}$/);
+    assert.ok(!calls[0].options.body.includes("192.0.2.42"));
+    assert.equal(calls[0].options.redirect, "error");
+    result = [3, 2501];
+    const denied = await enforceRateLimit(req, "contact", 2, 60000);
+    assert.equal(denied.status, 429);
+    assert.equal(denied.headers.get("Retry-After"), "3");
+    await enforceRateLimit(req, "booking", 2, 60000);
+    assert.notEqual(
+      JSON.parse(calls[1].options.body)[3],
+      JSON.parse(calls[2].options.body)[3],
+    );
+    for (const invalid of [[1, -1], [1, 60001], ["1", 1000], null]) {
+      result = invalid;
+      assert.equal(
+        (await enforceRateLimit(req, "contact", 2, 60000)).status,
+        503,
+      );
+    }
+    globalThis.fetch = async () => {
+      throw new Error("mock timeout");
+    };
+    assert.equal((await enforceRateLimit(req, "contact")).status, 503);
+    process.env.UPSTASH_REDIS_REST_URL = "https://untrusted.invalid";
+    globalThis.fetch = async () => {
+      assert.fail("invalid endpoint must not receive a token");
+    };
+    assert.equal((await enforceRateLimit(req, "contact")).status, 503);
+    process.env.VERCEL_ENV = "preview";
+    assert.equal((await contact(request(base))).status, 403);
+  } finally {
+    globalThis.fetch = originalFetch;
+    for (const name of names) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  }
+});
+
+test("SMTP transports enforce bounded waits and disable file/URL attachment reads", () => {
+  assert.ok(state.transports.length >= 2);
+  for (const options of state.transports) {
+    assert.equal(options.host, "mail.privateemail.com");
+    assert.equal(options.port, 465);
+    assert.equal(options.secure, true);
+    assert.equal(options.disableFileAccess, true);
+    assert.equal(options.disableUrlAccess, true);
+    assert.equal(options.connectionTimeout, 10000);
+    assert.equal(options.greetingTimeout, 10000);
+    assert.equal(options.socketTimeout, 20000);
+    assert.equal(options.tls?.rejectUnauthorized, undefined);
+  }
+});

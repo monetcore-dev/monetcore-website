@@ -1,4 +1,16 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
+
+/** Trust Vercel's overwritten header there; other hosts need a trusted proxy. */
+function clientAddress(request: Request) {
+  return (
+    (process.env.VERCEL === "1"
+      ? request.headers.get("x-vercel-forwarded-for")
+      : request.headers.get("x-forwarded-for")
+    )
+      ?.split(",")[0]
+      .trim() || "unknown"
+  );
+}
 
 const MAX_BYTES = 32_768;
 const buckets = new Map<string, { count: number; until: number }>();
@@ -12,8 +24,7 @@ export function rateLimit(
 ) {
   for (const [key, value] of buckets)
     if (value.until <= now) buckets.delete(key);
-  const address =
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  const address = clientAddress(request);
   const key = `${scope}:${createHash("sha256").update(address).digest("hex")}`;
   const bucket = buckets.get(key);
   if (bucket && bucket.count >= limit)
@@ -37,6 +48,95 @@ export function rateLimit(
   });
   return null;
 }
+/** Atomic fixed-window counter. Expiry is set only on the first increment. */
+const counterScript = `local n = redis.call('INCR', KEYS[1])
+if n == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+return {n, redis.call('PTTL', KEYS[1])}`;
+
+/** Optional shared protection; configured backend failures never fall back open. */
+export async function enforceRateLimit(
+  request: Request,
+  scope: string,
+  limit = 10,
+  windowMs = 600_000,
+) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const secret = process.env.RATE_LIMIT_KEY_SECRET;
+  if (!url && !token && !secret && process.env.RATE_LIMIT_REQUIRED !== "true")
+    return rateLimit(request, scope, limit, windowMs);
+  try {
+    if (!url || !token || !secret || secret.length < 32)
+      throw new Error("Configuration");
+    const endpoint = new URL(url);
+    if (
+      endpoint.protocol !== "https:" ||
+      !endpoint.hostname.endsWith(".upstash.io") ||
+      endpoint.username ||
+      endpoint.password ||
+      endpoint.search ||
+      endpoint.hash ||
+      endpoint.pathname !== "/" ||
+      endpoint.port
+    )
+      throw new Error("Endpoint");
+    const address = clientAddress(request);
+    const digest = createHmac("sha256", secret).update(address).digest("hex");
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        "EVAL",
+        counterScript,
+        "1",
+        `monetcore:v1:${scope}:${digest}`,
+        String(windowMs),
+      ]),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(2000),
+    });
+    if (!response.ok) throw new Error("Backend");
+    const payload: unknown = await response.json();
+    const result =
+      payload && typeof payload === "object" && "result" in payload
+        ? payload.result
+        : null;
+    if (
+      !Array.isArray(result) ||
+      result.length !== 2 ||
+      !Number.isSafeInteger(result[0]) ||
+      result[0] < 1 ||
+      !Number.isSafeInteger(result[1]) ||
+      result[1] < 0 ||
+      result[1] > windowMs
+    )
+      throw new Error("Counter");
+    if (result[0] <= limit) return null;
+    return Response.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, Math.ceil(result[1] / 1000))),
+        },
+      },
+    );
+  } catch {
+    console.error("Shared rate limiting unavailable.");
+    return Response.json(
+      { error: "Service is temporarily unavailable. Please try again later." },
+      {
+        status: 503,
+        headers: { "Retry-After": "60" },
+      },
+    );
+  }
+}
+
 export async function readSubmission(
   request: Request,
 ): Promise<Record<string, unknown> | Response> {

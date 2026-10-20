@@ -1,5 +1,6 @@
 export const state = {
   emails: [],
+  transports: [],
   bookings: [],
   calendars: [],
   failCalendar: false,
@@ -8,7 +9,8 @@ export const state = {
   available: ["09:00"],
 };
 const mailer = {
-  createTransport() {
+  createTransport(options) {
+    state.transports.push(options);
     return {
       async sendMail(message) {
         if (state.failEmail) throw new Error("mock mail failure");

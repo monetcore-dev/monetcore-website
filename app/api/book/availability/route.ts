@@ -1,4 +1,4 @@
-import { rateLimit, isValidDate } from "@/app/lib/submissionSafety";
+import { enforceRateLimit, isValidDate } from "@/app/lib/submissionSafety";
 import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   if (isReviewPreview()) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
-  const limited = rateLimit(request, "availability", 60, 60_000);
+  const limited = await enforceRateLimit(request, "availability", 60, 60_000);
   if (limited) return limited;
   try {
     const { searchParams } = new URL(request.url);
