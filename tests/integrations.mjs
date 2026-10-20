@@ -1,6 +1,9 @@
 export const state = {
   emails: [],
   transports: [],
+  updates: [],
+  failTracking: false,
+  throwTracking: false,
   bookings: [],
   calendars: [],
   failCalendar: false,
@@ -63,9 +66,23 @@ export function getSupabaseAdmin() {
             },
           };
         },
-        update() {
+        update(fields) {
           return {
-            async eq() {
+            async eq(column, id) {
+              state.updates.push({ fields, column, id });
+              if (state.throwTracking)
+                throw new Error(
+                  "PRIVATE synthetic provider details must not be logged",
+                );
+              if (state.failTracking)
+                return {
+                  error: {
+                    message:
+                      "PRIVATE synthetic database details must not be logged",
+                  },
+                };
+              const booking = state.bookings.find((item) => item.id === id);
+              if (booking) Object.assign(booking, fields);
               return { error: null };
             },
           };

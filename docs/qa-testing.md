@@ -55,3 +55,17 @@ transport safeguards. REST responses are mocked: no Redis provisioning or real
 concurrency/expiry guarantee is established by these tests. Before approved staging
 runs, read `docs/phase-3.9-production-readiness.md` for configuration requirements,
 recipient isolation, database invariants and approval gates.
+
+Staging preparation (fully offline): `npm run test:staging:local`. The runner
+requires the approved feature branch, accepts no live target, blocks network
+sockets and uses mocked providers. See `docs/staging-preparation-report.md` for
+resource/cost approvals and the distinction between local and external evidence.
+The prepared metadata SQL must not be executed without staging approval.
+
+Booking patch regressions: `QA_BASE_URL=http://127.0.0.1:4600 node
+tests/browser-booking-conflicts.mjs` runs mobile/desktop 409 flows, successful and
+failed availability refresh, preserved inputs, disabled blind resubmission and
+selection of a replacement slot. API responses are intercepted; the server must
+retain preview safeguards. This program is also included in `test:browser`.
+Server tests cover all three tracking operations with returned/thrown database
+errors, sanitized logs and internal Calendar-id persistence without public exposure.

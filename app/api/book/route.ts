@@ -117,6 +117,31 @@ https://monetcore.dev/book
   `.trim();
 }
 
+/** Tracking failures must not erase a reservation or repeat accepted side effects. */
+async function updateBookingTracking(
+  bookingId: string,
+  fields: Record<string, string>,
+  operation: "calendar" | "customer_notification" | "admin_notification",
+) {
+  try {
+    const { error } = await getSupabaseAdmin()
+      .from("bookings")
+      .update(fields)
+      .eq("id", bookingId);
+    if (error) {
+      console.error("Booking tracking update failed.", {
+        operation,
+        failure: "database_rejected",
+      });
+    }
+  } catch {
+    console.error("Booking tracking update failed.", {
+      operation,
+      failure: "request_failed",
+    });
+  }
+}
+
 export async function POST(request: Request) {
   if (isReviewPreview()) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
@@ -277,7 +302,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              "That consultation time has just been booked. Please choose another time.",
+              "The selected time is no longer available. Please choose another available slot.",
           },
           { status: 409 },
         );
@@ -341,18 +366,15 @@ export async function POST(request: Request) {
       if (calendarEventId) {
         calendarEventCreated = true;
 
-        const { error: calendarUpdateError } = await getSupabaseAdmin()
-          .from("bookings")
-          .update({
+        await updateBookingTracking(
+          booking.id,
+          {
             google_calendar_event_id: calendarEventId,
             google_calendar_event_created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          })
-          .eq("id", booking.id);
-
-        if (calendarUpdateError) {
-          console.error("Calendar tracking update error:");
-        }
+          },
+          "calendar",
+        );
       } else {
         console.error("Google Calendar event created without an event ID.");
       }
@@ -431,13 +453,14 @@ https://monetcore.dev
 
           customerEmailSent = true;
 
-          await getSupabaseAdmin()
-            .from("bookings")
-            .update({
+          await updateBookingTracking(
+            booking.id,
+            {
               confirmation_sent_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            })
-            .eq("id", booking.id);
+            },
+            "customer_notification",
+          );
         } catch {
           console.error("Customer confirmation email error:");
         }
@@ -489,13 +512,14 @@ ${booking.id}
 
           adminEmailSent = true;
 
-          await getSupabaseAdmin()
-            .from("bookings")
-            .update({
+          await updateBookingTracking(
+            booking.id,
+            {
               admin_notification_sent_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            })
-            .eq("id", booking.id);
+            },
+            "admin_notification",
+          );
         } catch {
           console.error("Admin booking notification error:");
         }
@@ -517,7 +541,6 @@ ${booking.id}
         },
         calendar: {
           eventCreated: calendarEventCreated,
-          eventId: calendarEventId,
         },
         email: {
           customerConfirmationSent: customerEmailSent,

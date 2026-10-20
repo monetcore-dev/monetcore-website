@@ -48,7 +48,7 @@ export default function BookingForm() {
       setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
-      return;
+      return false;
     }
 
     setAvailabilityStatus("loading");
@@ -65,7 +65,7 @@ export default function BookingForm() {
       );
 
       const result = await response.json();
-      if (requestId !== availabilityRequest.current) return;
+      if (requestId !== availabilityRequest.current) return false;
 
       if (!response.ok) {
         throw new Error(result.error || "Unable to check availability.");
@@ -91,8 +91,9 @@ export default function BookingForm() {
           "No consultation times remain available for this date. Please choose another date.",
         );
       }
+      return true;
     } catch (error) {
-      if (requestId !== availabilityRequest.current) return;
+      if (requestId !== availabilityRequest.current) return false;
       console.error("Availability check failed.");
 
       setUnavailableTimes([]);
@@ -102,6 +103,7 @@ export default function BookingForm() {
           ? error.message
           : "Unable to check availability.",
       );
+      return false;
     }
   }
 
@@ -180,7 +182,16 @@ export default function BookingForm() {
       if (!response.ok || result.success !== true) {
         if (response.status === 409) {
           setSelectedTime("");
-          await checkAvailability(selectedDate);
+          setStatus("error");
+          setFeedback(
+            "The selected time is no longer available. Checking availability; please choose another available slot.",
+          );
+          const refreshed = await checkAvailability(selectedDate);
+          throw new Error(
+            refreshed
+              ? "The selected time is no longer available. Availability has been refreshed. Please select another available slot before confirming."
+              : "The selected time is no longer available. Availability could not be refreshed. Please choose a date to check availability again, then select another available slot.",
+          );
         }
 
         throw new Error(result.error || "Unable to book consultation.");

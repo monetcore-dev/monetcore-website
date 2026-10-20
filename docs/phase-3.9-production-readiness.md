@@ -2,7 +2,34 @@
 
 Assessment date: 20 October 2026 (Africa/Lagos). Branch: `feature/monetcore-stage1-websites`.
 
-**Not ready for production integration or launch.** Application safeguards can be reviewed in the protected preview. No production infrastructure, credentials, policies, records, DNS or calendar permissions were changed. No live integration calls, email deliveries or calendar bookings were made. The managed cloud reports no configured integration credentials; the actual Vercel secret bindings and production database configuration remain unverified. Do not paste secret values into Git, reports or chat.
+**Development rebuild: not yet approved for production launch; isolated staging verification is pending approval. Existing production availability and contact email are working, as confirmed by the owner.** Application safeguards can be reviewed in the protected preview. Codex has not changed production infrastructure, credentials, policies, records, DNS or calendar permissions, or performed live integration tests. The owner independently resumed the existing Supabase project to resolve the incident described below. The managed cloud's previously observed lack of integration bindings does not establish their state in Vercel. Do not paste secret values into Git, reports or chat.
+
+## Production incident update — resolved
+
+Owner-confirmed evidence received on 20 October 2026 (Africa/Lagos):
+
+1. Vercel production logs showed `GET /api/book/availability` returning HTTP 500 with `getaddrinfo ENOTFOUND` for the Supabase project hostname.
+2. The existing Supabase project **monetcore-website** was paused on the Free plan.
+3. The owner successfully resumed that same project.
+4. Production booking availability now works, and the production email/contact form also works.
+
+**Incident diagnosis: the paused Supabase project was the resolved dependency outage; no booking availability application hotfix is warranted.** This replaces the earlier unconfirmed configuration/permission hypotheses for this specific incident. The evidence and recovery are owner-reported; Codex has not independently accessed production logs, customer records or the restored service. Do not generalize every future ENOTFOUND error to a paused project without checking service status and DNS/network evidence.
+
+Both reviewed branches calculate availability from Supabase booking records, past times and weekends; neither performs a Google Calendar free/busy query. The incident therefore does not establish a Google service-account authentication or calendar-permission failure. Working availability confirms the owner's recovery observation, not database insertion, atomic duplicate prevention, Calendar event synchronization or failure recovery on the development rebuild.
+
+**Disposition:** no availability hotfix, credential rotation, schema/policy change, SMTP change or production redeployment. Retain the existing production SMTP functionality. The development branch's defensive initialization/error-handling improvements remain useful safeguards, not the cause or cure of this incident.
+
+Operational follow-up for approval: assign an owner to dependency-status/availability alerts and an outage runbook that checks Supabase project status before changing application code or credentials. Review the current Free-plan pause policy and service guarantees, then decide whether a production-appropriate plan is needed. No plan upgrade, paid provisioning, monitoring change or artificial keep-alive traffic is authorized or performed.
+
+The next authorized preparation is the [isolated staging verification plan](staging-booking-verification-plan.md). All external tests and staging-resource changes remain pending explicit approval.
+
+## Owner-confirmed production database metadata — 20 October 2026
+
+The owner completed all seven read-only inspections on production **monetcore-website** and reports: `public.bookings` exists with the expected booking/contact/status/timestamp/Calendar columns; RLS enabled, not forced; owner `postgres`; primary key on `id` and a status check; six indexes, including valid partial unique `unique_active_booking_slot` excluding cancelled bookings; no returned booking RLS policies; table privileges for `anon`, `authenticated`, `postgres`, `service_role`; BYPASSRLS false for anon/authenticated and true for service_role. The paused-project incident remains resolved and production availability/contact remain owner-confirmed working.
+
+These are owner-supplied metadata findings, not new database access by Codex. No customer records were inspected. Exact index keys/expressions/predicate, column types/nullability, status-check expression and privilege lists were not included in the summary. Index existence/validity and RLS configuration are now confirmed by owner evidence; complete slot coverage, effective role permissions and actual concurrent booking behavior remain pending review/staging verification. An empty policy result is recorded as reported, subject to inspector catalog visibility.
+
+See [booking code review and smallest proposed fixes](booking-database-review.md). No production database change or availability hotfix is recommended from the metadata summary. Earlier statements that metadata was wholly uninspected describe the original audit, not the current evidence status.
 
 ## Completed application changes
 
@@ -39,17 +66,17 @@ No values were disclosed or changed. Required integration variables are absent f
 
 Provider failures return generic errors or booking partial-success flags; logs do not include credentials or submitted payloads. The honeypot and timing check deter basic bots but are not strong identity checks. An attacker can submit arbitrary syntactically valid addresses to the confirmation flow; shared and edge/global abuse controls are needed to limit email abuse. No HTML email or user-selected attachments are supported. Timeouts bound each SMTP phase; they are not a total end-to-end function deadline. Multiple sequential side effects can still exceed a serverless request duration.
 
-Before enabling delivery, confirm the approved sending mailbox and notification recipient, provider outbound SMTP support from the chosen Vercel runtime, TLS and mailbox authentication, SPF/DKIM/DMARC and alignment. Domain records are infrastructure work requiring approval. DNS correctness and delivery reputation have not been verified. Confirm whether the public address `hello@monetcore.dev` is also the authorized authenticated sender; the public contact address alone does not prove SMTP access.
+The owner confirms the existing production contact/email form works after recovery. This is operational evidence for that existing path; it does not verify development-branch booking confirmations, failure recovery or isolated staging delivery. Keep the production SMTP implementation and bindings unchanged. Before enabling delivery from the rebuild, confirm the approved sending mailbox and notification recipient, provider outbound SMTP support from the chosen Vercel runtime, TLS and mailbox authentication, SPF/DKIM/DMARC and alignment. Domain records are infrastructure work requiring approval. DNS correctness and delivery reputation have not been verified. Confirm whether the public address `hello@monetcore.dev` is also the authorized authenticated sender; the public contact address alone does not prove SMTP access.
 
 ## 2. Supabase implementation audit
 
 `app/lib/supabaseAdmin.ts` is server-only, refuses preview access, and disables session persistence/token refresh. The service-role key is never intentionally passed to client components. Its privilege bypasses RLS; RLS alone cannot constrain this application credential. Prefer a narrowly scoped server role or carefully granted database functions in a later approved integration change. Never give browsers the service-role key or direct write access to bookings.
 
-The application inserts a `bookings` record, selects only id/date/time/type after insertion, reads only booking times for public availability, and updates calendar/email tracking by booking id. Availability exposes no names, email addresses or project descriptions. Errors are generic. Actual schema, grants, RLS policies, unique indexes, backups and data ownership were **not inspected** because live database access is outside this phase.
+The application inserts a `bookings` record, selects only id/date/time/type after insertion, reads only booking times for public availability, and updates calendar/email tracking by booking id. Availability exposes no names, email addresses or project descriptions. Errors are generic. The original audit did not inspect live metadata. The owner has now confirmed the table/expected columns, RLS settings, owner, role bypass flags, grants presence and six indexes including valid partial unique_active_booking_slot. Exact definitions and effective permissions still need the scoped review below; backups remain unverified. Codex has not accessed the database.
 
 Required schema contract (verify in staging, do not execute on production): id; consultation_type; booking_date; booking_time; timezone; name; email; nullable phone/company/service/message; status; google_calendar_event_id; google_calendar_event_created_at; confirmation_sent_at; admin_notification_sent_at; updated_at. Confirm types, defaults, constraints and migration ownership. There is no schema migration establishing this contract in the repository.
 
-**High-priority launch blocker:** concurrent inserts must be serialized by a database-enforced unique constraint on active date/time (or an exclusion constraint on occupied ranges if durations/resources become variable). An availability read followed by insert is not atomic. Current code maps PostgreSQL `23505` to 409, but that only works if the real constraint exists. A partial unique index excluding `status = 'cancelled'` must also forbid/null-harden unexpected status values. Do not add it blindly: review existing duplicates, business timezone and cancellation semantics first. Hourly fixed slots with 30/45-minute consultations currently do not overlap, assuming a single resource and no additional buffers.
+**Remaining verification requirement:** the owner confirms a valid partial unique index exists; verify its exact coverage and staging concurrency rather than adding a replacement. Concurrent inserts must be serialized by a database-enforced unique constraint on active date/time (or an exclusion constraint on occupied ranges if durations/resources become variable). An availability read followed by insert is not atomic. Current code maps PostgreSQL `23505` to 409, but that only works if the real constraint exists. A partial unique index excluding `status = 'cancelled'` must also forbid/null-harden unexpected status values. Do not add it blindly: review existing duplicates, business timezone and cancellation semantics first. Hourly fixed slots with 30/45-minute consultations currently do not overlap, assuming a single resource and no additional buffers.
 
 Review RLS on bookings and any exposed schema: deny anon/authenticated SELECT/INSERT/UPDATE/DELETE unless a specific approved workflow requires it; restrict grants and server functions, pin function search paths, avoid unsafe SECURITY DEFINER functions. Verify access using anonymous/low-privilege test identities in staging. Public API validation is still required because the service role bypasses policies.
 
@@ -97,6 +124,8 @@ Mitigation pending upstream: use fixed repository-controlled lint patterns, do n
 
 ## 6. Safe staging verification procedure — approval required before external calls
 
+The post-incident [detailed staging plan](staging-booking-verification-plan.md) is the current execution checklist: verify isolation and shared limiting before end-to-end submission tests, mock all downstream services during database-only checks, and follow its stop conditions. The original outline below remains background guidance; none of these external actions has been executed.
+
 1. Approve a dedicated staging project, database, non-customer calendar, mail sink/allowlisted staff test inboxes, limiter database and exact test recipients. Confirm cost limits and ownership. Production credentials/data must not be copied into staging. Provide secrets only through secure environment settings.
 2. Keep ordinary Vercel review deployments at `VERCEL_ENV=preview`, with integrations disabled and noindex. Do not bypass this guard on a publicly accessible preview. Use an access-controlled local/staging runner with approved sandbox bindings; if a hosted staging mode is needed, design a separate explicit allowlisted staging gate for approval first. This phase does not introduce such an exception.
 3. Database owner reviews a migration against an empty/synthetic staging dataset. Verify required columns, restrictive grants/RLS and atomic active-slot constraint. Race at least two independent booking requests for one date/time: exactly one reservation and one 409; test cancellation/rebooking, failed inserts and unavailable reads. Confirm no PII appears in availability responses. Anonymized fixtures must not be derived from live customers without authorization.
@@ -128,7 +157,7 @@ Mitigation pending upstream: use fixed repository-controlled lint patterns, do n
 5. Approve business content, privacy/retention, any temporary development-tool advisory acceptance, operating alerts/runbook and production configuration review.
 6. Obtain explicit production integration/launch approval. No merge, production deployment or DNS change is performed in this phase.
 
-Production blockers: unverified SMTP delivery/authentication, database schema/RLS/atomic reservation guarantee, Calendar permissions/conflict policy, durable limiter provisioning/verification, partial-failure recovery/idempotency, approved business/privacy policies and explicit launch authorization. Mobile LCP and actual deployed Core Web Vitals remain performance follow-ups; simulated lab results cannot establish field INP or real-device performance.
+Development rebuild launch blockers: isolated staging booking/email verification, database schema/RLS/atomic reservation guarantee, Calendar synchronization/permissions/conflict policy, durable limiter provisioning/verification, partial-failure recovery/idempotency, approved business/privacy policies and explicit launch authorization. The resolved availability incident and owner-confirmed working production contact form are not open outages. Mobile LCP and actual deployed Core Web Vitals remain performance follow-ups; simulated lab results cannot establish field INP or real-device performance.
 
 ## 9. Performance investigation
 
@@ -146,11 +175,11 @@ An approved staging runner needs outbound HTTPS to its Supabase project, its Red
 | --- | --- | --- |
 | Development braces stack exhaustion | High advisory severity; development-tool exposure, not a discovered runtime exploit | Isolate build tooling; monitor compatible upstream patch; explicit temporary acceptance if needed. |
 | Instance-local limits on serverless | High abuse risk before durable/edge controls are configured | Shared adapter implemented and mocked; provision/verify isolated limiter and global/edge budgets after approval. |
-| Supabase elevated credential / unverified RLS and grants | High potential impact if misused; no leaked key found in this review | Server-only boundary retained; review real grants/RLS and narrow permissions in approved staging. |
-| Atomic reservation constraint unverified | High booking-integrity risk under concurrent requests | Database-owner review and concurrency test required; no production constraint was modified. |
+| Elevated server credential; effective access review pending | Owner confirms RLS enabled/no returned policies and service_role BYPASSRLS; broad impact remains if the server credential is misused | Preserve server-only boundary; review grant details and staged low-privilege access without changing production policies. |
+| Active-slot coverage/concurrency not fully verified | Owner confirms valid partial unique_active_booking_slot; exact keys/predicate/null handling not supplied | Review existing DDL and stage concurrency/cancellation tests; no duplicate index or production alteration is proposed. |
 | Calendar scope / database-only availability | Medium least-privilege and conflict-policy risk | Approve dedicated calendar, narrower compatible scope and external-conflict policy. |
 | Missing durable outbox/idempotency/recovery | High reliability risk for partial failures and ambiguous retries | Approve schema/job design and recovery owner before promising end-to-end booking guarantees. |
-| SMTP configuration/delivery unverified | Launch blocker, not evidence of compromised mail | Bounded waits and attachment access hardened; approved sink/inbox tests and DNS/provider checks remain. |
+| Rebuild booking-email delivery/recovery not staging-verified | Rebuild launch blocker; existing production contact email is owner-confirmed working | Preserve production SMTP; verify the rebuild against an isolated mail sink and review sender/provider configuration before enabling it. |
 | Privacy/retention policy undecided | Governance and customer-data risk | Business/legal owner must approve lifecycle across all three processors. |
 
 No credential rotation, access-policy change, paid provisioning or destructive security testing was performed. Production-only npm audit found no advisories; this review does not establish the absence of all vulnerabilities or replace an authorized infrastructure audit.
@@ -203,3 +232,60 @@ Changed files: `app/lib/submissionSafety.ts`; the three API routes `app/api/cont
 Evidence: `/workspace/artifacts/phase39/` contains final build/lint/typecheck/unit/browser logs, dependency JSON, final/candidate Lighthouse reports, a standalone final Lighthouse HTML report, and retained-design contact-anchor screenshots. `browser-regression.log` and `anchor-tests.log` record the rejected experiment failures; `browser-regression-final.log` and `anchor-tests-final.log` are the final passing checks. Do not conflate candidate results with final verification.
 
 Commit/push is restricted to `feature/monetcore-stage1-websites`; the commit identifier and Vercel result are supplied with the delivery message. Production remains blocked by the items above. Approval is still required before external staging integration calls, production integration tests or launch.
+
+
+## 12. Documentation update after incident recovery
+
+This update changes readiness documentation only. It records the owner's resolved production incident and adds a separate staged test matrix with isolation, approval and stop conditions. Historical Phase 3.9 test/performance results above remain historical; no new build, Lighthouse run or external integration test is claimed. The approved UI, interactive features, SMTP code and booking implementation are unchanged. See [staging-booking-verification-plan.md](staging-booking-verification-plan.md) for the next proposed work. External staging actions, production integration tests and launch remain unapproved.
+
+## 13. Staging preparation only — approved scope
+
+The owner approved local staging preparation, not external execution. The [preparation audit](staging-preparation-report.md) records resource isolation/cost decisions, the source-derived database contract, metadata inspection SQL, synthetic fixtures, offline checks and an execution matrix for all nine staging steps. Owner-confirmed metadata is now recorded above. Exact schema/index/check/grant definitions, effective permissions, provider credentials and external synchronization remain unverified. No booking availability hotfix, production SMTP change or external provisioning/testing is authorized by this update.
+
+
+## 14. Booking review following owner metadata inspection
+
+Owner-confirmed database findings are summarized near the top of this report. The [focused booking review](booking-database-review.md) records index/cancellation alignment conditions, 23505/409 handling, server-only elevated credentials, RLS interpretation, abuse controls, record-preserving partial failures and public-response minimization. Proposed small fixes await approval: check returned email tracking-update errors, improve sanitized failure observability and approved partial-success messaging, and omit the unused public Calendar event id. No database/RLS/index or production SMTP change is proposed. Exact index/check/nullability/grant definitions and isolated concurrency/recovery verification remain pending; no live test is claimed.
+
+## 15. Approved three-change booking patch — development only
+
+The owner authorized application changes for tracking errors, slot-conflict guidance and public Calendar-id removal. This supersedes the corresponding pending-fix entries in the historical review; it does not authorize external integration tests, database changes, shared-limiter provisioning or launch.
+
+- All Calendar/customer-email/admin-email tracking writes now inspect returned database errors and catch thrown failures. Logs contain only a fixed operation name and failure category (`database_rejected` or `request_failed`), without booking/customer identifiers, provider details or credential values. Tracking failures retain the reservation and do not retry already accepted side effects. Provider outcome flags retain their existing meaning; they do not promise tracking persistence or inbox delivery.
+- Slot conflicts still return HTTP 409 before Calendar/mail calls. The form clears the conflicted selection, refreshes availability, preserves entered details and explicitly asks for another available slot. If refresh fails, it keeps submission blocked until availability and a new selection are established, and provides date-recheck guidance. It does not automatically resubmit.
+- Public responses omit `calendar.eventId`; the internal database field, event creation, tracking and `eventCreated` status remain intact. SMTP transport/settings, contact code, database schema/RLS/indexes and corporate design are unchanged.
+
+Regression coverage includes returned and thrown tracking failures for all three operations, sanitized logs, unchanged reservation/provider counts, internal event-id persistence without public exposure, and slot-conflict behavior. Browser checks cover successful and failed availability refresh at mobile 390px and desktop 1440px with intercepted API responses only. Earlier staged preparation documents/fixtures are included alongside this patch; those do not activate external tests.
+
+Rate-limiting recommendations only: choose and approve an isolated shared backend and budget, verify atomic counter/expiry/fail-closed behavior across independent processes, confirm trusted hosting headers and global/recipient abuse budgets, then review production configuration separately. No Redis or paid infrastructure is provisioned and limiter code is unchanged.
+
+Concurrent-booking recommendations only: review the already-collected sanitized unique_active_booking_slot keys/predicate, column nullability and status-check definition; preserve the existing valid production index; run same-slot and cancellation races only in approved staging. No database constraint/policy/grant is changed. Mapping all 23505 errors to slot conflict and durable request/provider idempotency remain review items.
+
+Remaining launch blockers: isolated database/concurrency/Calendar/sink/recovery evidence, exact index/grant coverage, durable shared/global abuse controls, ambiguous side-effect recovery/idempotency, business-approved confirmation/partial-delivery semantics, privacy/retention/content approvals, existing dev-only advisory disposition and explicit production authorization. Mobile LCP remains a documented performance follow-up. The owner-confirmed working production contact/availability systems remain untouched.
+
+### Patch verification and exact file manifest
+
+Executed: `npm test` 13 passed/0 failed/0 skipped; `npm run test:staging:local` 9 passed/0 failed/0 skipped; `npm run lint` passed; `npm run typecheck` passed; `VERCEL_ENV=preview npm run build` passed as an optimized production build with preview guards. Local preview port 5900: `tests/browser-booking-conflicts.mjs` passed all four mobile/desktop success/failure refresh cases; `tests/browser-booking-demo.mjs` passed booking UI and existing demo regressions. All browser booking responses were intercepted. A first version of the new browser assertion matched multiple alert regions; the selector was narrowed to the booking-conflict message and all four cases then passed. No application defect was hidden or assertion removed. Physical devices, full browser suite, actual database concurrency, Calendar synchronization, SMTP delivery and Redis behavior were not tested in this patch.
+
+The development commit includes these 16 files (including previously prepared local staging materials):
+
+```text
+app/BookingForm.tsx
+app/api/book/route.ts
+package.json
+tests/integrations.mjs
+tests/qa.test.mjs
+tests/browser-booking-conflicts.mjs
+tests/staging/fixtures.mjs
+tests/staging/offline-guard.mjs
+tests/staging/preparation.test.mjs
+scripts/staging/local-check.mjs
+scripts/staging/schema-inspection.sql
+docs/phase-3.9-production-readiness.md
+docs/qa-testing.md
+docs/booking-database-review.md
+docs/staging-booking-verification-plan.md
+docs/staging-preparation-report.md
+```
+
+Only the two app files change application behavior. The schema inspection SQL is metadata-only preparation and was not executed by Codex. No dependency, provider binding, paid service or production setting changed. The development commit/preview outcome is reported in the delivery message; production deployment remains unapproved.

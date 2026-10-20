@@ -366,3 +366,112 @@ test("SMTP transports enforce bounded waits and disable file/URL attachment read
     assert.equal(options.tls?.rejectUnauthorized, undefined);
   }
 });
+
+test("booking keeps Calendar id internal and persists all tracking fields", async () => {
+  process.env.VERCEL_ENV = "development";
+  const data = {
+    ...base,
+    startedAt: Date.now() - 5000,
+    consultationType: "Discovery Call - 30 minutes",
+    date: "2030-01-08",
+    time: "09:00",
+  };
+  const response = await booking(request(data, "book"));
+  assert.equal(response.status, 201);
+  const result = await response.json();
+  assert.deepEqual(result.calendar, { eventCreated: true });
+  assert.equal(JSON.stringify(result).includes("mock-event"), false);
+  const record = state.bookings.at(-1);
+  assert.equal(record.google_calendar_event_id, "mock-event");
+  for (const field of [
+    "google_calendar_event_created_at",
+    "confirmation_sent_at",
+    "admin_notification_sent_at",
+  ])
+    assert.ok(Number.isFinite(Date.parse(record[field])));
+});
+
+test("returned and thrown tracking errors are sanitized and never erase or repeat accepted side effects", async () => {
+  const originalError = console.error;
+  try {
+    for (const [index, flag] of ["failTracking", "throwTracking"].entries()) {
+      const logs = [];
+      console.error = (...args) => logs.push(args);
+      state[flag] = true;
+      const before = {
+        bookings: state.bookings.length,
+        emails: state.emails.length,
+        calendars: state.calendars.length,
+        updates: state.updates.length,
+      };
+      const response = await booking(
+        request(
+          {
+            ...base,
+            startedAt: Date.now() - 5000,
+            consultationType: "Discovery Call - 30 minutes",
+            date: "2030-01-08",
+            time: `${10 + index}:00`,
+          },
+          "book",
+        ),
+      );
+      assert.equal(response.status, 201);
+      const result = await response.json();
+      assert.deepEqual(result.calendar, { eventCreated: true });
+      assert.equal(result.email.customerConfirmationSent, true);
+      assert.equal(result.email.adminNotificationSent, true);
+      assert.equal(state.bookings.length, before.bookings + 1);
+      assert.equal(state.bookings.at(-1).status, "confirmed");
+      assert.equal(state.emails.length, before.emails + 2);
+      assert.equal(state.calendars.length, before.calendars + 1);
+      assert.equal(state.updates.length, before.updates + 3);
+      assert.deepEqual(
+        logs,
+        ["calendar", "customer_notification", "admin_notification"].map(
+          (operation) => [
+            "Booking tracking update failed.",
+            {
+              operation,
+              failure: index === 0 ? "database_rejected" : "request_failed",
+            },
+          ],
+        ),
+      );
+      assert.doesNotMatch(
+        JSON.stringify(logs),
+        /PRIVATE|Test Person|test@example|mock-event|password/i,
+      );
+      state[flag] = false;
+    }
+  } finally {
+    state.failTracking = state.throwTracking = false;
+    console.error = originalError;
+  }
+});
+
+test("slot conflict gives selection guidance without repeating Calendar or notification calls", async () => {
+  const data = {
+    ...base,
+    startedAt: Date.now() - 5000,
+    consultationType: "Discovery Call - 30 minutes",
+    date: "2030-01-08",
+    time: "12:00",
+  };
+  assert.equal((await booking(request(data, "book"))).status, 201);
+  const before = [
+    state.bookings.length,
+    state.calendars.length,
+    state.emails.length,
+  ];
+  const response = await booking(request(data, "book"));
+  assert.equal(response.status, 409);
+  assert.match(
+    (await response.json()).error,
+    /selected time is no longer available.*choose another available slot/i,
+  );
+  assert.deepEqual(
+    [state.bookings.length, state.calendars.length, state.emails.length],
+    before,
+  );
+});
