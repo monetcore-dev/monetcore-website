@@ -1,18 +1,112 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import PrivacyNotice from "./components/PrivacyNotice";
 
-export default function ContactForm() {
+import { FormEvent, useId, useState, useRef, useEffect } from "react";
+
+import {
+  getWebsitePackage,
+  packageSelectionEvent,
+  packagePrice,
+  websitePackages,
+} from "./config/websitePackages";
+
+import { useProjectPlan } from "./components/ProjectPlanContext";
+import { enquiryBudgets } from "./config/projectPlanner";
+
+import {
+  contactServiceOptions,
+  type EnquiryInterest,
+} from "./config/enquiryInterests";
+
+type ContactFormProps = {
+  initialPackageId?: string;
+  quotationMode?: boolean;
+  initialInterest?: EnquiryInterest;
+};
+
+export default function ContactForm({
+  initialPackageId,
+  initialInterest,
+  quotationMode = false,
+}: ContactFormProps) {
+  const submitting = useRef(false);
+  const planner = useProjectPlan();
+  const incomingPlan = quotationMode ? null : planner?.draft;
+  const planId = incomingPlan?.id ?? 0;
+  const messageCounterId = useId();
+  const interestSource = quotationMode ? "" : (initialInterest?.id ?? "");
+  const defaultService = quotationMode
+    ? "Business Website"
+    : (initialInterest?.service ?? "");
+  const [editedFields, setEditedFields] = useState({
+    planId: 0,
+    interestSource,
+    service: defaultService,
+    budget: "",
+    message: initialInterest?.message ?? "",
+  });
+  // A new draft replaces only the planner fields; uncontrolled contact details keep their DOM state.
+  const fields =
+    editedFields.planId === planId &&
+    editedFields.interestSource === interestSource
+      ? editedFields
+      : {
+          planId,
+          interestSource,
+          service: incomingPlan?.service ?? defaultService,
+          budget: incomingPlan?.budget ?? "",
+          message: incomingPlan?.message ?? initialInterest?.message ?? "",
+        };
+  function editField(field: "service" | "budget" | "message", value: string) {
+    setEditedFields({ ...fields, [field]: value });
+  }
+  const initialPackage = initialPackageId ?? "";
+  const [packageSelection, setPackageSelection] = useState({
+    source: initialPackage,
+    value: initialPackage,
+  });
+  if (packageSelection.source !== initialPackage) {
+    setPackageSelection({ source: initialPackage, value: initialPackage });
+  }
+  const selectedPackageId =
+    packageSelection.source === initialPackage
+      ? packageSelection.value
+      : initialPackage;
+  function setSelectedPackageId(value: string) {
+    setPackageSelection({ source: initialPackage, value });
+  }
+  useEffect(() => {
+    if (!quotationMode) return;
+    const onSelection = (event: Event) => {
+      const id: unknown = (event as CustomEvent).detail;
+      if (typeof id === "string" && getWebsitePackage(id)) {
+        setPackageSelection({ source: initialPackage, value: id });
+      }
+    };
+    window.addEventListener(packageSelectionEvent, onSelection);
+    return () => window.removeEventListener(packageSelectionEvent, onSelection);
+  }, [quotationMode, initialPackage]);
+  const feedbackKey = `${interestSource}:${planId}:${selectedPackageId}`;
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
 
   const [feedback, setFeedback] = useState("");
+  const [feedbackForDraft, setFeedbackForDraft] = useState("");
   const [startedAt] = useState(() => Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
+    setFeedbackForDraft(feedbackKey);
 
+    if (!fields.message.trim()) {
+      setStatus("error");
+      setFeedback("Please add meaningful project details before submitting.");
+      return;
+    }
+    submitting.current = true;
     setStatus("sending");
     setFeedback("");
 
@@ -28,6 +122,8 @@ export default function ContactForm() {
       message: formData.get("message"),
       website: formData.get("website"),
       startedAt: formData.get("startedAt"),
+      packageId: quotationMode ? formData.get("packageId") : undefined,
+      consent: quotationMode ? formData.get("consent") === "on" : undefined,
     };
 
     try {
@@ -41,23 +137,39 @@ export default function ContactForm() {
 
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || result.success !== true) {
         throw new Error(result.error || "Unable to send enquiry.");
       }
 
       setStatus("success");
       setFeedback(
-        "Thank you. Your project enquiry has been sent to Monetcore."
+        "Thank you. Your project enquiry has been sent to Monetcore.",
       );
 
+      // A package change during a pending request must not clear the newer draft.
+      if (
+        quotationMode &&
+        new FormData(form).get("packageId") !== data.packageId
+      )
+        return;
       form.reset();
+      setEditedFields({
+        planId,
+        interestSource,
+        service: defaultService,
+        budget: "",
+        message: "",
+      });
+      if (quotationMode) setSelectedPackageId(initialPackageId ?? "");
     } catch (error) {
-      console.error("Contact form error:", error);
+      console.error("Enquiry submission failed.");
 
       setStatus("error");
       setFeedback(
-        "We couldn't send your enquiry. Please email hello@monetcore.dev."
+        `We couldn't send your enquiry. ${error instanceof Error ? error.message : "Please try again."} You can email hello@monetcore.dev.`,
       );
+    } finally {
+      submitting.current = false;
     }
   }
 
@@ -67,27 +179,59 @@ export default function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
+      aria-busy={status === "sending"}
+      aria-label={
+        quotationMode ? "Website quotation enquiry" : "Project enquiry"
+      }
       className="mt-12 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
     >
+      <p className="text-sm leading-6 text-slate-600">
+        Tell us about your project. Our team will review your requirements and
+        contact you to discuss the next steps.
+      </p>
+      {incomingPlan && fields.message && (
+        <p className="enquiry-plan-notice" role="status">
+          Your planner outline is ready to review. You can edit these details
+          before sending; nothing has been submitted.
+        </p>
+      )}
       {/* Spam honeypot — hidden from real visitors */}
       <div className="hidden" aria-hidden="true">
         <label>
           Website
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-          />
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
       {/* Records when the visitor opened the form */}
-      <input
-        type="hidden"
-        name="startedAt"
-        value={startedAt}
-      />
+      <input type="hidden" name="startedAt" value={startedAt} />
+
+      {quotationMode && (
+        <div>
+          <label className="text-sm font-semibold text-slate-900">
+            Website package <span className="text-red-500">*</span>
+            <select
+              required
+              name="packageId"
+              value={selectedPackageId}
+              onChange={(event) => setSelectedPackageId(event.target.value)}
+              className={inputStyle}
+            >
+              <option value="">Select a package</option>
+              {websitePackages.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} — {packagePrice(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p aria-live="polite" className="mt-3 text-sm text-slate-600">
+            {getWebsitePackage(selectedPackageId)
+              ? `${getWebsitePackage(selectedPackageId)?.name} selected. Confirm your requirements and final scope in a written quotation.`
+              : "Choose the package you would like us to quote."}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-900">
@@ -132,32 +276,17 @@ export default function ContactForm() {
           What do you need?
           <select
             name="service"
-            defaultValue=""
+            value={fields.service}
+            onChange={(event) => editField("service", event.target.value)}
             className={inputStyle}
           >
-            <option value="">
-              Select a service
-            </option>
+            <option value="">Select a service</option>
 
-            <option value="Software Development">
-              Software Development
-            </option>
-
-            <option value="AI Solution">
-              AI Solution
-            </option>
-
-            <option value="Business Automation">
-              Business Automation
-            </option>
-
-            <option value="Digital Product">
-              Digital Product
-            </option>
-
-            <option value="Other">
-              Other
-            </option>
+            {contactServiceOptions.map((value) => (
+              <option value={value} key={value}>
+                {value}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -165,36 +294,17 @@ export default function ContactForm() {
           Estimated budget
           <select
             name="budget"
-            defaultValue=""
+            value={fields.budget}
+            onChange={(event) => editField("budget", event.target.value)}
             className={inputStyle}
           >
-            <option value="">
-              Select a budget range
-            </option>
+            <option value="">Select a budget range</option>
 
-            <option value="Under $500">
-              Under $500
-            </option>
-
-            <option value="$500 - $1,000">
-              $500 – $1,000
-            </option>
-
-            <option value="$1,000 - $2,500">
-              $1,000 – $2,500
-            </option>
-
-            <option value="$2,500 - $5,000">
-              $2,500 – $5,000
-            </option>
-
-            <option value="$5,000+">
-              $5,000+
-            </option>
-
-            <option value="Not sure">
-              Not sure yet
-            </option>
+            {enquiryBudgets.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -204,6 +314,9 @@ export default function ContactForm() {
         <textarea
           required
           name="message"
+          value={fields.message}
+          onChange={(event) => editField("message", event.target.value)}
+          aria-describedby={messageCounterId}
           rows={6}
           maxLength={5000}
           placeholder="What are you trying to build, improve, or automate?"
@@ -211,6 +324,24 @@ export default function ContactForm() {
         />
       </label>
 
+      <p id={messageCounterId} className="enquiry-character-count">
+        {fields.message.length.toLocaleString("en-NG")} / 5,000 characters
+      </p>
+
+      {quotationMode && (
+        <label className="flex items-start gap-3 text-sm leading-6 text-slate-600">
+          <input
+            required
+            name="consent"
+            type="checkbox"
+            className="mt-1 h-4 w-4 shrink-0"
+          />
+          I agree that Monetcore may use the details I submit to respond to this
+          quotation request. This does not confirm a purchase or subscription.
+        </label>
+      )}
+
+      <PrivacyNotice />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-500">
           Or email us directly at{" "}
@@ -229,13 +360,15 @@ export default function ContactForm() {
         >
           {status === "sending"
             ? "Sending..."
-            : "Send Project Enquiry"}
+            : quotationMode
+              ? "Send Quotation Request"
+              : "Send Project Enquiry"}
         </button>
       </div>
 
-      {feedback && (
+      {feedback && feedbackForDraft === feedbackKey && (
         <p
-          role="status"
+          role={status === "error" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
             status === "success"
               ? "bg-green-50 text-green-700"

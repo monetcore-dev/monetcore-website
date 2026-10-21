@@ -1,10 +1,24 @@
+import { resolveInterest } from "../config/offeringCatalog";
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/book",
+  "Book a Consultation",
+  "Choose a consultation to discuss your software, AI automation, website or business integration project with Monetcore System Solutions.",
+);
+
 import BookingForm from "../BookingForm";
-import SiteFooter from "../components/SiteFooter";
+import PrivacyNotice from "../components/PrivacyNotice";
+import { isStagingBookingEnabled } from "../lib/previewSafety";
 import SiteHeader from "../components/SiteHeader";
 
-export default function BookPage() {
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ interest?: string | string[] }>;
+}) {
+  const initialInterest = resolveInterest((await searchParams).interest, true);
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main id="main-content" className="corporate-page min-h-screen bg-slate-50">
       <SiteHeader />
 
       <section className="px-6 pb-24 pt-32 lg:px-8">
@@ -39,12 +53,16 @@ export default function BookPage() {
               </div>
             </div>
 
-            <BookingForm />
+            <div className="min-w-0">
+              <BookingForm
+                initialInterest={initialInterest}
+                stagingTesting={isStagingBookingEnabled()}
+              />
+              <PrivacyNotice booking />
+            </div>
           </div>
         </div>
       </section>
-
-      <SiteFooter />
     </main>
   );
 }

@@ -1,16 +1,31 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import "./offering.css";
+import SiteFooter from "./components/SiteFooter";
+import PreviewNotice from "./components/PreviewNotice";
+import {
+  isReviewPreview,
+  isStagingContactEnabled,
+  isStagingBookingEnabled,
+} from "./lib/previewSafety";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Disabled for this release pending privacy verification and owner approval.
+// Retain the SDK integration; re-enabling requires an explicit code review.
+const analyticsEnabled = false;
+
+const inter = localFont({
+  src: "./fonts/inter-latin-variable.woff2",
+  variable: "--font-inter",
+  display: "swap",
+  weight: "100 900",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const manrope = localFont({
+  src: "./fonts/manrope-latin-variable.woff2",
+  variable: "--font-manrope",
+  display: "swap",
+  weight: "200 800",
 });
 
 export const metadata: Metadata = {
@@ -62,8 +77,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://monetcore.dev",
     siteName: "Monetcore System Solutions",
-    title:
-      "Monetcore System Solutions | AI Automation & Software Development",
+    title: "Monetcore System Solutions | AI Automation & Software Development",
     description:
       "Build smarter. Automate faster. Grow further. Monetcore builds AI automation, custom software, and intelligent systems for modern businesses.",
     images: [
@@ -78,8 +92,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title:
-      "Monetcore System Solutions | AI Automation & Software Development",
+    title: "Monetcore System Solutions | AI Automation & Software Development",
     description:
       "Build smarter. Automate faster. Grow further. AI automation, custom software, and intelligent business systems from Monetcore.",
     images: ["/og-image.png"],
@@ -116,12 +129,12 @@ export const metadata: Metadata = {
   },
 
   robots: {
-    index: true,
-    follow: true,
+    index: !isReviewPreview(),
+    follow: !isReviewPreview(),
 
     googleBot: {
-      index: true,
-      follow: true,
+      index: !isReviewPreview(),
+      follow: !isReviewPreview(),
       "max-image-preview": "large",
       "max-snippet": -1,
       "max-video-preview": -1,
@@ -131,17 +144,38 @@ export const metadata: Metadata = {
   category: "technology",
 };
 
-export default function RootLayout({
-  children,
-}: LayoutProps<"/">) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body
+        className={`min-h-full flex flex-col ${isReviewPreview() ? "review-preview" : ""}`}
+      >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Monetcore System Solutions",
+              url: "https://monetcore.dev",
+              email: "hello@monetcore.dev",
+              telephone: "+2347065880558",
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
         {children}
-        <Analytics />
+        <SiteFooter />
+        {isReviewPreview() ? (
+          <PreviewNotice
+            contactTesting={isStagingContactEnabled()}
+            bookingTesting={isStagingBookingEnabled()}
+          />
+        ) : analyticsEnabled ? (
+          <Analytics />
+        ) : null}
       </body>
     </html>
   );

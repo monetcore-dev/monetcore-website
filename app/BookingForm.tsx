@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useRef } from "react";
 
 type Status = "idle" | "sending" | "success" | "error";
 type AvailabilityStatus = "idle" | "loading" | "ready" | "error";
@@ -15,14 +15,38 @@ const timeSlots = [
   "16:00",
 ];
 
-export default function BookingForm() {
+import {
+  bookingServiceOptions,
+  type EnquiryInterest,
+} from "./config/enquiryInterests";
+
+export default function BookingForm({
+  initialInterest,
+  stagingTesting = false,
+}: { initialInterest?: EnquiryInterest; stagingTesting?: boolean } = {}) {
+  const source = initialInterest?.id ?? "";
+  const [editedEnquiry, setEditedEnquiry] = useState({
+    source,
+    service: initialInterest?.service ?? "",
+    message: initialInterest?.message ?? "",
+  });
+  const enquiry =
+    editedEnquiry.source === source
+      ? editedEnquiry
+      : {
+          source,
+          service: initialInterest?.service ?? "",
+          message: initialInterest?.message ?? "",
+        };
+  const submitting = useRef(false);
+  const availabilityRequest = useRef(0);
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
+  const [reservationNotice, setReservationNotice] = useState("");
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [unavailableTimes, setUnavailableTimes] = useState<string[]>([]);
   const [availabilityStatus, setAvailabilityStatus] =
     useState<AvailabilityStatus>("idle");
@@ -42,17 +66,16 @@ export default function BookingForm() {
   }, []);
 
   async function checkAvailability(date: string) {
+    const requestId = ++availabilityRequest.current;
     if (!date) {
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
-      return;
+      return false;
     }
 
     setAvailabilityStatus("loading");
     setAvailabilityMessage("");
-    setBookedTimes([]);
     setUnavailableTimes([]);
 
     try {
@@ -61,30 +84,26 @@ export default function BookingForm() {
         {
           method: "GET",
           cache: "no-store",
-        }
+        },
       );
 
       const result = await response.json();
+      if (requestId !== availabilityRequest.current) return false;
 
       if (!response.ok) {
-        throw new Error(
-          result.error || "Unable to check availability."
-        );
+        throw new Error(result.error || "Unable to check availability.");
       }
 
       const booked = Array.isArray(result.bookedTimes)
-        ? result.bookedTimes.map((time: unknown) =>
-            String(time).slice(0, 5)
-          )
+        ? result.bookedTimes.map((time: unknown) => String(time).slice(0, 5))
         : [];
 
       const unavailable = Array.isArray(result.unavailableTimes)
         ? result.unavailableTimes.map((time: unknown) =>
-            String(time).slice(0, 5)
+            String(time).slice(0, 5),
           )
         : booked;
 
-      setBookedTimes(booked);
       setUnavailableTimes(unavailable);
       setAvailabilityStatus("ready");
 
@@ -92,56 +111,47 @@ export default function BookingForm() {
         setAvailabilityMessage(String(result.message));
       } else if (unavailable.length === timeSlots.length) {
         setAvailabilityMessage(
-          "No consultation times remain available for this date. Please choose another date."
+          "No consultation times remain available for this date. Please choose another date.",
         );
       }
+      return true;
     } catch (error) {
-      console.error("Availability error:", error);
+      if (requestId !== availabilityRequest.current) return false;
+      console.error("Availability check failed.");
 
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("error");
       setAvailabilityMessage(
         error instanceof Error
           ? error.message
-          : "Unable to check availability."
+          : "Unable to check availability.",
       );
+      return false;
     }
   }
-  
-  
-  
-  
 
-async function handleDateChange(
-  event: React.ChangeEvent<HTMLInputElement>
-) {
-  const date = event.target.value;
+  async function handleDateChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const date = event.target.value;
 
-  setSelectedDate(date);
-  setSelectedTime("");
-  setStatus("idle");
-  setFeedback("");
-  setAvailabilityMessage("");
+    setSelectedDate(date);
+    setSelectedTime("");
+    setStatus("idle");
+    setFeedback("");
+    setAvailabilityMessage("");
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    setBookedTimes([]);
-    setUnavailableTimes([]);
-    setAvailabilityStatus("idle");
-    return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      availabilityRequest.current += 1;
+      setUnavailableTimes([]);
+      setAvailabilityStatus("idle");
+      return;
+    }
+
+    await checkAvailability(date);
   }
 
-  await checkAvailability(date);
-}
-  
-  
-  
-  
-
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current || reservationNotice) return;
 
     if (!selectedDate || !selectedTime) {
       setStatus("error");
@@ -152,7 +162,7 @@ async function handleDateChange(
     if (unavailableTimes.includes(selectedTime)) {
       setStatus("error");
       setFeedback(
-        "That consultation time is no longer available. Please choose another time."
+        "That consultation time is no longer available. Please choose another time.",
       );
       setSelectedTime("");
 
@@ -160,6 +170,7 @@ async function handleDateChange(
       return;
     }
 
+    submitting.current = true;
     setStatus("sending");
     setFeedback("");
 
@@ -180,6 +191,7 @@ async function handleDateChange(
       startedAt: formData.get("startedAt"),
     };
 
+    let uncertain = stagingTesting;
     try {
       const response = await fetch("/api/book", {
         method: "POST",
@@ -190,41 +202,73 @@ async function handleDateChange(
       });
 
       const result = await response.json();
+      uncertain =
+        (stagingTesting || result.outcome === "unknown") &&
+        response.status >= 500 &&
+        result.outcome !== "not_created";
+      if (
+        response.status === 202 &&
+        result.outcome === "reserved_incomplete" &&
+        result.booking?.id
+      ) {
+        setStatus("error");
+        setReservationNotice(
+          "Your reservation was saved, but confirmation is incomplete. Do not resubmit or choose another slot. Contact hello@monetcore.dev for reconciliation.",
+        );
+        return;
+      }
 
-      if (!response.ok) {
+      if (!response.ok || result.success !== true) {
         if (response.status === 409) {
           setSelectedTime("");
-          await checkAvailability(selectedDate);
+          setStatus("error");
+          setFeedback(
+            "The selected time is no longer available. Checking availability; please choose another available slot.",
+          );
+          const refreshed = await checkAvailability(selectedDate);
+          throw new Error(
+            refreshed
+              ? "The selected time is no longer available. Availability has been refreshed. Please select another available slot before confirming."
+              : "The selected time is no longer available. Availability could not be refreshed. Please choose a date to check availability again, then select another available slot.",
+          );
         }
 
-        throw new Error(
-          result.error || "Unable to book consultation."
-        );
+        throw new Error(result.error || "Unable to book consultation.");
       }
 
       setStatus("success");
       setFeedback(
-        `Your consultation has been booked for ${selectedDate} at ${selectedTime} WAT.`
+        `Your consultation has been booked for ${selectedDate} at ${selectedTime} WAT.`,
       );
 
       form.reset();
+      setEditedEnquiry({
+        source,
+        service: initialInterest?.service ?? "",
+        message: initialInterest?.message ?? "",
+      });
 
       setSelectedDate("");
       setSelectedTime("");
-      setBookedTimes([]);
       setUnavailableTimes([]);
       setAvailabilityStatus("idle");
       setAvailabilityMessage("");
     } catch (error) {
-      console.error("Booking form error:", error);
+      console.error("Booking submission failed.");
 
       setStatus("error");
-
+      if (uncertain) {
+        setReservationNotice(
+          "The booking outcome could not be verified. Do not resubmit or choose another slot. Contact hello@monetcore.dev to check the reservation first.",
+        );
+      }
       setFeedback(
         error instanceof Error
           ? error.message
-          : "We couldn't complete your booking. Please email hello@monetcore.dev."
+          : "We couldn't complete your booking. Please email hello@monetcore.dev.",
       );
+    } finally {
+      submitting.current = false;
     }
   }
 
@@ -234,25 +278,18 @@ async function handleDateChange(
   return (
     <form
       onSubmit={handleSubmit}
+      aria-label="Consultation booking"
+      aria-busy={status === "sending"}
       className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
     >
       <div className="hidden" aria-hidden="true">
         <label>
           Website
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-          />
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
-      <input
-        type="hidden"
-        name="startedAt"
-        value={startedAt}
-      />
+      <input type="hidden" name="startedAt" value={startedAt} />
 
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
@@ -264,18 +301,14 @@ async function handleDateChange(
         </h2>
 
         <label className="mt-6 block text-sm font-semibold text-slate-900">
-          Consultation type{" "}
-          <span className="text-red-500">*</span>
-
+          Consultation type <span className="text-red-500">*</span>
           <select
             required
             name="consultationType"
             defaultValue=""
             className={inputStyle}
           >
-            <option value="">
-              Select a consultation
-            </option>
+            <option value="">Select a consultation</option>
 
             <option value="Discovery Call - 30 minutes">
               Discovery Call — 30 minutes
@@ -302,14 +335,13 @@ async function handleDateChange(
         </h2>
 
         <p className="mt-2 text-sm text-slate-500">
-          All consultation times are shown in West Africa Time
-          (WAT). Consultations are available Monday to Friday.
+          All consultation times are shown in West Africa Time (WAT).
+          Consultations are available Monday to Friday.
         </p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
           <label className="text-sm font-semibold text-slate-900">
             Date <span className="text-red-500">*</span>
-
             <input
               required
               type="date"
@@ -323,12 +355,11 @@ async function handleDateChange(
           <div>
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-semibold text-slate-900">
-                Available time{" "}
-                <span className="text-red-500">*</span>
+                Available time <span className="text-red-500">*</span>
               </p>
 
               {availabilityStatus === "loading" && (
-                <p className="text-xs font-medium text-blue-600">
+                <p role="status" className="text-xs font-medium text-blue-600">
                   Checking availability...
                 </p>
               )}
@@ -336,7 +367,6 @@ async function handleDateChange(
 
             <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {timeSlots.map((time) => {
-                const isBooked = bookedTimes.includes(time);
                 const isUnavailable = unavailableTimes.includes(time);
                 const active = selectedTime === time;
 
@@ -385,13 +415,17 @@ async function handleDateChange(
             {availabilityStatus === "ready" &&
               selectedDate &&
               unavailableTimes.length === 0 && (
-                <p className="mt-3 text-xs font-medium text-green-700">
+                <p
+                  role="status"
+                  className="mt-3 text-xs font-medium text-green-700"
+                >
                   All listed times are currently available.
                 </p>
               )}
 
             {availabilityMessage && (
               <p
+                role={availabilityStatus === "error" ? "alert" : "status"}
                 className={`mt-3 text-xs font-medium ${
                   availabilityStatus === "error"
                     ? "text-red-600"
@@ -417,7 +451,6 @@ async function handleDateChange(
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <label className="text-sm font-semibold text-slate-900">
             Your name <span className="text-red-500">*</span>
-
             <input
               required
               name="name"
@@ -430,9 +463,7 @@ async function handleDateChange(
           </label>
 
           <label className="text-sm font-semibold text-slate-900">
-            Business email{" "}
-            <span className="text-red-500">*</span>
-
+            Business email <span className="text-red-500">*</span>
             <input
               required
               name="email"
@@ -446,7 +477,6 @@ async function handleDateChange(
 
           <label className="text-sm font-semibold text-slate-900">
             Phone / WhatsApp
-
             <input
               name="phone"
               type="tel"
@@ -459,7 +489,6 @@ async function handleDateChange(
 
           <label className="text-sm font-semibold text-slate-900">
             Company
-
             <input
               name="company"
               type="text"
@@ -471,45 +500,34 @@ async function handleDateChange(
           </label>
 
           <label className="text-sm font-semibold text-slate-900 md:col-span-2">
-            Service you're interested in
-
+            Service you&apos;re interested in
             <select
               name="service"
-              defaultValue=""
+              value={enquiry.service}
+              onChange={(event) =>
+                setEditedEnquiry({ ...enquiry, service: event.target.value })
+              }
               className={inputStyle}
             >
-              <option value="">
-                Select a service
-              </option>
+              <option value="">Select a service</option>
 
-              <option value="AI Automation">
-                AI Automation
-              </option>
-
-              <option value="Custom Software">
-                Custom Software
-              </option>
-
-              <option value="AI Sales Systems">
-                AI Sales Systems
-              </option>
-
-              <option value="Business Integrations">
-                Business Integrations
-              </option>
-
-              <option value="Other">
-                Other
-              </option>
+              {bookingServiceOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
             </select>
           </label>
         </div>
 
         <label className="mt-6 block text-sm font-semibold text-slate-900">
           What would you like to discuss?
-
           <textarea
             name="message"
+            value={enquiry.message}
+            onChange={(event) =>
+              setEditedEnquiry({ ...enquiry, message: event.target.value })
+            }
             rows={5}
             maxLength={3000}
             placeholder="Tell us briefly about your project, problem, or automation opportunity."
@@ -533,21 +551,28 @@ async function handleDateChange(
           type="submit"
           disabled={
             status === "sending" ||
+            Boolean(reservationNotice) ||
             availabilityStatus === "loading" ||
             !selectedDate ||
             !selectedTime
           }
           className="rounded-xl bg-blue-600 px-7 py-3.5 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {status === "sending"
-            ? "Booking..."
-            : "Confirm Consultation"}
+          {status === "sending" ? "Booking..." : "Confirm Consultation"}
         </button>
       </div>
 
+      {reservationNotice && (
+        <p
+          role="alert"
+          className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+        >
+          {reservationNotice}
+        </p>
+      )}
       {feedback && (
         <p
-          role="status"
+          role={status === "error" ? "alert" : "status"}
           className={`rounded-xl px-4 py-3 text-sm font-medium ${
             status === "success"
               ? "bg-green-50 text-green-700"

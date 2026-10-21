@@ -1,11 +1,25 @@
-import Link from "next/link";
+import { resolveInterest } from "../config/offeringCatalog";
+import { pageMetadata } from "../lib/metadata";
+export const metadata = pageMetadata(
+  "/contact",
+  "Contact Monetcore",
+  "Discuss your business technology project with Monetcore System Solutions. Contact our Abuja team or request a consultation.",
+);
+
 import ContactForm from "../ContactForm";
 import SiteHeader from "../components/SiteHeader";
-import SiteFooter from "../components/SiteFooter";
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ interest?: string | string[] }>;
+}) {
+  const initialInterest = resolveInterest((await searchParams).interest, false);
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main
+      id="main-content"
+      className="corporate-page min-h-screen bg-slate-50 text-slate-950"
+    >
       <SiteHeader />
 
       <section className="relative overflow-hidden px-6 pb-20 pt-36 lg:px-8 lg:pt-44">
@@ -29,8 +43,8 @@ export default function ContactPage() {
 
             <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">
               Tell us about the business problem, workflow, software product, or
-              automation you want to improve. We&apos;ll help you explore the right
-              technology approach.
+              automation you want to improve. We&apos;ll help you explore the
+              right technology approach.
             </p>
           </div>
         </div>
@@ -66,7 +80,7 @@ export default function ContactPage() {
             </div>
 
             <div className="rounded-[2rem] border border-blue-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10 lg:p-12">
-              <ContactForm />
+              <ContactForm initialInterest={initialInterest} />
             </div>
           </div>
         </div>
@@ -161,7 +175,7 @@ export default function ContactPage() {
       </section>
 
       <section className="border-t border-blue-100 bg-white">
-        <div className="px-6 pb-10 pt-24 lg:px-8">
+        <div className="px-6 py-16 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div className="max-w-3xl">
@@ -184,21 +198,11 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
-                Get Directions →
+                Open in Google Maps
+                <span className="sr-only"> (opens in a new tab)</span>
               </a>
             </div>
           </div>
-        </div>
-
-        <div className="w-full border-y border-blue-100 bg-slate-100">
-          <iframe
-            title="Monetcore System Solutions Office Map"
-            src="https://www.google.com/maps?q=Ventures%20Park%2C%205%20Kwaji%20Close%2C%20Maitama%2C%20Abuja%2C%20Nigeria&output=embed"
-            className="h-[500px] w-full border-0 lg:h-[620px]"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-          />
         </div>
       </section>
 
@@ -270,8 +274,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
-      <SiteFooter />
     </main>
   );
 }
