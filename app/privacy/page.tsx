@@ -39,6 +39,16 @@ const sections = [
     ],
   },
   {
+    id: "ai-assistant",
+    title: "Monetcore AI Assistant",
+    paragraphs: [
+      "The Monetcore AI Assistant is prepared with live inference disabled by default. When separately activated, your question and a limited recent history of your questions are sent to OpenAI to classify the information you need. The website then selects approved Monetcore answers and enquiry links; it does not use the assistant to send emails, create appointments, change business records or take external actions.",
+      "Conversation history is held in page memory, not stored as a transcript in the application database or automatically emailed to our team. Leaving or reloading the page clears that local history. Please do not submit personal, sensitive or confidential information. Clearing the page does not delete information already processed by a provider.",
+      "When activated, OpenAI processes submitted text and associated technical information. Requests ask the provider not to store Responses API response objects; this is not a guarantee of zero retention. Provider security logs, retention, processing locations and applicable terms require verification before activation. We do not claim verified international-transfer safeguards or completed legal compliance for this proposed processing.",
+      "Expiring address-derived identifiers, request counters, reserved usage allowances and short-lived concurrency identifiers are processed in Redis for abuse and cost control. Chat text is not written into those counters. Application operational logs exclude chat text and API credentials. Contact hello@monetcore.dev or use our enquiry form if you prefer human assistance.",
+    ],
+  },
+  {
     id: "providers",
     title: "Service providers and external services",
     paragraphs: [

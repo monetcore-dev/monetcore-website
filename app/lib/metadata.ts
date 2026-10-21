@@ -8,6 +8,7 @@ export const publicRoutes = [
   "/about",
   "/contact",
   "/privacy",
+  "/assistant",
   "/book",
   "/website-packages",
   "/demo/fintech",
