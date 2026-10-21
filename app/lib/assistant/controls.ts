@@ -20,7 +20,16 @@ export function configuration() {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   const secret = process.env.RATE_LIMIT_KEY_SECRET;
   const cost = Number(process.env.AI_MAX_CALL_COST_MICRO_USD);
+  const stagingRunId =
+    process.env.VERCEL_ENV === "preview"
+      ? process.env.STAGING_AI_TEST_RUN_ID
+      : undefined;
   if (
+    (process.env.VERCEL_ENV === "preview" &&
+      (!stagingRunId ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+          stagingRunId,
+        ))) ||
     !key ||
     model !== pricingPolicy.model ||
     process.env.AI_PRICING_APPROVAL !== pricingApprovalId ||
@@ -45,16 +54,26 @@ export function configuration() {
     endpoint.password
   )
     throw new Error("Configuration");
-  return { key, model, url, token, secret, cost };
+  return { key, model, url, token, secret, cost, stagingRunId };
 }
 export type Config = NonNullable<ReturnType<typeof configuration>>;
 // One atomic admission: emergency stop, visitor limits, global allowances, cost,
 // and expiring concurrency leases. Failed/uncertain calls are never refunded.
 export const admissionScript = `
 if redis.call('GET',KEYS[1]) ~= 'enabled' then return 0 end
+local runCount=nil
+if ARGV[10] ~= '' then
+ if #KEYS ~= 10 or redis.call('GET',KEYS[9]) ~= ARGV[10] or redis.call('PTTL',KEYS[9]) ~= -1 or redis.call('PTTL',KEYS[10]) ~= -1 then return 3 end
+ local raw=redis.call('GET',KEYS[10])
+ if not raw or not string.match(raw,'^%d+$') then return 3 end
+ runCount=tonumber(raw)
+ if not runCount or runCount<0 or runCount>20 or tostring(runCount)~=raw then return 3 end
+ if runCount>=20 then return 4 end
+end
 local now=tonumber(ARGV[1])
 redis.call('ZREMRANGEBYSCORE',KEYS[8],'-inf',now)
 if tonumber(redis.call('GET',KEYS[2]) or '0')>=5 or tonumber(redis.call('GET',KEYS[3]) or '0')>=30 or tonumber(redis.call('GET',KEYS[4]) or '0')>=100 or tonumber(redis.call('GET',KEYS[5]) or '0')>=1000 or tonumber(redis.call('GET',KEYS[6]) or '0')+tonumber(ARGV[3])>1000000 or tonumber(redis.call('GET',KEYS[7]) or '0')+tonumber(ARGV[3])>10000000 or redis.call('ZCARD',KEYS[8])>=3 then return 2 end
+if runCount then redis.call('INCRBY',KEYS[10],1) end
 for i=2,7 do
  local amount=1
  if i>=6 then amount=tonumber(ARGV[3]) end
@@ -63,6 +82,17 @@ for i=2,7 do
 end
 redis.call('ZADD',KEYS[8],now+60000,ARGV[2])
 redis.call('EXPIRE',KEYS[8],120)
+return 1`;
+/** Recheck the same non-expiring state before counting and before inference.
+ * No initialization, expiry refresh, decrement or reset path exists here.
+ */
+export const stagingRunCheckScript = `
+if redis.call('GET',KEYS[1]) ~= 'enabled' then return 0 end
+if redis.call('GET',KEYS[2]) ~= ARGV[1] or redis.call('PTTL',KEYS[2]) ~= -1 or redis.call('PTTL',KEYS[3]) ~= -1 then return 0 end
+local raw=redis.call('GET',KEYS[3])
+if not raw or not string.match(raw,'^%d+$') then return 0 end
+local n=tonumber(raw)
+if not n or n<1 or n>20 or tostring(n)~=raw then return 0 end
 return 1`;
 async function redis(c: Config, command: unknown[]) {
   const r = await fetch(c.url, {
@@ -108,10 +138,15 @@ export async function reserve(c: Config, request: Request) {
     `${prefix}cost:${month}`,
     `${prefix}leases`,
   ];
+  if (c.stagingRunId)
+    keys.push(
+      `${prefix}test-run:binding`,
+      `${prefix}test-run:${c.stagingRunId}:admitted`,
+    );
   const result = await redis(c, [
     "EVAL",
     admissionScript,
-    "8",
+    String(keys.length),
     ...keys,
     String(now),
     lease,
@@ -122,16 +157,31 @@ export async function reserve(c: Config, request: Request) {
     "5356800",
     "172800",
     "5356800",
+    c.stagingRunId ?? "",
   ]);
-  if (result !== 0 && result !== 1 && result !== 2) throw new Error("Controls");
+  if (![0, 1, 2, 3, 4].includes(result)) throw new Error("Controls");
   return {
     result,
     async release() {
       await redis(c, ["ZREM", keys[7], lease]);
     },
     async check() {
-      if ((await redis(c, ["GET", keys[0]])) !== "enabled")
+      if (c.stagingRunId) {
+        if (
+          (await redis(c, [
+            "EVAL",
+            stagingRunCheckScript,
+            "3",
+            keys[0],
+            keys[8],
+            keys[9],
+            c.stagingRunId,
+          ])) !== 1
+        )
+          throw new Error("Stopped");
+      } else if ((await redis(c, ["GET", keys[0]])) !== "enabled") {
         throw new Error("Stopped");
+      }
     },
   };
 }

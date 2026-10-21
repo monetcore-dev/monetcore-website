@@ -1,8 +1,14 @@
 "use client";
 import { useRef, useState, type FormEvent } from "react";
+import { assistantTestCases } from "../config/assistantTestCases";
 type Answer = { text: string; links: { label: string; href: string }[] };
 type Turn = { question: string; answers: Answer[] };
-export default function AssistantChat() {
+export default function AssistantChat({
+  stagingTest = false,
+}: {
+  stagingTest?: boolean;
+}) {
+  const [testCase, setTestCase] = useState(assistantTestCases[0]);
   const [turns, setTurns] = useState<Turn[]>([]),
     [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
@@ -30,7 +36,10 @@ export default function AssistantChat() {
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(stagingTest ? { "x-monetcore-test-case": testCase } : {}),
+        },
         body: JSON.stringify({
           messages: [...turns.slice(-5).map((t) => t.question), q],
         }),
@@ -134,6 +143,31 @@ export default function AssistantChat() {
         ))}
       </div>
       <form onSubmit={send} className="mt-6">
+        {stagingTest && (
+          <label
+            className="mb-5 block text-sm font-semibold"
+            htmlFor="assistant-test-case"
+          >
+            Synthetic staging test case
+            <select
+              id="assistant-test-case"
+              value={testCase}
+              onChange={(e) => setTestCase(e.target.value)}
+              disabled={busy}
+              className="mt-2 block min-h-11 w-full rounded-xl border border-slate-500 bg-white p-3 text-slate-950"
+            >
+              {assistantTestCases.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
+            <span className="mt-2 block font-normal text-slate-600">
+              Use fictional questions only. Each admitted attempt consumes the
+              fixed staging allowance, including failures.
+            </span>
+          </label>
+        )}
         <label htmlFor="assistant-question" className="font-semibold">
           Your question
         </label>

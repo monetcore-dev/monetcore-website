@@ -62,9 +62,15 @@ try {
     .getByRole("button", { name: "Ask Monetcore", exact: true })
     .click();
   await page.getByRole("alert").filter({ hasText: "unavailable" }).waitFor();
-  let payload;
+  const caseSelector = page.getByRole("combobox", {
+    name: "Synthetic staging test case",
+  });
+  const stagingSelectorVisible = (await caseSelector.count()) > 0;
+  if (stagingSelectorVisible) await caseSelector.selectOption("case-03");
+  let payload, caseHeader;
   await page.route("**/api/assistant", async (route) => {
     payload = route.request().postDataJSON();
+    caseHeader = route.request().headers()["x-monetcore-test-case"];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -88,6 +94,7 @@ try {
     .getByText("Approved company answer.", { exact: false })
     .waitFor();
   assert.deepEqual(payload.messages, ["What services do you offer?"]);
+  assert.equal(caseHeader, stagingSelectorVisible ? "case-03" : undefined);
   await page.getByRole("button", { name: "Clear Conversation" }).click();
   assert.equal(await page.getByRole("log").innerText(), "");
   await page.reload();

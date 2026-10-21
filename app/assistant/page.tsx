@@ -1,6 +1,7 @@
 import SiteHeader from "../components/SiteHeader";
 import { pageMetadata } from "../lib/metadata";
 import AssistantChat from "./AssistantChat";
+import { isReviewPreview } from "../lib/previewSafety";
 export const metadata = pageMetadata(
   "/assistant",
   "Monetcore AI Assistant",
@@ -56,7 +57,7 @@ export default function AssistantPage() {
               </a>
             </div>
           </div>
-          <AssistantChat />
+          <AssistantChat stagingTest={isReviewPreview()} />
         </div>
       </main>
     </>

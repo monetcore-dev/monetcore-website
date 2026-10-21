@@ -4,6 +4,7 @@ import { POST } from "../app/api/assistant/route.ts";
 import {
   configuration,
   admissionScript,
+  stagingRunCheckScript,
 } from "../app/lib/assistant/controls.ts";
 import {
   minimumReservationMicroUsd,
@@ -18,6 +19,7 @@ const request = (messages = ["What is Smart Starter?"]) =>
       origin: "https://preview.example",
       "content-type": "application/json",
       "x-vercel-forwarded-for": "192.0.2.1",
+      "x-monetcore-test-case": "case-01",
     },
     body: JSON.stringify({ messages }),
   });
@@ -26,6 +28,7 @@ const env = {
   VERCEL_ENV: "preview",
   VERCEL_GIT_COMMIT_REF: "feature/monetcore-stage1-websites",
   STAGING_AI_ASSISTANT_ENABLED: "true",
+  STAGING_AI_TEST_RUN_ID: "11111111-1111-4111-8111-111111111111",
   OPENAI_API_KEY: "synthetic-test-key",
   OPENAI_MODEL: pricingPolicy.model,
   AI_PRICING_APPROVAL: pricingApprovalId,
@@ -76,7 +79,16 @@ test("assistant mocked safety and outcomes", async (t) => {
         if (redisDown) throw new Error("offline");
         const cmd = JSON.parse(options.body);
         return Response.json({
-          result: cmd[0] === "EVAL" ? admission : cmd[0] === "GET" ? stop : 1,
+          result:
+            cmd[0] === "EVAL"
+              ? cmd[1] === admissionScript
+                ? admission
+                : stop === "enabled"
+                  ? 1
+                  : 0
+              : cmd[0] === "GET"
+                ? stop
+                : 1,
         });
       }
       if (url === "https://api.openai.com/v1/responses/input_tokens") {
@@ -265,7 +277,12 @@ test("assistant mocked safety and outcomes", async (t) => {
           .filter((c) => c[0].includes("upstash.io"))
           .map((c) => JSON.parse(c[1].body));
         assert.equal(commands[0][0], "EVAL");
-        assert.equal(commands.filter((c) => c[0] === "GET").length, 2);
+        assert.equal(
+          commands.filter(
+            (c) => c[0] === "EVAL" && c[1] === stagingRunCheckScript,
+          ).length,
+          2,
+        );
       },
     );
     await t.test(
@@ -374,15 +391,15 @@ test("atomic admission contract and reservation accounting with mocked Redis", a
     }
     assert.equal(command[0], "EVAL");
     assert.equal(command[1], admissionScript);
-    assert.equal(command[2], "8");
-    const keys = command.slice(3, 11),
-      args = command.slice(11);
-    assert.equal(keys.length, 8);
-    assert.equal(args.length, 9);
+    assert.equal(command[2], "10");
+    const keys = command.slice(3, 13),
+      args = command.slice(13);
+    assert.equal(keys.length, 10);
+    assert.equal(args.length, 10);
     assert.ok(
       keys.every((k) => k.startsWith("monetcore:assistant:v1:preview:")),
     );
-    assert.deepEqual(args.slice(3), [
+    assert.deepEqual(args.slice(3, 9), [
       "120",
       "172800",
       "172800",

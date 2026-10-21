@@ -7,6 +7,12 @@ import {
   boundedJson,
 } from "../../lib/assistant/provider";
 import { pricingPolicy } from "../../lib/assistant/pricing";
+import {
+  stagingMeasurement,
+  captureUsage,
+  reportMeasurement,
+  type SafeCategory,
+} from "../../lib/assistant/measurements";
 export const maxDuration = 30;
 const unavailable = () =>
   Response.json(
@@ -17,10 +23,22 @@ const unavailable = () =>
     { status: 503 },
   );
 export async function POST(request: Request) {
+  const measurement = stagingMeasurement(request);
+  function category(value: SafeCategory) {
+    if (measurement) measurement.category = value;
+  }
   let reservation: Awaited<ReturnType<typeof reserve>> | undefined;
   try {
     const config = configuration();
     if (!config) return unavailable();
+    if (measurement && !measurement.caseId) {
+      category("invalid_test_case");
+      return Response.json(
+        { error: "Choose a synthetic staging test case." },
+        { status: 400 },
+      );
+    }
+    category("invalid_request");
     if (
       request.headers.get("origin") !== new URL(request.url).origin ||
       request.headers.get("content-type")?.split(";")[0] !== "application/json"
@@ -84,20 +102,41 @@ export async function POST(request: Request) {
         { error: "Conversation is too long. Clear it and try again." },
         { status: 413 },
       );
+    category("controls_unavailable");
     reservation = await reserve(config, request);
-    if (reservation.result !== 1)
-      return reservation.result === 2
+    if (reservation.result !== 1) {
+      category(
+        reservation.result === 4
+          ? "test_run_exhausted"
+          : reservation.result === 3
+            ? "test_run_invalid"
+            : reservation.result === 2
+              ? "rate_or_budget_limit"
+              : "emergency_stop",
+      );
+      return reservation.result === 2 || reservation.result === 4
         ? Response.json(
             {
               error:
-                "Usage limit reached. Please contact Monetcore or try later.",
+                reservation.result === 4
+                  ? "The staging test allowance is exhausted. No further requests are admitted."
+                  : "Usage limit reached. Please contact Monetcore or try later.",
             },
-            { status: 429, headers: { "Retry-After": "60" } },
+            {
+              status: 429,
+              ...(reservation.result === 2
+                ? { headers: { "Retry-After": "60" } }
+                : {}),
+            },
           )
         : unavailable();
+    }
+    category("emergency_stop");
     await reservation.check();
+    category("token_count_unavailable");
     const inputTokens = await countInputTokens(config.key, countedInput);
-    if (inputTokens > pricingPolicy.maxInputTokens)
+    if (inputTokens > pricingPolicy.maxInputTokens) {
+      category("input_token_limit");
       return Response.json(
         {
           error:
@@ -105,8 +144,11 @@ export async function POST(request: Request) {
         },
         { status: 413 },
       );
+    }
     // The counter request can take time: recheck stop immediately before inference.
+    category("emergency_stop");
     await reservation.check();
+    category("provider_unavailable");
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -124,8 +166,10 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(15000),
     });
     if (!response.ok) return unavailable();
+    category("provider_response_invalid");
     const payload = await boundedJson(response, 65536);
     if (!payload || typeof payload !== "object") return unavailable();
+    captureUsage(measurement, payload);
     const data = payload as {
       status?: unknown;
       output?: {
@@ -148,6 +192,18 @@ export async function POST(request: Request) {
     )
       return unavailable();
     const answers = assemble(JSON.parse(data.output[0].content[0].text));
+    if (measurement) {
+      measurement.topics = answers.map((a) => a.id);
+      category(
+        measurement.inputTokens === null || measurement.outputTokens === null
+          ? "usage_unavailable"
+          : measurement.inputTokens > pricingPolicy.maxInputTokens ||
+              measurement.outputTokens > pricingPolicy.maxOutputTokens
+            ? "usage_limit_mismatch"
+            : "success",
+      );
+    }
+    if (measurement?.category === "usage_limit_mismatch") return unavailable();
     return Response.json({
       answers: answers.map(({ text, links }) => ({ text, links })),
     });
@@ -161,5 +217,6 @@ export async function POST(request: Request) {
       } catch {
         console.error("AI Assistant lease release unavailable.");
       }
+    reportMeasurement(measurement);
   }
 }

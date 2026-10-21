@@ -27,6 +27,9 @@ undo already-started provider processing or charges.
 Server-only, never NEXT_PUBLIC:
 
 - STAGING_AI_ASSISTANT_ENABLED=true only in branch-specific protected Preview.
+- STAGING_AI_TEST_RUN_ID: approved lowercase UUID v4; an enabled Preview requires
+  a permanent matching Redis binding and 0..20 admission counter. See
+  ai-assistant-staging-run.md for isolated provisioning and measurement controls.
 - AI_ASSISTANT_ENABLED remains absent/false; production uses its separate flag.
 - OPENAI_API_KEY: dedicated restricted staging project key, securely configured.
 - OPENAI_MODEL=gpt-4.1-mini-2025-04-14 (verify availability/schema support first).
@@ -47,7 +50,7 @@ Both enable flags are absent/false by default. Preview additionally requires the
 exact feature/monetcore-stage1-websites branch. Production cannot be enabled by
 the staging flag. Missing controls or configuration fail closed.
 
-Redis permissions: EVAL, GET, INCRBY, EXPIRE, ZREMRANGEBYSCORE, ZCARD, ZADD, ZREM.
+Redis permissions: EVAL, GET, PTTL, INCRBY, EXPIRE, ZREMRANGEBYSCORE, ZCARD, ZADD, ZREM.
 Use an isolated staging namespace/database. Counters are namespaced by VERCEL_ENV;
 all approved Preview deployments share the Preview allowance intentionally.
 Emergency key `monetcore:assistant:v1:preview:control` must equal `enabled`.
@@ -60,6 +63,8 @@ One Redis Lua admission atomically checks emergency control and reserves:
 
 - visitor: 5/minute, 30/day; address HMAC, Vercel-overwritten address header required;
 - global: 100/day, 1,000/month, UTC fixed windows;
+- staging test run: hard maximum 20 total admissions in permanent Redis state;
+  no automatic reset, initialization or expiry, including across deployments;
 - reserved cost: $1/day and $10/month;
 - global concurrency: three 60-second leases; explicit release after completion.
   A second emergency GET runs immediately before provider fetch. Redis failure at
@@ -92,6 +97,10 @@ retention/training settings, processing regions and transfer basis before activa
 Approve lawful basis, disclosure, emergency operator and retention for security
 metadata. Provider output/errors are not exposed or stored as transcripts.
 No email, database or Calendar receives chat text. Existing demos stay local.
+Staging-only sanitized console measurements include fixed synthetic case/topic IDs,
+provider token counts, estimated generation cost and safe error categories; no
+questions or transcripts. Reporting failures cannot refund or reset admission.
+See ai-assistant-staging-run.md; log handling requires separate approval.
 
 ## Controlled test / rollback (not yet authorized)
 
