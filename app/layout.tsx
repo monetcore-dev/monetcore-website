@@ -5,7 +5,11 @@ import "./globals.css";
 import "./offering.css";
 import SiteFooter from "./components/SiteFooter";
 import PreviewNotice from "./components/PreviewNotice";
-import { isReviewPreview, isStagingContactEnabled } from "./lib/previewSafety";
+import {
+  isReviewPreview,
+  isStagingContactEnabled,
+  isStagingBookingEnabled,
+} from "./lib/previewSafety";
 
 const inter = localFont({
   src: "./fonts/inter-latin-variable.woff2",
@@ -161,7 +165,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <SiteFooter />
         {isReviewPreview() ? (
-          <PreviewNotice contactTesting={isStagingContactEnabled()} />
+          <PreviewNotice
+            contactTesting={isStagingContactEnabled()}
+            bookingTesting={isStagingBookingEnabled()}
+          />
         ) : (
           <Analytics />
         )}

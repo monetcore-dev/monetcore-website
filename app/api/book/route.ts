@@ -5,7 +5,12 @@ import {
   isValidDate,
   escapeCalendarText,
 } from "@/app/lib/submissionSafety";
-import { isReviewPreview, previewFormMessage } from "@/app/lib/previewSafety";
+import { isStagingBookingEnabled } from "@/app/lib/previewSafety";
+import {
+  bookingAccessError,
+  stagingBookingRecipients,
+} from "@/app/lib/stagingBooking";
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
@@ -117,6 +122,21 @@ https://monetcore.dev/book
   `.trim();
 }
 
+function smtpAccepted(
+  result: { accepted?: unknown; rejected?: unknown },
+  recipient: string,
+) {
+  return (
+    Array.isArray(result.accepted) &&
+    result.accepted.some(
+      (address) =>
+        typeof address === "string" &&
+        address.toLowerCase() === recipient.toLowerCase(),
+    ) &&
+    (!Array.isArray(result.rejected) || result.rejected.length === 0)
+  );
+}
+
 /** Tracking failures must not erase a reservation or repeat accepted side effects. */
 async function updateBookingTracking(
   bookingId: string,
@@ -133,28 +153,50 @@ async function updateBookingTracking(
         operation,
         failure: "database_rejected",
       });
+      return false;
     }
+    return true;
   } catch {
     console.error("Booking tracking update failed.", {
       operation,
       failure: "request_failed",
     });
+    return false;
   }
 }
 
 export async function POST(request: Request) {
-  if (isReviewPreview()) {
-    return NextResponse.json({ error: previewFormMessage }, { status: 403 });
-  }
+  const staging = isStagingBookingEnabled();
+  const blocked = bookingAccessError();
+  if (blocked) return blocked;
+  let reservationAttempted = false;
+  const respond = (body: Record<string, unknown>, init?: ResponseInit) =>
+    NextResponse.json(
+      staging && "error" in body && !("outcome" in body)
+        ? { ...body, outcome: reservationAttempted ? "unknown" : "not_created" }
+        : body,
+      init,
+    );
   try {
-    const limited = await enforceRateLimit(request, "booking");
+    const limited = await enforceRateLimit(
+      request,
+      staging ? "staging:booking" : "booking",
+      10,
+      600_000,
+      staging,
+    );
     if (limited) return limited;
     const body = await readSubmission(request);
     if (body instanceof Response) return body;
     if (body.website && typeof body.website === "string")
-      return NextResponse.json({ success: true });
+      return staging
+        ? respond(
+            { error: "Unable to accept this submission." },
+            { status: 400 },
+          )
+        : respond({ success: true });
     const invalid = validateSubmission(body, "booking");
-    if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
+    if (invalid) return respond({ error: invalid }, { status: 400 });
 
     const consultationType = cleanText(body.consultationType, 150);
 
@@ -171,12 +213,12 @@ export async function POST(request: Request) {
 
     // Honeypot
     if (website) {
-      return NextResponse.json({ success: true }, { status: 200 });
+      return respond({ success: true }, { status: 200 });
     }
 
     // Reject unrealistically fast submissions
     if (Number.isFinite(startedAt) && Date.now() - startedAt < 1500) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please wait a moment before submitting.",
         },
@@ -185,7 +227,7 @@ export async function POST(request: Request) {
     }
 
     if (!consultationType) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please select a consultation type.",
         },
@@ -194,7 +236,7 @@ export async function POST(request: Request) {
     }
 
     if (!name) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please enter your name.",
         },
@@ -203,7 +245,7 @@ export async function POST(request: Request) {
     }
 
     if (!isValidEmail(email)) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please enter a valid email address.",
         },
@@ -212,7 +254,7 @@ export async function POST(request: Request) {
     }
 
     if (!isValidDate(date)) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please select a valid booking date.",
         },
@@ -221,7 +263,7 @@ export async function POST(request: Request) {
     }
 
     if (!isValidTime(time) || !allowedTimes.has(time)) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Please select a valid consultation time.",
         },
@@ -237,7 +279,7 @@ export async function POST(request: Request) {
     }).format(new Date());
 
     if (date < todayString) {
-      return NextResponse.json(
+      return respond(
         {
           error: "You cannot book a date in the past.",
         },
@@ -254,7 +296,7 @@ export async function POST(request: Request) {
       }).format(new Date());
 
       if (time <= currentTime) {
-        return NextResponse.json(
+        return respond(
           {
             error:
               "That consultation time has already passed. Please choose a later time.",
@@ -269,7 +311,7 @@ export async function POST(request: Request) {
     const day = bookingDate.getUTCDay();
 
     if (day === 0 || day === 6) {
-      return NextResponse.json(
+      return respond(
         {
           error: "Consultations are currently available Monday to Friday.",
         },
@@ -277,8 +319,19 @@ export async function POST(request: Request) {
       );
     }
 
+    if (staging && !stagingBookingRecipients().includes(email)) {
+      return respond(
+        {
+          error: "Use an approved staging test email address.",
+          outcome: "not_created",
+        },
+        { status: 403 },
+      );
+    }
+
     // Save booking first.
     // Supabase remains the source of truth.
+    reservationAttempted = true;
     const { data: booking, error: bookingError } = await getSupabaseAdmin()
       .from("bookings")
       .insert({
@@ -299,10 +352,11 @@ export async function POST(request: Request) {
 
     if (bookingError) {
       if (bookingError.code === "23505") {
-        return NextResponse.json(
+        return respond(
           {
             error:
               "The selected time is no longer available. Please choose another available slot.",
+            ...(staging ? { outcome: "not_created" } : {}),
           },
           { status: 409 },
         );
@@ -310,7 +364,7 @@ export async function POST(request: Request) {
 
       console.error("Supabase booking error:");
 
-      return NextResponse.json(
+      return respond(
         {
           error: "Unable to create booking.",
         },
@@ -321,6 +375,7 @@ export async function POST(request: Request) {
     // Booking is now safely stored.
     // Calendar or email failures must not remove the booking.
 
+    let trackingComplete = true;
     let calendarEventCreated = false;
     let calendarEventId: string | null = null;
 
@@ -338,7 +393,14 @@ export async function POST(request: Request) {
         calendarId: monetcoreCalendarId,
         sendUpdates: "none",
         requestBody: {
-          summary: `Monetcore Consultation — ${name}`,
+          ...(staging
+            ? {
+                id: createHash("sha256")
+                  .update(`monetcore-booking:${booking.id}`)
+                  .digest("hex"),
+              }
+            : {}),
+          summary: `${staging ? "[STAGING TEST] " : ""}Monetcore Consultation — ${name}`,
           description: buildCalendarDescription({
             consultationType,
             name,
@@ -366,15 +428,16 @@ export async function POST(request: Request) {
       if (calendarEventId) {
         calendarEventCreated = true;
 
-        await updateBookingTracking(
-          booking.id,
-          {
-            google_calendar_event_id: calendarEventId,
-            google_calendar_event_created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          "calendar",
-        );
+        trackingComplete =
+          (await updateBookingTracking(
+            booking.id,
+            {
+              google_calendar_event_id: calendarEventId,
+              google_calendar_event_created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            "calendar",
+          )) && trackingComplete;
       } else {
         console.error("Google Calendar event created without an event ID.");
       }
@@ -406,17 +469,19 @@ export async function POST(request: Request) {
 
         // Customer confirmation
         try {
-          await transporter.sendMail({
+          const customerDelivery = await transporter.sendMail({
             from: `"Monetcore System Solutions" <${process.env.MONETCORE_EMAIL}>`,
             to: email,
             replyTo: process.env.MONETCORE_EMAIL,
-            subject: "Your Monetcore Consultation Is Confirmed",
+            subject: staging
+              ? "[STAGING TEST] Your reservation was recorded"
+              : "Your Monetcore Consultation Is Confirmed",
             text: `
 Hello ${name},
 
 Thank you for booking a consultation with Monetcore System Solutions.
 
-Your consultation is confirmed.
+${staging ? "Your staging reservation is recorded. Final confirmation depends on completion of Calendar and notification processing; contact the test administrator if any step is incomplete. Do not resubmit this reservation." : "Your consultation is confirmed."}
 
 Consultation:
 ${consultationType}
@@ -451,29 +516,33 @@ https://monetcore.dev
             `.trim(),
           });
 
+          if (staging && !smtpAccepted(customerDelivery, email))
+            throw new Error("SMTP acceptance incomplete");
           customerEmailSent = true;
 
-          await updateBookingTracking(
-            booking.id,
-            {
-              confirmation_sent_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            "customer_notification",
-          );
+          trackingComplete =
+            (await updateBookingTracking(
+              booking.id,
+              {
+                confirmation_sent_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              "customer_notification",
+            )) && trackingComplete;
         } catch {
           console.error("Customer confirmation email error:");
         }
 
         // Monetcore notification
         try {
-          await transporter.sendMail({
+          const adminDelivery = await transporter.sendMail({
             from: `"Monetcore Booking System" <${process.env.MONETCORE_EMAIL}>`,
-            to: process.env.MONETCORE_EMAIL,
+            to: staging ? "hello@monetcore.dev" : process.env.MONETCORE_EMAIL,
             replyTo: email,
-            subject: `New Consultation Booking — ${name}`,
+            subject: `${staging ? "[STAGING TEST] " : ""}New Consultation Booking — ${name}`,
             text: `
 New consultation booking from monetcore.dev
+${staging ? `STAGING reservation. Calendar accepted: ${calendarEventCreated}; customer SMTP accepted: ${customerEmailSent}. Tracking/reconciliation must be reviewed before final confirmation.` : ""}
 
 Consultation:
 ${consultationType}
@@ -510,16 +579,19 @@ ${booking.id}
             `.trim(),
           });
 
+          if (staging && !smtpAccepted(adminDelivery, "hello@monetcore.dev"))
+            throw new Error("SMTP acceptance incomplete");
           adminEmailSent = true;
 
-          await updateBookingTracking(
-            booking.id,
-            {
-              admin_notification_sent_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            "admin_notification",
-          );
+          trackingComplete =
+            (await updateBookingTracking(
+              booking.id,
+              {
+                admin_notification_sent_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              "admin_notification",
+            )) && trackingComplete;
         } catch {
           console.error("Admin booking notification error:");
         }
@@ -530,9 +602,22 @@ ${booking.id}
       console.error("Missing Monetcore booking email environment variables.");
     }
 
-    return NextResponse.json(
+    const complete =
+      calendarEventCreated &&
+      customerEmailSent &&
+      adminEmailSent &&
+      trackingComplete;
+    return respond(
       {
-        success: true,
+        success: staging ? complete : true,
+        ...(staging
+          ? {
+              outcome: complete ? "confirmed" : "reserved_incomplete",
+              message: complete
+                ? "Reservation and required operations accepted."
+                : "Your reservation was saved, but confirmation is incomplete. Do not resubmit. Contact hello@monetcore.dev for reconciliation.",
+            }
+          : {}),
         booking: {
           id: booking.id,
           bookingDate: booking.booking_date,
@@ -547,12 +632,12 @@ ${booking.id}
           adminNotificationSent: adminEmailSent,
         },
       },
-      { status: 201 },
+      { status: staging && !complete ? 202 : 201 },
     );
   } catch {
     console.error("Booking API error:");
 
-    return NextResponse.json(
+    return respond(
       {
         error: "Unable to process booking.",
       },

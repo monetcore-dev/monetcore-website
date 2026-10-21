@@ -59,11 +59,18 @@ export async function enforceRateLimit(
   scope: string,
   limit = 10,
   windowMs = 600_000,
+  required = false,
 ) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   const secret = process.env.RATE_LIMIT_KEY_SECRET;
-  if (!url && !token && !secret && process.env.RATE_LIMIT_REQUIRED !== "true")
+  if (
+    !required &&
+    !url &&
+    !token &&
+    !secret &&
+    process.env.RATE_LIMIT_REQUIRED !== "true"
+  )
     return rateLimit(request, scope, limit, windowMs);
   try {
     if (!url || !token || !secret || secret.length < 32)

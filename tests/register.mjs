@@ -11,6 +11,11 @@ registerHooks({
       ].includes(specifier)
     )
       return { url: mock, shortCircuit: true };
+    if (specifier === "server-only")
+      return {
+        url: new URL("./server-only.mjs", import.meta.url).href,
+        shortCircuit: true,
+      };
     if (specifier === "next/server") return next("next/server.js", context);
     if (specifier.startsWith("@/"))
       return next(new URL(specifier.slice(2) + ".ts", root).href, context);

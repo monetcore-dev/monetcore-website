@@ -22,7 +22,8 @@ import {
 
 export default function BookingForm({
   initialInterest,
-}: { initialInterest?: EnquiryInterest } = {}) {
+  stagingTesting = false,
+}: { initialInterest?: EnquiryInterest; stagingTesting?: boolean } = {}) {
   const source = initialInterest?.id ?? "";
   const [editedEnquiry, setEditedEnquiry] = useState({
     source,
@@ -41,6 +42,7 @@ export default function BookingForm({
   const availabilityRequest = useRef(0);
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
+  const [reservationNotice, setReservationNotice] = useState("");
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
@@ -149,7 +151,7 @@ export default function BookingForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current) return;
+    if (submitting.current || reservationNotice) return;
 
     if (!selectedDate || !selectedTime) {
       setStatus("error");
@@ -189,6 +191,7 @@ export default function BookingForm({
       startedAt: formData.get("startedAt"),
     };
 
+    let uncertain = stagingTesting;
     try {
       const response = await fetch("/api/book", {
         method: "POST",
@@ -199,6 +202,21 @@ export default function BookingForm({
       });
 
       const result = await response.json();
+      uncertain =
+        (stagingTesting || result.outcome === "unknown") &&
+        response.status >= 500 &&
+        result.outcome !== "not_created";
+      if (
+        response.status === 202 &&
+        result.outcome === "reserved_incomplete" &&
+        result.booking?.id
+      ) {
+        setStatus("error");
+        setReservationNotice(
+          "Your reservation was saved, but confirmation is incomplete. Do not resubmit or choose another slot. Contact hello@monetcore.dev for reconciliation.",
+        );
+        return;
+      }
 
       if (!response.ok || result.success !== true) {
         if (response.status === 409) {
@@ -239,7 +257,11 @@ export default function BookingForm({
       console.error("Booking submission failed.");
 
       setStatus("error");
-
+      if (uncertain) {
+        setReservationNotice(
+          "The booking outcome could not be verified. Do not resubmit or choose another slot. Contact hello@monetcore.dev to check the reservation first.",
+        );
+      }
       setFeedback(
         error instanceof Error
           ? error.message
@@ -529,6 +551,7 @@ export default function BookingForm({
           type="submit"
           disabled={
             status === "sending" ||
+            Boolean(reservationNotice) ||
             availabilityStatus === "loading" ||
             !selectedDate ||
             !selectedTime
@@ -539,6 +562,14 @@ export default function BookingForm({
         </button>
       </div>
 
+      {reservationNotice && (
+        <p
+          role="alert"
+          className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+        >
+          {reservationNotice}
+        </p>
+      )}
       {feedback && (
         <p
           role={status === "error" ? "alert" : "status"}

@@ -1,10 +1,9 @@
 import "server-only";
-import { isReviewPreview } from "./previewSafety";
+import { assertBookingIntegrationsAllowed } from "./stagingBooking";
 import { createClient } from "@supabase/supabase-js";
 
 export function getSupabaseAdmin() {
-  if (isReviewPreview())
-    throw new Error("Live integrations are disabled in review previews.");
+  assertBookingIntegrationsAllowed();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

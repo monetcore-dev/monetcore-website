@@ -7,6 +7,7 @@ export const metadata = pageMetadata(
 );
 
 import BookingForm from "../BookingForm";
+import { isStagingBookingEnabled } from "../lib/previewSafety";
 import SiteHeader from "../components/SiteHeader";
 
 export default async function BookPage({
@@ -51,7 +52,10 @@ export default async function BookPage({
               </div>
             </div>
 
-            <BookingForm initialInterest={initialInterest} />
+            <BookingForm
+              initialInterest={initialInterest}
+              stagingTesting={isStagingBookingEnabled()}
+            />
           </div>
         </div>
       </section>

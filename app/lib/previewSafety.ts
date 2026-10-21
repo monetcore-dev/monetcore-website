@@ -14,3 +14,12 @@ export function isStagingContactEnabled() {
     process.env.VERCEL_GIT_COMMIT_REF === "feature/monetcore-stage1-websites"
   );
 }
+
+/** Explicit opt-in on exactly one non-production branch. */
+export function isStagingBookingEnabled() {
+  return (
+    isReviewPreview() &&
+    process.env.STAGING_BOOKING_ENABLED === "true" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "feature/monetcore-stage1-websites"
+  );
+}
