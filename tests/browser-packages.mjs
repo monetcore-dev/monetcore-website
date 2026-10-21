@@ -20,21 +20,21 @@ import assert from "node:assert/strict";
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   const packages = [
-    ["starter", "Smart Starter", "Starting from ₦99,000", "₦45,000"],
-    ["business", "Smart Business", "Starting from ₦179,000", "₦60,000"],
+    ["starter", "Smart Starter", "₦99,000", "₦45,000"],
+    ["business", "Smart Business", "₦179,000", "₦60,000"],
     ["pro", "Smart Business Pro", "Starting from ₦299,000", "From ₦90,000"],
   ];
   await p.goto(base + "/website-packages");
   assert.equal(await p.locator("footer").count(), 1);
   assert.equal(await p.getByRole("table").count(), 1);
   assert.equal(await p.getByRole("columnheader").count(), 4);
-  assert.doesNotMatch(await p.locator("body").innerText(), /\$\d|USD/);
+  assert.doesNotMatch(await p.locator("body").innerText(), /\$\d|USD|proposed|approval pending|subject to approval/i);
   for (const [id, name, price, renewal] of packages) {
     const card = p.locator("#package-" + id);
     const text = await card.innerText();
     assert.ok(text.includes(price), name + " price");
     assert.ok(
-      text.includes("Proposed annual renewal: " + renewal),
+      text.includes("Annual renewal: " + renewal),
       name + " renewal",
     );
     const u = new URL(
@@ -48,7 +48,7 @@ import assert from "node:assert/strict";
     assert.equal(u.hostname, "wa.me");
     assert.equal(u.pathname, "/2347065880558");
     const msg = u.searchParams.get("text");
-    for (const s of [name, price, renewal, "proposed"])
+    for (const s of [name, price, renewal, "Annual renewal:"])
       assert.ok(msg.includes(s), s + " WhatsApp");
     for (const label of ["Request a Quotation: " + name]) {
       await card.getByRole("link", { name: label, exact: true }).click();

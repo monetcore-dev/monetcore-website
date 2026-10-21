@@ -42,7 +42,7 @@ const sections = [
     id: "ai-assistant",
     title: "Monetcore AI Assistant",
     paragraphs: [
-      "The Monetcore AI Assistant is prepared with live inference disabled by default. When separately activated, your question and a limited recent history of your questions are sent to OpenAI to classify the information you need. The website then selects approved Monetcore answers and enquiry links; it does not use the assistant to send emails, create appointments, change business records or take external actions.",
+      "The Monetcore AI Assistant is prepared with live inference disabled by default. Initial live testing is restricted to authenticated owner access and a fixed test allowance; it is not public AI availability. When separately activated, your question and a limited recent history of your questions are sent to OpenAI to classify the information you need. The website then selects approved Monetcore answers and enquiry links; it does not use the assistant to send emails, create appointments, change business records or take external actions.",
       "Conversation history is held in page memory, not stored as a transcript in the application database or automatically emailed to our team. Leaving or reloading the page clears that local history. Please do not submit personal, sensitive or confidential information. Clearing the page does not delete information already processed by a provider.",
       "When activated, OpenAI processes submitted text and associated technical information. Requests ask the provider not to store Responses API response objects; this is not a guarantee of zero retention. Provider security logs, retention, processing locations and applicable terms require verification before activation. We do not claim verified international-transfer safeguards or completed legal compliance for this proposed processing.",
       "Expiring address-derived identifiers, request counters, reserved usage allowances and short-lived concurrency identifiers are processed in Redis for abuse and cost control. Chat text is not written into those counters. Application operational logs exclude chat text and API credentials. Contact hello@monetcore.dev or use our enquiry form if you prefer human assistance.",
@@ -72,14 +72,14 @@ const sections = [
     paragraphs: [
       "General enquiries that do not become projects are retained for 12 months after the last communication. Consultation booking records are retained for 12 months after the appointment.",
       "Longer retention is permitted only where justified by applicable legal, contractual or financial requirements. Information connected to an ongoing project may need to be retained for the relevant engagement and applicable obligations.",
-      "These retention rules require manual review and deletion across relevant email, database and Calendar records; the website does not implement an automated deletion schedule for them. Copies in provider backups may follow separate retention cycles. You can contact us about the information and retention arrangements relevant to you.",
+      "Monetcore System Solutions is responsible for handling privacy requests and carrying out manual retention reviews and deletion across relevant email, database and Calendar records. The website does not implement an automated deletion schedule for these records. Copies in provider backups may follow separate retention cycles. You can contact us about the information and retention arrangements relevant to you.",
     ],
   },
   {
     id: "international",
     title: "International processing",
     paragraphs: [
-      "Our service providers may process information outside Nigeria. Applicable locations depend on the provider, account configuration and service involved. International transfers are subject to the requirements of the Nigeria Data Protection Act 2023.",
+      "Our service providers may process information outside Nigeria. Applicable locations depend on the provider, account configuration and service involved. Provider data-processing and international-transfer arrangements remain under review and have not been confirmed as approved or completed. International transfers are subject to the requirements of the Nigeria Data Protection Act 2023.",
       "Please contact us for information about processing locations and the arrangements relevant to your enquiry or engagement.",
     ],
   },

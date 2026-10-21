@@ -32,9 +32,11 @@ const env = {
   OPENAI_API_KEY: "synthetic-test-key",
   OPENAI_MODEL: pricingPolicy.model,
   AI_PRICING_APPROVAL: pricingApprovalId,
-  UPSTASH_REDIS_REST_URL: "https://synthetic.upstash.io",
-  UPSTASH_REDIS_REST_TOKEN: "synthetic-test-token",
-  RATE_LIMIT_KEY_SECRET: "synthetic-only-test-secret-32-characters",
+  AI_UPSTASH_REDIS_REST_URL: "https://synthetic.upstash.io",
+  AI_EXPECTED_REDIS_HOST: "synthetic.upstash.io",
+  AI_REDIS_ISOLATED: "true",
+  AI_UPSTASH_REDIS_REST_TOKEN: "synthetic-test-token",
+  AI_RATE_LIMIT_KEY_SECRET: "synthetic-only-test-secret-32-characters",
   AI_MAX_CALL_COST_MICRO_USD: "10000",
 };
 const provider = (topics = ["package-starter"]) => ({
@@ -104,8 +106,8 @@ test("assistant mocked safety and outcomes", async (t) => {
       const r = await POST(request());
       assert.equal(r.status, 200);
       const data = await r.json();
-      assert.match(data.answers[0].text, /Starting from ₦99,000/);
-      assert.match(data.answers[0].text, /proposed/i);
+      assert.match(data.answers[0].text, /Smart Starter: ₦99,000/);
+      assert.doesNotMatch(data.answers[0].text, /proposed|approval pending/i);
       assert.doesNotMatch(JSON.stringify(data), /synthetic-test-key/);
       const body = JSON.parse(
         calls.find((c) => c[0].endsWith("/responses"))[1].body,
@@ -383,7 +385,7 @@ test("atomic admission contract and reservation accounting with mocked Redis", a
     visitorMinute = 0,
     visitorDay = 0;
   global.fetch = async (url, options) => {
-    assert.equal(url, env.UPSTASH_REDIS_REST_URL);
+    assert.equal(url, env.AI_UPSTASH_REDIS_REST_URL);
     const command = JSON.parse(options.body);
     if (command[0] === "ZREM") {
       active--;

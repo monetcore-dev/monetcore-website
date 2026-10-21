@@ -220,14 +220,14 @@ export default function ContactForm({
               <option value="">Select a package</option>
               {websitePackages.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} — {packagePrice(item)} (proposed)
+                  {item.name} — {packagePrice(item)}
                 </option>
               ))}
             </select>
           </label>
           <p aria-live="polite" className="mt-3 text-sm text-slate-600">
             {getWebsitePackage(selectedPackageId)
-              ? `${getWebsitePackage(selectedPackageId)?.name} selected. Final price and scope require business approval.`
+              ? `${getWebsitePackage(selectedPackageId)?.name} selected. Confirm your requirements and final scope in a written quotation.`
               : "Choose the package you would like us to quote."}
           </p>
         </div>

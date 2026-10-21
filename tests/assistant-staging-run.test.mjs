@@ -22,9 +22,11 @@ const env = {
   OPENAI_API_KEY: "synthetic-only-key",
   OPENAI_MODEL: pricingPolicy.model,
   AI_PRICING_APPROVAL: pricingApprovalId,
-  UPSTASH_REDIS_REST_URL: "https://test-only.upstash.io",
-  UPSTASH_REDIS_REST_TOKEN: "synthetic-only-redis-token",
-  RATE_LIMIT_KEY_SECRET: "synthetic-only-secret-over-thirty-two-characters",
+  AI_UPSTASH_REDIS_REST_URL: "https://test-only.upstash.io",
+  AI_EXPECTED_REDIS_HOST: "test-only.upstash.io",
+  AI_REDIS_ISOLATED: "true",
+  AI_UPSTASH_REDIS_REST_TOKEN: "synthetic-only-redis-token",
+  AI_RATE_LIMIT_KEY_SECRET: "synthetic-only-secret-over-thirty-two-characters",
   AI_MAX_CALL_COST_MICRO_USD: "10000",
 };
 function request(index = 1, id = "case-01") {
@@ -75,7 +77,7 @@ class MockServices {
   }
   async fetch(url, options) {
     this.calls.push(url);
-    if (url === env.UPSTASH_REDIS_REST_URL) {
+    if (url === env.AI_UPSTASH_REDIS_REST_URL) {
       if (this.redisOffline) throw new Error("Synthetic Redis unavailable");
       const command = JSON.parse(options.body);
       this.commands.push(command);

@@ -9,7 +9,9 @@ An enabled assistant Preview now additionally requires STAGING_AI_TEST_RUN_ID,
 a lowercase UUID v4 chosen for ONE explicitly approved test run. Both assistant
 activation flags stay absent/false. Existing model/pricing approval, credentials,
 branch guard, per-visitor limits, daily/monthly ceilings and concurrency remain.
-Production assistant behaviour does not use the staging run or measurement code.
+Production now uses this same permanent run and sanitized measurements ONLY for
+an authenticated owner test. Public production inference has no enable path.
+See ai-assistant-owner-test.md for the current production-domain requirements.
 
 An operator must separately be authorized to provision these two keys in an
 isolated, durable staging Redis instance, with NO expiry:
@@ -44,7 +46,7 @@ admission and cost reservation. No refund/decrement exists. Releasing a request
 only removes its concurrency lease. Existing leases still expire after crashes.
 
 Permanent run keys are never given TTLs, reset or recreated by the application.
-The same run is shared across Preview instances/deployments and survives UTC
+The same run is shared across Preview AND production-owner instances/deployments and survives UTC
 minute/day/month changes. Changing only the configured UUID cannot start a fresh
 allowance because the permanent binding will mismatch. At most 20 admissions
 therefore implies at most 20 inference requests; count-only failures reduce the
@@ -63,7 +65,7 @@ or expiry mechanism exists. Non-personal run metadata stays until approved clean
 
 ## Synthetic case IDs and measurements
 
-The Preview assistant page includes a selector for fixed `case-01` through
+The Preview and production-owner assistant pages include a selector for fixed `case-01` through
 `case-20` IDs. It sends `x-monetcore-test-case`. Enabled staging rejects missing or
 unknown IDs before admission and never logs raw header text. IDs are labels, not
 idempotency tokens: repeating a case consumes another admission. The operator's
@@ -120,3 +122,12 @@ page errors; integration responses were mocks, not live OpenAI/Redis.
 Preview emulation used only isolated child-process test settings with inference
 forced off, not saved environment configuration. No Vercel settings were changed.
 Real device testing and live Lua/provider/billing verification were not performed.
+
+## Current configuration separation
+
+Assistant Redis settings now use AI_UPSTASH_REDIS_REST_URL,
+AI_UPSTASH_REDIS_REST_TOKEN and AI_RATE_LIMIT_KEY_SECRET exclusively, with
+AI_EXPECTED_REDIS_HOST and AI_REDIS_ISOLATED=true. There is no fallback to the
+shared booking/contact Redis variables. See ai-assistant-owner-test.md. Existing
+local test results above are historical; they do not establish managed-provider
+readiness or authorize deployment/activation.

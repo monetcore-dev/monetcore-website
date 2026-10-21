@@ -116,9 +116,9 @@ Budget: ${budget || "Not specified"}
 ${
   selectedPackage
     ? `Website Package: ${selectedPackage.name}
-Proposed Price: ${packagePrice(selectedPackage)}
-Proposed Annual Renewal: ${packageRenewal(selectedPackage)} after 12 months
-Final business approval and quotation required. Optional integrations and third-party usage separately quoted.
+Package Price: ${packagePrice(selectedPackage)}
+Annual Renewal: ${packageRenewal(selectedPackage)} after 12 months
+Final scope is confirmed in a written quotation. Optional integrations and third-party usage separately quoted.
 Consent to quotation response: yes`
     : ""
 }

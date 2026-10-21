@@ -61,7 +61,7 @@ const menus = [
       })),
       {
         title: "Smart Website Packages",
-        description: "Proposed Naira packages and inclusions.",
+        description: "Website packages, Naira pricing and renewal terms.",
         href: "/website-packages",
         icon: Globe2,
       },

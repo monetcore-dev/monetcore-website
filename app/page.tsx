@@ -94,7 +94,7 @@ const faqs = [
   ],
   [
     "Do you also offer business websites?",
-    `Yes. Smart Website Solutions offers ${starter.name}: ${packagePrice(starter)} (proposed one-time package setup). Standard first-year domain and hosting are included. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Proposed renewal amounts and all prices require final business approval; see the website packages page for full conditions.`,
+    `Yes. Smart Website Solutions offers ${starter.name}: ${packagePrice(starter)} (one-time package setup). Standard first-year domain and hosting are included. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Confirm your requirements and written quotation; see the website packages page for renewal amounts and full conditions.`,
   ],
   [
     "How do we start a project?",
@@ -366,7 +366,7 @@ export default function Home() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-600">
-                Proposed one-time package setup
+                One-time package setup
               </p>
               <p className="mt-2 text-4xl font-bold tracking-tight">
                 {packagePrice(starter)}
@@ -376,7 +376,7 @@ export default function Home() {
                 <ArrowUpRight size={17} aria-hidden="true" />
               </Link>
               <p className="mt-3 text-xs leading-6 text-slate-600">
-                Pricing and scope require final business approval. Annual
+                Final quotations depend on your requirements. Annual
                 renewals apply after 12 months. {renewalTerms.included} Full
                 scope and exclusions are on the packages page.
               </p>

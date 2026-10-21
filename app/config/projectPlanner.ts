@@ -39,7 +39,7 @@ export const solutionOptions = [
     features: [
       "Mobile-friendly business websites",
       "Enquiry capture and click-to-chat",
-      "Proposed packages with clear renewal terms",
+      "Website packages with clear renewal terms",
     ],
     accent: "#714397",
     tint: "#f6effb",

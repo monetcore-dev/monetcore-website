@@ -208,9 +208,8 @@ export default function OfferingOverview({
                 <article className="offering-card">
                   <h3>Smart Website Solutions</h3>
                   <p>
-                    An existing packages and quotation pathway. Prices and
-                    renewals remain proposed and require final business
-                    approval.
+                    Compare website packages, first-year inclusions and annual
+                    renewal terms, then request a quotation for your requirements.
                   </p>
                   <Link className="offering-text-link" href="/website-packages">
                     Compare website packages ↗

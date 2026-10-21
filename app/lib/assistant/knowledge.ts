@@ -29,7 +29,7 @@ export const knowledge: Answer[] = [
   ...websitePackages.map((p) => ({
     id: `package-${p.id}`,
     label: p.name,
-    text: `${p.name}: ${packagePrice(p)}. Proposed one-time package setup; proposed annual renewal: ${packageRenewal(p)} after 12 months. ${p.features.join("; ")}. ${renewalTerms.included} ${renewalTerms.excluded} ${pricingConditions[0]} Third-party API, AI and messaging fees are excluded unless agreed in writing; no unlimited AI usage.`,
+    text: `${p.name}: ${packagePrice(p)}. One-time package setup; annual renewal: ${packageRenewal(p)} after 12 months. ${p.features.join("; ")}. ${renewalTerms.included} ${renewalTerms.excluded} ${pricingConditions[0]} Third-party API, AI and messaging fees are excluded unless agreed in writing; no unlimited AI usage.`,
     links: [
       { label: "Compare packages", href: "/website-packages" },
       {

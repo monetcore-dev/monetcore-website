@@ -1,3 +1,4 @@
+import { ownerTestAccess } from "../../lib/assistant/access";
 import { configuration, reserve } from "../../lib/assistant/controls";
 import { assemble } from "../../lib/assistant/knowledge";
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ const unavailable = () =>
     { status: 503 },
   );
 export async function POST(request: Request) {
+  const denied = ownerTestAccess(request);
+  if (denied) return denied;
   const measurement = stagingMeasurement(request);
   function category(value: SafeCategory) {
     if (measurement) measurement.category = value;

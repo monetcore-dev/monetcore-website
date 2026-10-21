@@ -196,9 +196,9 @@ export default function ServiceDetail({
                 <p className="offering-eyebrow">Smart Website Solutions</p>
                 <h2>Start with a clear package.</h2>
                 <p>
-                  Smart Starter: {packagePrice(websitePackages[0])} (proposed
-                  one-time package setup). First-year standard .com domain,
-                  hosting and SSL are included for 12 months. Proposed renewal:{" "}
+                  Smart Starter: {packagePrice(websitePackages[0])} (one-time
+                  package setup). First-year standard .com domain,
+                  hosting and SSL are included for 12 months. Annual renewal:{" "}
                   {packageRenewal(websitePackages[0])} after 12 months.
                 </p>
                 <p>{renewalTerms.included}</p>
@@ -206,8 +206,8 @@ export default function ServiceDetail({
                   {renewalTerms.excluded} {renewalTerms.limits}
                 </p>
                 <p>
-                  Prices and renewals require final business approval. Premium
-                  domains, optional automation and third-party usage are
+                  Final quotations depend on your requirements. Premium domains,
+                  optional automation and third-party usage are
                   separately quoted; no unlimited AI usage is promised.
                 </p>
               </div>

@@ -16,7 +16,7 @@ https://api.openai.com/v1/responses (inference). No retries or arbitrary URLs.
 OpenAI selects one/two approved topic IDs, not answer text. The server rejects
 invalid output and renders only versioned knowledge templates and trusted links.
 No tools, browsing, email, Calendar, Supabase or workflow imports are used.
-Prices and renewals import existing configuration and remain proposed.
+Prices and renewals import the owner-approved website configuration; custom scope still requires a written quotation.
 No prompt guarantee: misclassification remains possible, but generated business
 claims, prices and links never reach the visitor. Out-of-scope answers use a
 human-contact template. Clearing history aborts the browser request; it cannot
@@ -36,7 +36,8 @@ Server-only, never NEXT_PUBLIC:
 - AI_PRICING_APPROVAL: exact fingerprint exported by pricing.ts, only AFTER
   current official pricing, counting fees and token-limit assumptions are approved.
   Missing/stale approval fails closed. No value was configured by this work.
-- UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN / RATE_LIMIT_KEY_SECRET
+- AI_UPSTASH_REDIS_REST_URL / AI_UPSTASH_REDIS_REST_TOKEN / AI_RATE_LIMIT_KEY_SECRET
+- AI_EXPECTED_REDIS_HOST / AI_REDIS_ISOLATED=true (dedicated assistant database only)
   (secret >=32 characters). Activation also requires VERCEL=1 and platform-set
   VERCEL_ENV and VERCEL_GIT_COMMIT_REF. No local or unknown environment inference.
 - AI_MAX_CALL_COST_MICRO_USD: integer reservation, currently 2,080..1,000,000
@@ -46,16 +47,20 @@ Server-only, never NEXT_PUBLIC:
   Redis request. This is not measured billing. See the source-verification limits
   in ai-assistant-cost-policy.md; current pricing verification is still blocked.
 
-Both enable flags are absent/false by default. Preview additionally requires the
-exact feature/monetcore-stage1-websites branch. Production cannot be enabled by
-the staging flag. Missing controls or configuration fail closed.
+All enable flags are absent/false by default. Preview and production require the
+exact feature/monetcore-stage1-websites branch. Production additionally requires
+AI_OWNER_TEST_ENABLED=true and server-side owner authentication; public production
+inference is not implemented. Production cannot be enabled by the staging flag.
+Missing controls or configuration fail closed. See ai-assistant-owner-test.md for
+the current configuration, deployment and rollback instructions.
 
 Redis permissions: EVAL, GET, PTTL, INCRBY, EXPIRE, ZREMRANGEBYSCORE, ZCARD, ZADD, ZREM.
-Use an isolated staging namespace/database. Counters are namespaced by VERCEL_ENV;
-all approved Preview deployments share the Preview allowance intentionally.
+Use a dedicated assistant database, never the booking database. All controlled
+Preview and production-owner tests intentionally share the existing Preview
+namespace and permanent test binding, preventing an environment-switch reset.
 Emergency key `monetcore:assistant:v1:preview:control` must equal `enabled`.
 Missing key or any other value disables inference. Setting this key is an external
-write, NOT performed by implementation/tests. Production has its own namespace.
+write, NOT performed by implementation/tests. Production owner tests use that SAME namespace and emergency key.
 
 ## Controls and costs
 

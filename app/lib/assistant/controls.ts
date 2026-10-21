@@ -5,31 +5,29 @@ import {
   minimumReservationMicroUsd,
   pricingApprovalId,
 } from "./pricing";
+import {
+  isControlledTestEnabled,
+  ownerCredentialConfigured,
+  assistantTestPrefix,
+} from "./access";
 export function configuration() {
-  const enabled =
-    process.env.VERCEL_ENV === "preview"
-      ? process.env.STAGING_AI_ASSISTANT_ENABLED === "true" &&
-        process.env.VERCEL_GIT_COMMIT_REF ===
-          "feature/monetcore-stage1-websites"
-      : process.env.VERCEL_ENV === "production" &&
-        process.env.AI_ASSISTANT_ENABLED === "true";
+  const enabled = isControlledTestEnabled();
   if (!enabled) return null;
   const key = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  const secret = process.env.RATE_LIMIT_KEY_SECRET;
+  const url = process.env.AI_UPSTASH_REDIS_REST_URL;
+  const token = process.env.AI_UPSTASH_REDIS_REST_TOKEN;
+  const secret = process.env.AI_RATE_LIMIT_KEY_SECRET;
   const cost = Number(process.env.AI_MAX_CALL_COST_MICRO_USD);
-  const stagingRunId =
-    process.env.VERCEL_ENV === "preview"
-      ? process.env.STAGING_AI_TEST_RUN_ID
-      : undefined;
+  // Shared binding/counter across Preview and the production-domain owner test.
+  const stagingRunId = process.env.STAGING_AI_TEST_RUN_ID;
   if (
-    (process.env.VERCEL_ENV === "preview" &&
-      (!stagingRunId ||
-        !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
-          stagingRunId,
-        ))) ||
+    (process.env.VERCEL_ENV === "production" && !ownerCredentialConfigured()) ||
+    process.env.AI_REDIS_ISOLATED !== "true" ||
+    (!stagingRunId ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+        stagingRunId,
+      )) ||
     !key ||
     model !== pricingPolicy.model ||
     process.env.AI_PRICING_APPROVAL !== pricingApprovalId ||
@@ -43,7 +41,12 @@ export function configuration() {
   )
     throw new Error("Configuration");
   const endpoint = new URL(url);
+  const sharedRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
   if (
+    endpoint.hostname !== process.env.AI_EXPECTED_REDIS_HOST ||
+    // A renamed variable must not silently point back to the business database.
+    (sharedRedisUrl &&
+      new URL(sharedRedisUrl).hostname === endpoint.hostname) ||
     endpoint.protocol !== "https:" ||
     !endpoint.hostname.endsWith(".upstash.io") ||
     endpoint.port ||
@@ -126,7 +129,7 @@ export async function reserve(c: Config, request: Request) {
     day = date.toISOString().slice(0, 10),
     month = day.slice(0, 7),
     minute = Math.floor(now / 60000);
-  const prefix = `monetcore:assistant:v1:${process.env.VERCEL_ENV}:`;
+  const prefix = assistantTestPrefix;
   const lease = randomUUID();
   const keys = [
     `${prefix}control`,

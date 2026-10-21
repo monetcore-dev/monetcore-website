@@ -93,3 +93,19 @@ This is local release-build evidence, not a test of the currently deployed websi
 or Vercel dashboard settings. No new tracker was added. Earlier approved pricing,
 renewal terms, form notices and map changes remain. Booking/customer enquiry logic
 and AI Core are unchanged. No commit, push, deployment or production action occurred.
+
+## Final release owner decisions — 21 October 2026
+
+Monetcore System Solutions has accepted responsibility for privacy requests and
+the documented manual retention/deletion process. The public policy now states
+that responsibility explicitly and continues to say that deletion is not
+automated. Approved business details, 12-month enquiry/booking periods, legal
+retention exceptions and separate voluntary marketing opt-in remain unchanged.
+
+Provider data-processing and international-transfer arrangements remain pending
+review. The public policy explicitly identifies that status; no verified provider
+contract, processing region, transfer safeguard or completed legal compliance is
+claimed. Owner acceptance of privacy operations does not resolve those reviews.
+Analytics remains code-disabled, Maps remains an external link, and AI inference
+remains disabled by default with its processing controls intact. No provider
+settings, records, environment variables or deletion jobs were changed.

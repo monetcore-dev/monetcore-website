@@ -92,7 +92,7 @@ function CapabilityIllustration({ id }: { id: SolutionId }) {
           <span className="mini-site-cta">Explore · Enquire · Connect</span>
         </div>
         <p className="visual-note">
-          Illustrative interface. Package inclusions and proposed NGN prices are
+          Illustrative interface. Package inclusions and NGN prices are
           on the packages page.
         </p>
       </div>

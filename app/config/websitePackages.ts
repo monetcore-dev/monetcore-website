@@ -1,5 +1,5 @@
 export const packageSelectionEvent = "monetcore-package-selected";
-/** Proposed commercial terms. Obtain business approval before public publication. */
+/** Owner-approved publication terms; custom scope is confirmed in a written quotation. */
 export const hybridPricing = {
   customLabel: "Request a Quote",
   customDescription:
@@ -16,9 +16,9 @@ export const renewalTerms = {
 } as const;
 
 export const pricingConditions = [
-  "All package prices and renewal amounts are proposed and require final Monetcore business approval before publication. Confirm the final scope and quotation before purchase.",
+  "Package prices cover the stated scope. Confirm your requirements and written quotation before purchase; additional work and optional services are quoted separately.",
   "First-year standard .com domain registration, hosting and SSL are included for 12 months. Annual renewal fees apply after the first 12 months.",
-  "Starting amounts cover one-time website development and the stated first-year domain, hosting and SSL inclusions. They are not monthly subscription prices. Final quotations depend on project requirements.",
+  "Package amounts cover one-time website development and the stated first-year domain, hosting and SSL inclusions. They are not monthly subscription prices. Final quotations depend on project requirements.",
   renewalTerms.included,
   renewalTerms.excluded,
   renewalTerms.limits,
@@ -158,7 +158,7 @@ export function formatNaira(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 export function packagePrice(item: WebsitePackage) {
-  return `Starting from ${formatNaira(item.price)}`;
+  return `${item.from ? "Starting from " : ""}${formatNaira(item.price)}`;
 }
 export function packageRenewal(item: WebsitePackage) {
   return `${item.from ? "From " : ""}${formatNaira(item.renewal)}`;
@@ -167,6 +167,6 @@ export function packageQuotationHref(item: WebsitePackage) {
   return `/website-packages?package=${item.id}#quotation`;
 }
 export function packageWhatsAppHref(item: WebsitePackage) {
-  const text = `Hello Monetcore System Solutions, I'd like to enquire about ${item.name} (${packagePrice(item)}, proposed). Proposed annual renewal: ${packageRenewal(item)} after 12 months. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Please confirm final scope, pricing and availability.`;
+  const text = `Hello Monetcore System Solutions, I'd like to enquire about ${item.name} (${packagePrice(item)}). Annual renewal: ${packageRenewal(item)} after 12 months. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Please confirm final scope, pricing and availability.`;
   return `https://wa.me/2347065880558?text=${encodeURIComponent(text)}`;
 }

@@ -2,11 +2,15 @@ import SiteHeader from "../components/SiteHeader";
 import { pageMetadata } from "../lib/metadata";
 import AssistantChat from "./AssistantChat";
 import { isReviewPreview } from "../lib/previewSafety";
-export const metadata = pageMetadata(
-  "/assistant",
-  "Monetcore AI Assistant",
-  "Explore approved Monetcore company, services, product status and website package information with our AI-assisted information guide.",
-);
+export const dynamic = "force-dynamic";
+export const metadata = {
+  ...pageMetadata(
+    "/assistant",
+    "Monetcore AI Assistant",
+    "Explore approved Monetcore company, services, product status and website package information with our AI-assisted information guide.",
+  ),
+  robots: { index: false, follow: false },
+};
 export default function AssistantPage() {
   return (
     <>
@@ -28,7 +32,8 @@ export default function AssistantPage() {
           </p>
           <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-7">
             <p>
-              Live AI is disabled by default for this release preparation. When
+              Live AI is disabled by default. Initial production-domain testing
+              is restricted to the owner and a permanent 20-admission allowance. When
               separately enabled, OpenAI interprets your questions and selects
               answers from approved Monetcore information. Questions and limited
               recent question history are sent to OpenAI. The assistant cannot
@@ -57,7 +62,7 @@ export default function AssistantPage() {
               </a>
             </div>
           </div>
-          <AssistantChat stagingTest={isReviewPreview()} />
+          <AssistantChat stagingTest={isReviewPreview() || process.env.VERCEL_ENV === "production"} />
         </div>
       </main>
     </>

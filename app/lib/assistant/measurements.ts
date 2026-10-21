@@ -1,4 +1,5 @@
 import "server-only";
+import { isControlledTestEnabled } from "./access";
 import { syntheticCaseId } from "../../config/assistantTestCases";
 import { knowledge } from "./knowledge";
 import { pricingPolicy } from "./pricing";
@@ -28,12 +29,7 @@ export type Measurement = {
   outputTokens: number | null;
 };
 export function stagingMeasurement(request: Request): Measurement | null {
-  if (
-    process.env.VERCEL_ENV !== "preview" ||
-    process.env.VERCEL_GIT_COMMIT_REF !== "feature/monetcore-stage1-websites" ||
-    process.env.STAGING_AI_ASSISTANT_ENABLED !== "true"
-  )
-    return null;
+  if (!isControlledTestEnabled()) return null;
   return {
     caseId: syntheticCaseId(request.headers.get("x-monetcore-test-case")),
     category: "configuration_unavailable",
@@ -65,13 +61,7 @@ export function captureUsage(
   );
 }
 export function reportMeasurement(measurement: Measurement | null) {
-  if (
-    !measurement ||
-    process.env.VERCEL_ENV !== "preview" ||
-    process.env.VERCEL_GIT_COMMIT_REF !== "feature/monetcore-stage1-websites" ||
-    process.env.STAGING_AI_ASSISTANT_ENABLED !== "true"
-  )
-    return;
+  if (!measurement || !isControlledTestEnabled()) return;
   try {
     const input = safeTokens(measurement.inputTokens),
       output = safeTokens(measurement.outputTokens);
