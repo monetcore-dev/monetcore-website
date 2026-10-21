@@ -20,9 +20,9 @@ import assert from "node:assert/strict";
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   const packages = [
-    ["starter", "Smart Starter", "₦99,000", "₦45,000"],
-    ["business", "Smart Business", "₦179,000", "₦60,000"],
-    ["pro", "Smart Business Pro", "From ₦299,000", "From ₦90,000"],
+    ["starter", "Smart Starter", "Starting from ₦99,000", "₦45,000"],
+    ["business", "Smart Business", "Starting from ₦179,000", "₦60,000"],
+    ["pro", "Smart Business Pro", "Starting from ₦299,000", "From ₦90,000"],
   ];
   await p.goto(base + "/website-packages");
   assert.equal(await p.locator("footer").count(), 1);

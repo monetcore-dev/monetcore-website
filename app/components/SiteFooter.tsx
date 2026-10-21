@@ -24,6 +24,7 @@ const columns = [
     links: [
       ["About Monetcore", "/about"],
       ["Contact", "/contact"],
+      ["Privacy Policy", "/privacy"],
       ["Free consultation", "/contact#consultation"],
       ["Book an appointment", "/book"],
     ],

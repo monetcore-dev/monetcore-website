@@ -1,3 +1,4 @@
+import { hybridPricing } from "../../config/websitePackages";
 import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
 import {
@@ -23,6 +24,7 @@ import {
   websitePackages,
   packagePrice,
   packageRenewal,
+  renewalTerms,
 } from "../../config/websitePackages";
 const icons = [Cpu, Code2, Globe2, PlugZap, Smartphone, Megaphone, Compass];
 export default function ServiceDetail({
@@ -52,12 +54,13 @@ export default function ServiceDetail({
               <p className="offering-eyebrow">{item.title}</p>
               <h1>{item.headline}</h1>
               <p>{item.intro}</p>
+              <p>{hybridPricing.customDescription}</p>
               <div className="offering-actions">
                 <Link
                   className="offering-primary"
                   href={enquiryHref("service", item.slug)}
                 >
-                  Request a Quotation{" "}
+                  {hybridPricing.customLabel}{" "}
                   <ArrowUpRight size={16} aria-hidden="true" />
                 </Link>
                 <Link
@@ -193,10 +196,14 @@ export default function ServiceDetail({
                 <p className="offering-eyebrow">Smart Website Solutions</p>
                 <h2>Start with a clear package.</h2>
                 <p>
-                  Smart Starter: proposed {packagePrice(websitePackages[0])}.
-                  First-year standard .com domain, hosting and SSL are included
-                  for 12 months. Proposed renewal:{" "}
+                  Smart Starter: {packagePrice(websitePackages[0])} (proposed
+                  one-time package setup). First-year standard .com domain,
+                  hosting and SSL are included for 12 months. Proposed renewal:{" "}
                   {packageRenewal(websitePackages[0])} after 12 months.
+                </p>
+                <p>{renewalTerms.included}</p>
+                <p>
+                  {renewalTerms.excluded} {renewalTerms.limits}
                 </p>
                 <p>
                   Prices and renewals require final business approval. Premium
@@ -222,7 +229,7 @@ export default function ServiceDetail({
                 ],
                 [
                   "What will the project cost?",
-                  "Request a quotation. We agree deliverables, implementation fees, third-party subscriptions and support separately. No unapproved service pricing is implied.",
+                  hybridPricing.customDescription,
                 ],
                 [
                   "Are the examples live products?",
@@ -282,7 +289,7 @@ export default function ServiceDetail({
                 className="offering-primary"
                 href={enquiryHref("service", item.slug)}
               >
-                Request a Quotation
+                {hybridPricing.customLabel}
               </Link>
               <Link
                 className="offering-secondary"

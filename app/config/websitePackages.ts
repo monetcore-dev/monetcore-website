@@ -1,8 +1,27 @@
 export const packageSelectionEvent = "monetcore-package-selected";
 /** Proposed commercial terms. Obtain business approval before public publication. */
+export const hybridPricing = {
+  customLabel: "Request a Quote",
+  customDescription:
+    "Custom software, complex AI automation, integrations and enterprise solutions are quoted to your requirements. One-time development fees and recurring hosting, maintenance, API usage, subscriptions and third-party charges are itemised separately in your final quotation.",
+} as const;
+
+export const renewalTerms = {
+  included:
+    "Annual renewal includes standard domain renewal (subject to domain terms), website hosting, SSL and basic technical support for hosting, SSL, website availability and existing website functionality.",
+  excluded:
+    "Website redesigns, new pages, additional features, major content updates, AI integrations, third-party subscriptions and premium-domain charges are quoted separately.",
+  limits:
+    "Basic technical support is limited to the renewal scope. Renewal does not include unlimited support, guaranteed uptime or free development work.",
+} as const;
+
 export const pricingConditions = [
   "All package prices and renewal amounts are proposed and require final Monetcore business approval before publication. Confirm the final scope and quotation before purchase.",
-  "First-year standard .com domain registration, hosting and SSL are included for 12 months. Annual domain and hosting renewal fees apply after the first 12 months.",
+  "First-year standard .com domain registration, hosting and SSL are included for 12 months. Annual renewal fees apply after the first 12 months.",
+  "Starting amounts cover one-time website development and the stated first-year domain, hosting and SSL inclusions. They are not monthly subscription prices. Final quotations depend on project requirements.",
+  renewalTerms.included,
+  renewalTerms.excluded,
+  renewalTerms.limits,
   "Premium domains are charged separately and domain availability must be confirmed.",
   "Third-party API, AI and messaging usage fees are excluded unless explicitly included in your written quotation. No package promises unlimited AI usage.",
   "Advanced automation and complex integrations are separately quoted. Optional features are not included in the advertised base price unless confirmed in writing.",
@@ -139,7 +158,7 @@ export function formatNaira(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 export function packagePrice(item: WebsitePackage) {
-  return `${item.from ? "From " : ""}${formatNaira(item.price)}`;
+  return `Starting from ${formatNaira(item.price)}`;
 }
 export function packageRenewal(item: WebsitePackage) {
   return `${item.from ? "From " : ""}${formatNaira(item.renewal)}`;
@@ -148,6 +167,6 @@ export function packageQuotationHref(item: WebsitePackage) {
   return `/website-packages?package=${item.id}#quotation`;
 }
 export function packageWhatsAppHref(item: WebsitePackage) {
-  const text = `Hello Monetcore System Solutions, I'd like to enquire about ${item.name} (${packagePrice(item)}, proposed). Proposed annual renewal: ${packageRenewal(item)} after 12 months. Please confirm final scope, pricing and availability. I understand optional integrations and third-party usage may cost extra.`;
+  const text = `Hello Monetcore System Solutions, I'd like to enquire about ${item.name} (${packagePrice(item)}, proposed). Proposed annual renewal: ${packageRenewal(item)} after 12 months. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Please confirm final scope, pricing and availability.`;
   return `https://wa.me/2347065880558?text=${encodeURIComponent(text)}`;
 }

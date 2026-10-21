@@ -1,3 +1,4 @@
+import { hybridPricing } from "../../config/websitePackages";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -38,9 +39,10 @@ export default function OfferingOverview({
                 ? "Custom software, AI, integrations, websites, mobile experiences, marketing and consulting. Start with the challenge; we will define the right scope."
                 : "Product concepts, local interactive demonstrations and existing prototypes. Clear status labels help distinguish what you can explore from what is commercially available."}
             </p>
+            <p>{hybridPricing.customDescription}</p>
             <div className="offering-actions">
               <Link className="offering-primary" href="/contact#consultation">
-                Request a Quotation
+                {hybridPricing.customLabel}
               </Link>
               <Link
                 className="offering-secondary"
@@ -98,7 +100,7 @@ export default function OfferingOverview({
                             className="offering-text-link"
                             href={enquiryHref("service", s.slug)}
                           >
-                            Request a Quotation
+                            {hybridPricing.customLabel}
                           </Link>
                         </div>
                       </article>
@@ -127,7 +129,7 @@ export default function OfferingOverview({
                           className="offering-text-link"
                           href={enquiryHref("product", p.slug)}
                         >
-                          Request a Quotation
+                          {hybridPricing.customLabel}
                         </Link>
                       </div>
                     </article>

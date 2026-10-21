@@ -11,6 +11,10 @@ import {
   isStagingBookingEnabled,
 } from "./lib/previewSafety";
 
+// Disabled for this release pending privacy verification and owner approval.
+// Retain the SDK integration; re-enabling requires an explicit code review.
+const analyticsEnabled = false;
+
 const inter = localFont({
   src: "./fonts/inter-latin-variable.woff2",
   variable: "--font-inter",
@@ -169,9 +173,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             contactTesting={isStagingContactEnabled()}
             bookingTesting={isStagingBookingEnabled()}
           />
-        ) : (
+        ) : analyticsEnabled ? (
           <Analytics />
-        )}
+        ) : null}
       </body>
     </html>
   );

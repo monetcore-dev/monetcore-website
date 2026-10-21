@@ -31,7 +31,12 @@ import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
 import AICore from "./components/AICore";
 import { corporateSolutions } from "./config/corporateSolutions";
-import { formatNaira, websitePackages } from "./config/websitePackages";
+import {
+  packagePrice,
+  hybridPricing,
+  renewalTerms,
+  websitePackages,
+} from "./config/websitePackages";
 
 const starter = websitePackages[0];
 const solutionIcons = [
@@ -89,7 +94,7 @@ const faqs = [
   ],
   [
     "Do you also offer business websites?",
-    `Yes. Smart Website Solutions starts with the proposed ${formatNaira(starter.price)} ${starter.name} package. Standard first-year domain and hosting are included. Proposed renewals and all prices require final business approval; see the website packages page for full conditions.`,
+    `Yes. Smart Website Solutions offers ${starter.name}: ${packagePrice(starter)} (proposed one-time package setup). Standard first-year domain and hosting are included. ${renewalTerms.included} ${renewalTerms.excluded} ${renewalTerms.limits} Proposed renewal amounts and all prices require final business approval; see the website packages page for full conditions.`,
   ],
   [
     "How do we start a project?",
@@ -209,7 +214,7 @@ export default function Home() {
                 We combine software development, artificial intelligence,
                 automation and consulting to address practical challenges in
                 operations, customer experience and growth. Your goals guide the
-                technology.
+                technology. {hybridPricing.customDescription}
               </p>
             </div>
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -361,10 +366,10 @@ export default function Home() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-600">
-                Proposed starting price
+                Proposed one-time package setup
               </p>
               <p className="mt-2 text-4xl font-bold tracking-tight">
-                {formatNaira(starter.price)}
+                {packagePrice(starter)}
               </p>
               <Link href="/website-packages" className={`${primary} mt-5`}>
                 Explore Website Packages{" "}
@@ -372,8 +377,8 @@ export default function Home() {
               </Link>
               <p className="mt-3 text-xs leading-6 text-slate-600">
                 Pricing and scope require final business approval. Annual
-                renewals apply after 12 months; full terms are on the packages
-                page.
+                renewals apply after 12 months. {renewalTerms.included} Full
+                scope and exclusions are on the packages page.
               </p>
             </div>
           </div>

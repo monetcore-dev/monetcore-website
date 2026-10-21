@@ -1,5 +1,7 @@
 "use client";
 
+import PrivacyNotice from "./components/PrivacyNotice";
+
 import { FormEvent, useId, useState, useRef, useEffect } from "react";
 
 import {
@@ -339,6 +341,7 @@ export default function ContactForm({
         </label>
       )}
 
+      <PrivacyNotice />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-500">
           Or email us directly at{" "}

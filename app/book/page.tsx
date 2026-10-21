@@ -7,6 +7,7 @@ export const metadata = pageMetadata(
 );
 
 import BookingForm from "../BookingForm";
+import PrivacyNotice from "../components/PrivacyNotice";
 import { isStagingBookingEnabled } from "../lib/previewSafety";
 import SiteHeader from "../components/SiteHeader";
 
@@ -52,10 +53,13 @@ export default async function BookPage({
               </div>
             </div>
 
-            <BookingForm
-              initialInterest={initialInterest}
-              stagingTesting={isStagingBookingEnabled()}
-            />
+            <div className="min-w-0">
+              <BookingForm
+                initialInterest={initialInterest}
+                stagingTesting={isStagingBookingEnabled()}
+              />
+              <PrivacyNotice booking />
+            </div>
           </div>
         </div>
       </section>

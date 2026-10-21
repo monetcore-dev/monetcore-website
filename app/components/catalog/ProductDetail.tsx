@@ -1,3 +1,4 @@
+import { hybridPricing } from "../../config/websitePackages";
 import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -35,6 +36,7 @@ export default function ProductDetail({
               <p className="offering-eyebrow">{item.title}</p>
               <h1>{item.headline}</h1>
               <p>{item.intro}</p>
+              <p>{hybridPricing.customDescription}</p>
               <div className="offering-actions">
                 {demo && (
                   <a className="offering-primary" href="#experience">
@@ -45,7 +47,7 @@ export default function ProductDetail({
                   className="offering-secondary"
                   href={enquiryHref("product", item.slug)}
                 >
-                  Request a Quotation
+                  {hybridPricing.customLabel}
                 </Link>
               </div>
             </div>
@@ -207,7 +209,8 @@ export default function ProductDetail({
                 ["Does this demo use live integrations?", item.disclosure],
                 [
                   "How is pricing agreed?",
-                  "Request a scoped quotation. Implementation, subscriptions, AI/API/messaging usage and support must be explicitly agreed. No unlimited usage or unapproved product price is promised.",
+                  hybridPricing.customDescription +
+                    " Product availability must be confirmed; no unlimited AI usage is promised.",
                 ],
               ].map(([q, a]) => (
                 <details key={q}>
@@ -260,7 +263,7 @@ export default function ProductDetail({
                 className="offering-primary"
                 href={enquiryHref("product", item.slug)}
               >
-                Request a Quotation
+                {hybridPricing.customLabel}
               </Link>
               <Link
                 className="offering-secondary"

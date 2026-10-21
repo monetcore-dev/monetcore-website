@@ -175,7 +175,7 @@ export default async function ContactPage({
       </section>
 
       <section className="border-t border-blue-100 bg-white">
-        <div className="px-6 pb-10 pt-24 lg:px-8">
+        <div className="px-6 py-16 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div className="max-w-3xl">
@@ -198,21 +198,11 @@ export default async function ContactPage({
                 rel="noopener noreferrer"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
-                Get Directions →
+                Open in Google Maps
+                <span className="sr-only"> (opens in a new tab)</span>
               </a>
             </div>
           </div>
-        </div>
-
-        <div className="w-full border-y border-blue-100 bg-slate-100">
-          <iframe
-            title="Monetcore System Solutions Office Map"
-            src="https://www.google.com/maps?q=Ventures%20Park%2C%205%20Kwaji%20Close%2C%20Maitama%2C%20Abuja%2C%20Nigeria&output=embed"
-            className="h-[500px] w-full border-0 lg:h-[620px]"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-          />
         </div>
       </section>
 
