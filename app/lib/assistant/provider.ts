@@ -61,6 +61,7 @@ export async function boundedJson(
 export async function countInputTokens(
   key: string,
   input: ReturnType<typeof classifierInput>,
+  signal?: AbortSignal,
 ) {
   const response = await fetch(
     "https://api.openai.com/v1/responses/input_tokens",
@@ -73,7 +74,7 @@ export async function countInputTokens(
       body: JSON.stringify(input),
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(3000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(3000)]) : AbortSignal.timeout(3000),
     },
   );
   if (!response.ok) throw new Error("Token count unavailable");

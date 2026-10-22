@@ -1,3 +1,8 @@
+> Historical corporate release record. Later local assistant-only direct API work
+> supersedes the Redis admission/budget/20-request instructions in this record.
+> See [current direct-mode controls and configuration](ai-assistant-direct-mode.md).
+> No new deployment or activation is implied; business integrations are unchanged.
+
 # Final corporate website release — approved local commit
 
 Branch: `feature/monetcore-stage1-websites`.

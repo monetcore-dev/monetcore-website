@@ -1,3 +1,9 @@
+> Superseded for assistant runtime controls on 22 October 2026: see
+> [Direct owner-only API mode](ai-assistant-direct-mode.md). Redis admission,
+> permanent 20-request allowances, distributed budgets and the Redis emergency
+> key described below are historical and no longer apply to assistant requests.
+> This history is retained for review; booking Redis/integrations are unchanged.
+
 # Monetcore AI Assistant V1 — disabled local implementation
 
 No inference, deployment or activation is authorized by this implementation.

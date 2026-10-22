@@ -1,3 +1,9 @@
+> Superseded for assistant runtime controls on 22 October 2026: see
+> [Direct owner-only API mode](ai-assistant-direct-mode.md). Redis admission,
+> permanent 20-request allowances, distributed budgets and the Redis emergency
+> key described below are historical and no longer apply to assistant requests.
+> This history is retained for review; booking Redis/integrations are unchanged.
+
 # Assistant cost policy — local revision, 21 October 2026
 
 ## Current source-verification limitation / activation blocker
