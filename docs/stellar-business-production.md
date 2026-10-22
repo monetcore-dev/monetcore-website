@@ -1,13 +1,13 @@
-# Stellar Plus production preparation — authoritative operator guide
+# Stellar Business production preparation — authoritative operator guide
 
 ## Decision and confirmed target
 
 **NO-GO for cutover until the account checks and isolated integration tests below
 pass. GO for reviewing/testing the prepared package.** Nothing is deployed here.
 
-Owner-provided limits: Namecheap Stellar Plus, Node.js target 24.13, RAM 2 GB,
-CPU 0.5 core, 30 entry processes. These are shared-account ceilings, not dedicated
-resources or a promise of 30 safe simultaneous AI/SSR requests. Local tests run on
+Owner-provided limits: Namecheap Stellar Business, Node.js target 24.13, RAM 2 GB,
+CPU 1 core, 40 entry processes, 50 GB SSD storage. These are shared-account ceilings, not dedicated
+resources or a promise of 40 safe simultaneous AI/SSR requests. Local tests run on
 Node 24.19.0, not 24.13; exact-version/CloudLinux/Passenger testing remains required.
 Use a maintained Node 24.x >=24.13. Build/runtime major mismatch is rejected.
 Installed Supabase requires >=22 and Next >=20.9; no dependencies were downgraded.
@@ -34,7 +34,7 @@ No database schema, bookings, SMTP accounts or Calendar permissions were changed
 
 Confirm all of the following on this account, not only generic Next compatibility:
 
-- Node 24.13.x (or approved maintained 24.x), Linux architecture/glibc compatibility,
+- Select the owner-confirmed Node 24.13.x (or approved maintained 24.x); test Linux architecture/glibc compatibility,
   Passenger version and support for Next's generated standalone server/listen call.
 - Application root outside public_html, startup file start.cjs, root-path mounting,
   protected environment-variable editing, and safe restart/log access.
@@ -61,7 +61,7 @@ Git, screenshots or shell history. Node app variables do not automatically becom
 Apache per-vhost variables. If support cannot supply the private Apache variable,
 this template alone is NOT sufficient and production must remain blocked.
 
-Support-reviewed Apache 2.4 template (syntax/modules must be verified on account):
+Apache 2.4 template for Namecheap support to review (not installed or server-verified):
 
 ```apache
 # In the app ingress/vhost scope; exclude unrelated apps and mail/webhooks.
@@ -83,7 +83,7 @@ Missing/wrong token or metadata rejects paid AI and form submission access.
 ## 3. Build elsewhere, without credentials
 
 Use a trusted Linux builder matching the target architecture/glibc and Node major.
-The hosting account must not run compilation under its 0.5-core/2-GB limits.
+The hosting account must not run compilation under its 1-core/2-GB limits.
 Checkout the approved clean release commit; do not include unrelated SQL files.
 
 ```
@@ -194,7 +194,7 @@ entry processes, process count, I/O and faults/508s. Capture idle, page navigati
 image optimization and mocked concurrent-request periods, plus restart/idle recycle.
 Verify provider timeouts fit Passenger/Apache timeout settings. A 512-MB heap can
 still exceed 512MB RSS due to native buffers/threads; all sites/mail/processes share
-account quotas. Do not equate 30 entry processes with a concurrency target.
+account quotas. Do not equate 40 entry processes with a concurrency target.
 
 With SSH, list ONLY your user processes without command arguments/environment:
 
@@ -236,7 +236,7 @@ assumed equivalent to Vercel Instant Rollback/WAF/edge DDoS/rate limiting.
 
 ## Remaining approvals and external blockers
 
-Actual Node24.13/Passenger/Apache private-env support; memory/CPU headroom; secure
+Actual Node24.13 execution/Passenger/Apache private-env support; memory/CPU headroom; secure
 cPanel secret persistence; outbound provider connectivity; SMTP and isolated booking
 acceptance tests; current OpenAI pricing/privacy review; hosting/processor Privacy
 Policy update; rollback rehearsal. Local success does not establish any of these.
@@ -258,3 +258,23 @@ booking, packages and privacy layouts, navigation, keyboard/axe checks, no overf
 noindex headers, disabled submissions and blocked assistant; zero external requests
 or browser errors. These are browser emulation, not Android/iOS device or Passenger
 tests. No Node24.13-specific or shared-host load/capacity success is claimed.
+
+## Stellar Business resource acceptance checklist
+
+The confirmed 1-core/2-GB/40-entry-process/50-GB-SSD plan replaces the previous
+Stellar Plus target. Existing limits in code do not need increasing. Start with
+one application worker and the same optional 512-MB JavaScript heap limit; do not
+spawn 40 workers or allocate the entire 2-GB account allowance to the Node heap.
+Keep other account workloads, native image buffers, logs and caches in the budget.
+
+For the actual-host acceptance report record idle/peak RSS, CPU, entry/process
+counts, restart frequency and LVE faults during page navigation, image processing
+and a small authorized synthetic concurrency test. Require no OOM/508/faults or
+sustained saturation, acceptable response times and meaningful memory/CPU headroom
+before approving launch. Numerical throughput cannot be inferred from plan quotas.
+
+Use versioned releases and check both bytes and inode usage. Budget space for the
+active release, one known-good rollback, a new upload and unpacking, caches and
+rotated logs; 50 GB is an account quota, not entirely free application space.
+Never delete the only rollback artifact to make an upload fit. Reassess retained
+release/log/cache sizes after measuring the real package on this server.

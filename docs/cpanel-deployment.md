@@ -1,4 +1,4 @@
-> Historical initial investigation. For the confirmed Stellar Plus resources and the new authenticated cPanel production profile, use [stellar-plus-production.md](stellar-plus-production.md). Its instructions supersede the earlier AI-blocked adapter limitations below.
+> Historical initial investigation. For the confirmed Stellar Business resources and the new authenticated cPanel production profile, use [stellar-business-production.md](stellar-business-production.md). Its instructions supersede the earlier AI-blocked adapter limitations below.
 
 # Namecheap cPanel migration preparation
 
