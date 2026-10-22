@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { reportOriginFailure } from "./originDiagnostics";
 
 export const assistantBranch = "feature/monetcore-stage1-websites";
 
@@ -33,22 +34,30 @@ export function ownerCredentialConfigured() {
 export function assistantRequestOrigin(request: Request): string | null {
   const url = new URL(request.url);
   const production = process.env.VERCEL_ENV === "production";
-  if (!production) return url.protocol === "https:" ? url.origin : null;
+  if (!production) return url.protocol === "https:" ? url.origin
+    : reportOriginFailure(request, "nonproduction_non_https");
 
   const allowedOrigin = "https://monetcore.dev";
   const host = request.headers.get("host");
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto");
   // Exact values only: no ports, lists, suffixes, userinfo or alternate domains.
-  if ((host !== null && host !== "monetcore.dev") ||
-      (forwardedHost !== null && forwardedHost !== "monetcore.dev") ||
-      (forwardedProto !== null && forwardedProto !== "https")) return null;
+  if (host !== null && host !== "monetcore.dev")
+    return reportOriginFailure(request, "host_mismatch");
+  if (forwardedHost !== null && forwardedHost !== "monetcore.dev")
+    return reportOriginFailure(request, "forwarded_host_mismatch");
+  if (forwardedProto !== null && forwardedProto !== "https")
+    return reportOriginFailure(request, "forwarded_protocol_mismatch");
   if (url.origin === allowedOrigin) return allowedOrigin;
 
   // A client header saying "Vercel" is never evidence. These are server-side
   // deployment variables; Host must independently match Vercel's routed domain.
-  if (process.env.VERCEL !== "1" || host !== "monetcore.dev" ||
-      forwardedProto !== "https") return null;
+  if (process.env.VERCEL !== "1")
+    return reportOriginFailure(request, "fallback_not_vercel");
+  if (host !== "monetcore.dev")
+    return reportOriginFailure(request, "fallback_host_missing");
+  if (forwardedProto !== "https")
+    return reportOriginFailure(request, "fallback_protocol_missing");
   return allowedOrigin;
 }
 
