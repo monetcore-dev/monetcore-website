@@ -18,15 +18,14 @@ export default function AssistantChat({
   function clear() {
     sequence.current++;
     controller.current?.abort();
-    controller.current = null;
     setTurns([]);
     setQuestion("");
     setError("");
-    setBusy(false);
+    // Keep the local send lock until the aborted fetch has actually settled.
   }
   async function send(e: FormEvent) {
     e.preventDefault();
-    if (busy || !question.trim()) return;
+    if (controller.current || !question.trim()) return;
     const current = ++sequence.current;
     const q = question.trim();
     const abort = new AbortController();
@@ -38,6 +37,7 @@ export default function AssistantChat({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-monetcore-request-id": crypto.randomUUID(),
           ...(stagingTest ? { "x-monetcore-test-case": testCase } : {}),
         },
         body: JSON.stringify({
@@ -64,7 +64,7 @@ export default function AssistantChat({
           e instanceof Error ? e.message : "Please contact Monetcore directly.",
         );
     } finally {
-      if (current === sequence.current) {
+      if (controller.current === abort) {
         setBusy(false);
         controller.current = null;
       }
@@ -163,8 +163,8 @@ export default function AssistantChat({
               ))}
             </select>
             <span className="mt-2 block font-normal text-slate-600">
-              Use fictional questions only. Each admitted attempt consumes the
-              fixed staging allowance, including failures.
+              Use fictional questions only. Direct owner testing has no shared
+              request allowance or spending cap. Failed requests may incur charges.
             </span>
           </label>
         )}

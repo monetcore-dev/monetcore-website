@@ -9,9 +9,8 @@ const safeCategories = [
   "invalid_test_case",
   "controls_unavailable",
   "emergency_stop",
-  "rate_or_budget_limit",
-  "test_run_invalid",
-  "test_run_exhausted",
+  "local_busy",
+  "local_duplicate",
   "token_count_unavailable",
   "input_token_limit",
   "provider_unavailable",
@@ -88,7 +87,7 @@ export function reportMeasurement(measurement: Measurement | null) {
         : "provider_response_invalid",
     });
   } catch {
-    // Reporting must not throw, retry a provider request, refund or reset admission.
+    // Reporting must not throw, retry a provider request or release the local lock early.
     try {
       console.error("AI staging measurement reporting unavailable.");
     } catch {

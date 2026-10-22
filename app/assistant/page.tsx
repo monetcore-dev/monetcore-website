@@ -33,7 +33,8 @@ export default function AssistantPage() {
           <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-7">
             <p>
               Live AI is disabled by default. Initial production-domain testing
-              is restricted to the owner and a permanent 20-admission allowance. When
+              is restricted to the owner. Direct API testing has no shared request
+              allowance or spending cap. When
               separately enabled, OpenAI interprets your questions and selects
               answers from approved Monetcore information. Questions and limited
               recent question history are sent to OpenAI. The assistant cannot

@@ -67,10 +67,11 @@ try {
   });
   const stagingSelectorVisible = (await caseSelector.count()) > 0;
   if (stagingSelectorVisible) await caseSelector.selectOption("case-03");
-  let payload, caseHeader;
+  let payload, caseHeader, requestId;
   await page.route("**/api/assistant", async (route) => {
     payload = route.request().postDataJSON();
     caseHeader = route.request().headers()["x-monetcore-test-case"];
+    requestId = route.request().headers()["x-monetcore-request-id"];
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -94,6 +95,7 @@ try {
     .getByText("Approved company answer.", { exact: false })
     .waitFor();
   assert.deepEqual(payload.messages, ["What services do you offer?"]);
+  assert.match(requestId, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
   assert.equal(caseHeader, stagingSelectorVisible ? "case-03" : undefined);
   await page.getByRole("button", { name: "Clear Conversation" }).click();
   assert.equal(await page.getByRole("log").innerText(), "");

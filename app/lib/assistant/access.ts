@@ -2,18 +2,20 @@ import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
 
 export const assistantBranch = "feature/monetcore-stage1-websites";
-export const assistantTestPrefix = "monetcore:assistant:v1:preview:";
 
 /** There is deliberately no public production-inference mode in this release. */
 export function isControlledTestEnabled() {
-  return (
-    process.env.VERCEL_GIT_COMMIT_REF === assistantBranch &&
-    (process.env.VERCEL_ENV === "preview"
-      ? process.env.STAGING_AI_ASSISTANT_ENABLED === "true"
-      : process.env.VERCEL_ENV === "production" &&
+  if (
+    process.env.VERCEL !== "1" ||
+    process.env.AI_ASSISTANT_EMERGENCY_STOP !== "false" ||
+    process.env.AI_OWNER_TEST_ENABLED !== "true"
+  ) return false;
+  return process.env.VERCEL_ENV === "preview"
+    ? process.env.STAGING_AI_ASSISTANT_ENABLED === "true" &&
+        process.env.VERCEL_GIT_COMMIT_REF === assistantBranch
+    : process.env.VERCEL_ENV === "production" &&
         process.env.AI_ASSISTANT_ENABLED === "true" &&
-        process.env.AI_OWNER_TEST_ENABLED === "true")
-  );
+        ["main", assistantBranch].includes(process.env.VERCEL_GIT_COMMIT_REF ?? "");
 }
 
 export function ownerCredentialConfigured() {
@@ -25,7 +27,7 @@ export function ownerCredentialConfigured() {
  * Enforced independently in Proxy AND the paid API route.
  */
 export function ownerTestAccess(request: Request): Response | null {
-  if (process.env.VERCEL_ENV !== "production") return null;
+  if (!["production", "preview"].includes(process.env.VERCEL_ENV ?? "")) return null;
   const headers = {
     "Cache-Control": "private, no-store",
     "X-Robots-Tag": "noindex, nofollow, noarchive",
@@ -40,7 +42,8 @@ export function ownerTestAccess(request: Request): Response | null {
       { status: 503, headers },
     );
   // Never accept the owner credential on deployment aliases or an HTTP origin.
-  if (new URL(request.url).origin !== "https://monetcore.dev")
+  if (new URL(request.url).protocol !== "https:" ||
+    (process.env.VERCEL_ENV === "production" && new URL(request.url).origin !== "https://monetcore.dev"))
     return Response.json(
       { error: "Owner test access is unavailable here." },
       { status: 403, headers },

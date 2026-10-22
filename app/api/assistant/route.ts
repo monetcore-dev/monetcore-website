@@ -1,5 +1,5 @@
 import { ownerTestAccess } from "../../lib/assistant/access";
-import { configuration, reserve } from "../../lib/assistant/controls";
+import { configuration, admit } from "../../lib/assistant/controls";
 import { assemble } from "../../lib/assistant/knowledge";
 export const runtime = "nodejs";
 import {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   function category(value: SafeCategory) {
     if (measurement) measurement.category = value;
   }
-  let reservation: Awaited<ReturnType<typeof reserve>> | undefined;
+  let admission: ReturnType<typeof admit> | undefined;
   try {
     const config = configuration();
     if (!config) return unavailable();
@@ -106,38 +106,18 @@ export async function POST(request: Request) {
         { status: 413 },
       );
     category("controls_unavailable");
-    reservation = await reserve(config, request);
-    if (reservation.result !== 1) {
-      category(
-        reservation.result === 4
-          ? "test_run_exhausted"
-          : reservation.result === 3
-            ? "test_run_invalid"
-            : reservation.result === 2
-              ? "rate_or_budget_limit"
-              : "emergency_stop",
-      );
-      return reservation.result === 2 || reservation.result === 4
-        ? Response.json(
-            {
-              error:
-                reservation.result === 4
-                  ? "The staging test allowance is exhausted. No further requests are admitted."
-                  : "Usage limit reached. Please contact Monetcore or try later.",
-            },
-            {
-              status: 429,
-              ...(reservation.result === 2
-                ? { headers: { "Retry-After": "60" } }
-                : {}),
-            },
-          )
-        : unavailable();
+    admission = admit(config, request, JSON.stringify(countedInput));
+    if (!admission.allowed) {
+      category(admission.category);
+      return Response.json({ error: admission.error }, {
+        status: admission.status,
+        headers: admission.retryAfter ? { "Retry-After": String(admission.retryAfter) } : {},
+      });
     }
     category("emergency_stop");
-    await reservation.check();
+    admission.check();
     category("token_count_unavailable");
-    const inputTokens = await countInputTokens(config.key, countedInput);
+    const inputTokens = await countInputTokens(config.key, countedInput, request.signal);
     if (inputTokens > pricingPolicy.maxInputTokens) {
       category("input_token_limit");
       return Response.json(
@@ -150,7 +130,7 @@ export async function POST(request: Request) {
     }
     // The counter request can take time: recheck stop immediately before inference.
     category("emergency_stop");
-    await reservation.check();
+    admission.check();
     category("provider_unavailable");
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -166,7 +146,7 @@ export async function POST(request: Request) {
       }),
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
     });
     if (!response.ok) return unavailable();
     category("provider_response_invalid");
@@ -214,12 +194,7 @@ export async function POST(request: Request) {
     console.error("AI Assistant request unavailable.");
     return unavailable();
   } finally {
-    if (reservation?.result === 1)
-      try {
-        await reservation.release();
-      } catch {
-        console.error("AI Assistant lease release unavailable.");
-      }
+    if (admission?.allowed) admission.release();
     reportMeasurement(measurement);
   }
 }
