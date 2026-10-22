@@ -1,4 +1,4 @@
-import { ownerTestAccess } from "../../lib/assistant/access";
+import { ownerTestAccess, assistantRequestOrigin } from "../../lib/assistant/access";
 import { configuration, admit } from "../../lib/assistant/controls";
 import { assemble } from "../../lib/assistant/knowledge";
 export const runtime = "nodejs";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
     category("invalid_request");
     if (
-      request.headers.get("origin") !== new URL(request.url).origin ||
+      request.headers.get("origin") !== assistantRequestOrigin(request) ||
       request.headers.get("content-type")?.split(";")[0] !== "application/json"
     )
       return Response.json({ error: "Invalid request." }, { status: 400 });

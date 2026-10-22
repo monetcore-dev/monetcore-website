@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { ownerTestAccess, isControlledTestEnabled } from "../app/lib/assistant/access.ts";
+import { ownerTestAccess, isControlledTestEnabled, assistantRequestOrigin } from "../app/lib/assistant/access.ts";
 import { proxy, config } from "../proxy.ts";
 const password = "synthetic-owner-password-longer-than-thirty-two-characters";
 const authorization = `Basic ${Buffer.from(`owner:${password}`).toString("base64")}`;
@@ -22,6 +22,43 @@ test("owner authentication and disabled-default guards for direct Production and
         assert.equal(ownerTestAccess(request(url)).status, 403);
       for (const value of ["", "Basic !", "Bearer synthetic", `Basic ${Buffer.from("owner:short").toString("base64")}`])
         assert.equal(ownerTestAccess(request("https://monetcore.dev/assistant", value)).status, 401);
+    });
+    await t.test("trusted Vercel routing handles internal URLs without bypassing Basic authentication", () => {
+      reset();
+      for (const url of ["http://localhost:3000/assistant", "https://127.0.0.1:3000/assistant", "https://internal.vercel.app/assistant"]) {
+        const headers = { host: "monetcore.dev", "x-forwarded-proto": "https", "x-forwarded-host": "monetcore.dev" };
+        const r = new Request(url, { headers: { ...headers, authorization } });
+        assert.equal(assistantRequestOrigin(r), "https://monetcore.dev");
+        assert.equal(ownerTestAccess(r), null);
+        assert.equal(proxy(r).headers.get("x-middleware-next"), "1");
+        const denied = proxy(new Request(url, { headers }));
+        assert.equal(denied.status, 401);
+        assert.match(denied.headers.get("www-authenticate"), /Basic/);
+      }
+    });
+    await t.test("spoofed/missing/mismatched routing metadata fails closed", () => {
+      reset();
+      const good = { host: "monetcore.dev", "x-forwarded-proto": "https" };
+      for (const headers of [
+        {}, { "x-forwarded-host": "monetcore.dev", "x-forwarded-proto": "https" },
+        { ...good, host: "evil.example" }, { ...good, host: "www.monetcore.dev" },
+        { ...good, host: "monetcore.dev:443" }, { ...good, host: "monetcore.dev.evil.example" },
+        { ...good, host: "monetcore.dev, evil.example" },
+        { ...good, "x-forwarded-host": "evil.example" },
+        { ...good, "x-forwarded-host": "monetcore.dev, evil.example" },
+        { host: "monetcore.dev" }, { ...good, "x-forwarded-proto": "http" },
+        { ...good, "x-forwarded-proto": "https,http" },
+        { forwarded: 'host=monetcore.dev;proto=https', "x-vercel-id": "spoofed" },
+      ]) {
+        const r = new Request("http://localhost:3000/assistant", { headers: { ...headers, authorization } });
+        assert.equal(assistantRequestOrigin(r), null);
+        assert.equal(ownerTestAccess(r).status, 403);
+      }
+      assert.equal(assistantRequestOrigin(new Request("https://monetcore.dev/assistant", { headers: { host: "evil.example" } })), null);
+      delete process.env.VERCEL;
+      assert.equal(assistantRequestOrigin(new Request("http://localhost:3000/assistant", { headers: good })), null);
+      process.env.VERCEL = "1"; process.env.VERCEL_ENV = "preview";
+      assert.equal(assistantRequestOrigin(new Request("http://localhost:3000/assistant", { headers: good })), null);
     });
     await t.test("Preview also requires owner authentication and exact development branch", () => {
       reset("preview"); assert.equal(ownerTestAccess(request("https://preview.example/assistant")), null);
