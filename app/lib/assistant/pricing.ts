@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 /** Official Cookbook rates (April 2025 table), NOT a verified current price quote.
- * Current pricing/model availability and token-count endpoint charges MUST be
+ * Current pricing/model availability and local-estimation assumptions MUST be
  * independently checked and approved before setting AI_PRICING_APPROVAL.
  * Any model, rate, limit or request-mode change requires a new approval.
  */
@@ -14,9 +14,9 @@ export const pricingPolicy = Object.freeze({
   // Integer nanodollars per token: $0.40 / 1M and $1.60 / 1M.
   inputNanoUsdPerToken: 400,
   outputNanoUsdPerToken: 1600,
-  // Approval must also verify that input-token counting has no separate fee.
-  tokenCountFeeMicroUsd: 0,
-  policyRevision: 1,
+  inputEstimation: "serialized-request-utf8-bytes-plus-framing-v1",
+  inputFramingAllowanceTokens: 512,
+  policyRevision: 2,
 });
 export const minimumReservationMicroUsd = Number(
   (BigInt(pricingPolicy.maxInputTokens) *
@@ -24,8 +24,7 @@ export const minimumReservationMicroUsd = Number(
     BigInt(pricingPolicy.maxOutputTokens) *
       BigInt(pricingPolicy.outputNanoUsdPerToken) +
     BigInt(999)) /
-    BigInt(1000) +
-    BigInt(pricingPolicy.tokenCountFeeMicroUsd),
+    BigInt(1000),
 );
 export const pricingApprovalId = `ai-cost-v1-${createHash("sha256")
   .update(JSON.stringify(pricingPolicy))
