@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-if (Number(process.versions.node.split('.')[0]) < 22)
-  throw new Error('Installed dependencies require Node.js 22 or newer.');
+const [major, minor] = process.versions.node.split('.').map(Number);
+if (major !== 24 || minor < 13) throw new Error('Build using Node.js 24.13+ in the 24.x line.');
 const mode = process.env.MONETCORE_DEPLOYMENT_ENV || 'review';
 if (!['review', 'production'].includes(mode)) throw new Error('Invalid build mode.');
 if (process.env.VERCEL || process.env.VERCEL_ENV)

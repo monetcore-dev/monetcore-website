@@ -8,7 +8,7 @@ import { POST as book } from '../app/api/book/route.ts';
 const { validate } = createRequire(import.meta.url)('../scripts/cpanel/start.cjs');
 test('cPanel adapter rejects fabricated Vercel context and integration activation', () => {
   assert.doesNotThrow(() => validate({}));
-  assert.doesNotThrow(() => validate({ MONETCORE_DEPLOYMENT_ENV: 'production', PORT: '3000' }));
+  assert.doesNotThrow(() => validate({ MONETCORE_DEPLOYMENT_ENV: 'production', PORT: '3000', CPANEL_INGRESS_CONFIGURED: 'true', CPANEL_INGRESS_SECRET: 'synthetic-ingress-secret-long-enough' }));
   for (const patch of [{ VERCEL: '1' }, { VERCEL_ENV: 'production' }, { AI_ASSISTANT_ENABLED: 'true' },
     { AI_OWNER_TEST_ENABLED: 'true' }, { STAGING_AI_ASSISTANT_ENABLED: 'true' }, { STAGING_BOOKING_ENABLED: 'true' },
     { STAGING_CONTACT_ENABLED: 'true' }, { MONETCORE_DEPLOYMENT_ENV: 'invalid' }, { PORT: '0' }, { PORT: '3000junk' }])

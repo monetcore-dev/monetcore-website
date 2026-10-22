@@ -7,8 +7,8 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const source = path.join(root, '.next/standalone');
 const output = process.argv[2];
 if (!output || !path.isAbsolute(output)) throw new Error('Provide an absolute NEW output directory outside the repository.');
-const target = path.resolve(output);
-const relative = path.relative(root, target);
+const target = path.join(await realpath(path.dirname(output)), path.basename(output));
+const relative = path.relative(await realpath(root), target);
 if (!relative.startsWith(`..${path.sep}`)) throw new Error('Artifact must be outside the repository.');
 // mkdir without recursive ensures existing artifacts are never overwritten.
 const config = JSON.parse(await readFile(path.join(source, '.next/required-server-files.json'), 'utf8'));

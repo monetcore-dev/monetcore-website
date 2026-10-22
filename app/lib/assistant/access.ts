@@ -1,10 +1,15 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isCpanelRuntime, cpanelProductionConfigured, trustedCpanelRequest } from "../cpanelRuntime";
 
 export const assistantBranch = "feature/monetcore-stage1-websites";
 
 /** There is deliberately no public production-inference mode in this release. */
 export function isControlledTestEnabled() {
+  if (isCpanelRuntime()) return cpanelProductionConfigured() &&
+    process.env.AI_ASSISTANT_ENABLED === "true" &&
+    process.env.AI_OWNER_TEST_ENABLED === "true" &&
+    process.env.AI_ASSISTANT_EMERGENCY_STOP === "false";
   if (
     process.env.VERCEL !== "1" ||
     process.env.AI_ASSISTANT_EMERGENCY_STOP !== "false" ||
@@ -31,6 +36,7 @@ export function ownerCredentialConfigured() {
  * forwarded-host metadata instead of selecting a value from a comma list.
  */
 export function assistantRequestOrigin(request: Request): string | null {
+  if (isCpanelRuntime()) return trustedCpanelRequest(request) ? "https://monetcore.dev" : null;
   const url = new URL(request.url);
   const production = process.env.VERCEL_ENV === "production";
   if (!production) return url.protocol === "https:" ? url.origin : null;
@@ -64,13 +70,13 @@ export function assistantRequestOrigin(request: Request): string | null {
  * Enforced independently in Proxy AND the paid API route.
  */
 export function ownerTestAccess(request: Request): Response | null {
-  if (!["production", "preview"].includes(process.env.VERCEL_ENV ?? "")) return null;
+  if (!isCpanelRuntime() && !["production", "preview"].includes(process.env.VERCEL_ENV ?? "")) return null;
   const headers = {
     "Cache-Control": "private, no-store",
     "X-Robots-Tag": "noindex, nofollow, noarchive",
   };
   if (
-    process.env.VERCEL !== "1" ||
+    (!isCpanelRuntime() && process.env.VERCEL !== "1") ||
     !isControlledTestEnabled() ||
     !ownerCredentialConfigured()
   )
