@@ -1,6 +1,7 @@
 /** Vercel sets VERCEL_ENV=preview for branch/PR deployments. */
 export function isReviewPreview() {
-  return process.env.VERCEL_ENV === "preview";
+  return process.env.VERCEL_ENV === "preview" ||
+    process.env.MONETCORE_DEPLOYMENT_ENV === "review";
 }
 
 export const previewFormMessage =

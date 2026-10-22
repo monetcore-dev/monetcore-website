@@ -1,3 +1,4 @@
+import { isCpanelRuntime } from "../lib/cpanelRuntime";
 import SiteHeader from "../components/SiteHeader";
 import { pageMetadata } from "../lib/metadata";
 import AssistantChat from "./AssistantChat";
@@ -63,7 +64,7 @@ export default function AssistantPage() {
               </a>
             </div>
           </div>
-          <AssistantChat stagingTest={isReviewPreview() || process.env.VERCEL_ENV === "production"} />
+          <AssistantChat stagingTest={isReviewPreview() || process.env.VERCEL_ENV === "production" || isCpanelRuntime()} />
         </div>
       </main>
     </>
