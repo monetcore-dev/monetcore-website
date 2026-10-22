@@ -4,7 +4,8 @@ import { assemble } from "../../lib/assistant/knowledge";
 export const runtime = "nodejs";
 import {
   classifierInput,
-  countInputTokens,
+  estimateInputTokens,
+  generationRequest,
   boundedJson,
 } from "../../lib/assistant/provider";
 import { pricingPolicy } from "../../lib/assistant/pricing";
@@ -99,25 +100,13 @@ export async function POST(request: Request) {
         { error: "Use up to six questions of at most 1,000 characters each." },
         { status: 400 },
       );
-    const countedInput = classifierInput(messages);
-    if (Buffer.byteLength(JSON.stringify(countedInput)) > 16000)
+    const classifierRequest = classifierInput(messages);
+    if (Buffer.byteLength(JSON.stringify(classifierRequest)) > 16000)
       return Response.json(
         { error: "Conversation is too long. Clear it and try again." },
         { status: 413 },
       );
-    category("controls_unavailable");
-    admission = admit(config, request, JSON.stringify(countedInput));
-    if (!admission.allowed) {
-      category(admission.category);
-      return Response.json({ error: admission.error }, {
-        status: admission.status,
-        headers: admission.retryAfter ? { "Retry-After": String(admission.retryAfter) } : {},
-      });
-    }
-    category("emergency_stop");
-    admission.check();
-    category("token_count_unavailable");
-    const inputTokens = await countInputTokens(config.key, countedInput, request.signal);
+    const inputTokens = estimateInputTokens(classifierRequest);
     if (inputTokens > pricingPolicy.maxInputTokens) {
       category("input_token_limit");
       return Response.json(
@@ -128,7 +117,16 @@ export async function POST(request: Request) {
         { status: 413 },
       );
     }
-    // The counter request can take time: recheck stop immediately before inference.
+    category("controls_unavailable");
+    admission = admit(config, request, JSON.stringify(classifierRequest));
+    if (!admission.allowed) {
+      category(admission.category);
+      return Response.json({ error: admission.error }, {
+        status: admission.status,
+        headers: admission.retryAfter ? { "Retry-After": String(admission.retryAfter) } : {},
+      });
+    }
+    // Recheck owner access, cancellation and emergency stop immediately before inference.
     category("emergency_stop");
     admission.check();
     category("provider_unavailable");
@@ -138,12 +136,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${config.key}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...countedInput,
-        service_tier: pricingPolicy.serviceTier,
-        store: false,
-        max_output_tokens: pricingPolicy.maxOutputTokens,
-      }),
+      body: JSON.stringify(generationRequest(classifierRequest)),
       cache: "no-store",
       redirect: "error",
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),

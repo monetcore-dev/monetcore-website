@@ -11,7 +11,6 @@ const safeCategories = [
   "emergency_stop",
   "local_busy",
   "local_duplicate",
-  "token_count_unavailable",
   "input_token_limit",
   "provider_unavailable",
   "provider_response_invalid",

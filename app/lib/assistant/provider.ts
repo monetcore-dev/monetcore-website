@@ -2,7 +2,7 @@ import "server-only";
 import { knowledge } from "./knowledge";
 import { pricingPolicy } from "./pricing";
 
-/** Identical input-affecting fields are used for counting and generation.
+/** Fixed input-affecting fields used for local estimation and generation.
  * No previous_response_id, conversation, tools, files, images or hidden history.
  */
 export function classifierInput(messages: string[]) {
@@ -58,37 +58,22 @@ export async function boundedJson(
   }
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
-export async function countInputTokens(
-  key: string,
-  input: ReturnType<typeof classifierInput>,
-  signal?: AbortSignal,
-) {
-  const response = await fetch(
-    "https://api.openai.com/v1/responses/input_tokens",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(input),
-      cache: "no-store",
-      redirect: "error",
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(3000)]) : AbortSignal.timeout(3000),
-    },
-  );
-  if (!response.ok) throw new Error("Token count unavailable");
-  const data = await boundedJson(response, 4096);
-  if (
-    !data ||
-    typeof data !== "object" ||
-    !("object" in data) ||
-    data.object !== "response.input_tokens" ||
-    !("input_tokens" in data) ||
-    typeof data.input_tokens !== "number" ||
-    !Number.isSafeInteger(data.input_tokens) ||
-    data.input_tokens < 1
-  )
-    throw new Error("Token count unavailable");
-  return data.input_tokens;
+/** Conservative byte-level BPE estimate, NOT an exact provider token count.
+ * A byte-level tokenizer cannot emit more text tokens than UTF-8 bytes. Count
+ * the ENTIRE serialized request (including instructions, escaped conversation,
+ * schema and request settings), then reserve extra room for provider framing.
+ * Hidden provider/schema processing is not a documented billing contract; model
+ * compatibility and actual usage still require review before paid activation.
+ */
+export function generationRequest(input: ReturnType<typeof classifierInput>) {
+  return {
+    ...input,
+    service_tier: pricingPolicy.serviceTier,
+    store: false,
+    max_output_tokens: pricingPolicy.maxOutputTokens,
+  };
+}
+export function estimateInputTokens(input: ReturnType<typeof classifierInput>) {
+  return Buffer.byteLength(JSON.stringify(generationRequest(input)), "utf8") +
+    pricingPolicy.inputFramingAllowanceTokens;
 }

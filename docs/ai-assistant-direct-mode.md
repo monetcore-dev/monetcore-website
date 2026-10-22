@@ -7,8 +7,8 @@ performed by this work.
 
 ## Current architecture and preserved boundaries
 
-POST /api/assistant uses only the fixed OpenAI Responses input_tokens and Responses
-endpoints. There is no Redis fetch, SDK, database or in-memory fallback pretending
+POST /api/assistant uses only the fixed OpenAI Responses endpoint.
+There is no separate token-counting API request. There is no Redis fetch, SDK, database or in-memory fallback pretending
 to be a durable quota. Booking/contact retain their independent Redis integration
 and existing environment variables. Do not remove or replace those settings.
 
@@ -16,7 +16,7 @@ Production on main (or the approved feature branch) requires BOTH activation fla
 VERCEL=1 and explicit AI_ASSISTANT_EMERGENCY_STOP=false. Preview additionally
 requires its own activation flag on exactly feature/monetcore-stage1-websites.
 Both environments require the owner password and are protected independently by
-Proxy and the API, before any token-count/provider request. Production accepts
+Proxy and the API, before any provider request. Production accepts
 only HTTPS https://monetcore.dev; Preview requires HTTPS and should retain Vercel
 deployment protection. There is no public inference mode. Unknown/local runtimes
 cannot infer. All activation flags default off; missing stop configuration blocks.
@@ -31,12 +31,26 @@ Pinned model remains gpt-4.1-mini-2025-04-14, with the existing pricing approval
 hash gate, fixed strict structured schema, approved topic/templates and URLs,
 store:false, no tools, no automatic retries and no arbitrary endpoint selection.
 Messages still have 6-question / 1000-character individual / 8192-byte body limits;
-full classifier input is bounded at 16000 bytes. Input is actually counted including
-instructions/schema: >4000 tokens stops before generation. Output stays capped
-at 300 tokens. Counting timeout is 3 seconds, generation 15 seconds; redirects are
-rejected and response bodies bounded. Client cancellation is passed upstream
-where supported; a disconnect cannot guarantee that accepted requests are unbilled.
-Token-count format and real model compatibility remain externally unverified.
+full classifier input is bounded at 16000 bytes. Before admission or any provider
+request, the server estimates input tokens as the UTF-8 byte length of the entire
+serialized generation request plus 512 framing tokens. This includes instructions,
+escaped conversation, schema and generation settings. Estimates above 4000 are
+rejected locally with HTTP 413; output remains capped at 300 tokens. The same
+request-building function is used for estimation and generation, preventing drift.
+
+Byte-level BPE text tokenization uses at most one token per byte; counting all JSON
+syntax/settings additionally overcounts ordinary input. The 512-token allowance
+is conservative engineering headroom, not a provider guarantee about hidden schema
+processing or billing. The check is NOT an exact token count or a hard monetary
+cap. Long/Unicode conversations may be rejected well before the character limit.
+Provider-reported usage is still checked and over-limit usage fails closed after
+the response (that cannot undo charges already incurred).
+
+Generation timeout is 15 seconds; redirects are rejected and bodies bounded.
+Client cancellation is passed upstream where supported; accepted requests may
+still be billed. No tokenizer dependency, network counting request or new service
+is introduced. Real snapshot/Responses structured-output compatibility remains
+externally unverified.
 
 ## Honest limits after removing Redis
 
@@ -57,9 +71,9 @@ Token-count format and real model compatibility remain externally unverified.
   state are kept. Logs retain only approved synthetic case/topic/token/cost/error
   fields. No questions, passwords, provider bodies or credentials are logged.
 
-Current provisional generation bound is $0.00208 for 4000 input + 300 output tokens
+Current provisional generation estimate is $0.00208 for 4000 input + 300 output tokens
 at the stored policy rates. This is NOT a reservation or spending guarantee.
-Counting charges, tariffs, availability, taxes, FX and infrastructure costs remain
+Current tariffs, availability, taxes, FX and infrastructure costs remain
 subject to separate verification. AI_MAX_CALL_COST_MICRO_USD is no longer used.
 Provider project budgets/alerts should be reviewed before activation, but do not
 assume they are immediate hard caps. Use a dedicated restricted OpenAI project/key
@@ -79,7 +93,7 @@ All are server-only; no NEXT_PUBLIC keys are used.
 | AI_OWNER_PASSWORD_SHA256 | Lowercase 64-character SHA-256 digest of the private random owner password |
 | OPENAI_API_KEY | Dedicated restricted server-side project API key, never shared in chat |
 | OPENAI_MODEL | `gpt-4.1-mini-2025-04-14` |
-| AI_PRICING_APPROVAL | Existing computed pricing-policy approval ID, only AFTER current pricing/counting-fee verification |
+| AI_PRICING_APPROVAL | Existing computed pricing-policy approval ID, only AFTER current pricing/model/estimation review |
 
 For optional Preview tests, STAGING_AI_ASSISTANT_ENABLED=true replaces the
 Production enable flag; AI_OWNER_TEST_ENABLED and all other safeguards still apply.
@@ -97,8 +111,8 @@ Do not delete shared UPSTASH_REDIS_REST_*, RATE_LIMIT_KEY_SECRET or booking sett
 
 ## Emergency disable / future test procedure
 
-Before paid tests verify current model access, Responses structured output and
-input_tokens support, counting fees, tariffs and provider privacy/transfer terms.
+Before paid tests verify current model access, Responses structured-output support, tariffs, input-estimation assumptions and
+provider privacy/transfer terms.
 Owner should review project permissions, key scope and actual billing controls.
 No zero-retention or completed provider legal arrangements are claimed.
 
@@ -110,7 +124,7 @@ are a procedure, NOT an application-enforced hard test ceiling.
 
 To stop, set AI_ASSISTANT_ENABLED=false (or AI_OWNER_TEST_ENABLED=false or
 AI_ASSISTANT_EMERGENCY_STOP=true) and redeploy using the authorized workflow.
-The application rechecks its local configuration before counting and generation,
+The application rechecks its local configuration before generation,
 but Vercel environment changes need a deployment and do NOT instantly update
 running instances. Already accepted requests may finish and be charged. For an
 urgent stop across already enabled deployments, an authorized owner must use
@@ -125,7 +139,7 @@ forms, whose implementation is untouched. No live services were exercised.
 47 automated tests passed, including actual local admission/concurrency logic,
 independent-process state, disabled defaults, Production/Preview owner auth,
 missing credentials, token bounds, structured-response validation, injection,
-count/generation failure, cancellation, emergency checks, no retries, duplicate
+local input bounds and generation failure, cancellation, emergency checks, no retries, duplicate
 suppression and log failures. All existing booking/contact tests passed with
 mocks. TypeScript, ESLint and optimized production build passed.
 
@@ -134,3 +148,19 @@ disabled endpoint, request UUID header, mocked answers, Clear Conversation/reloa
 and zero external requests or browser exceptions. No real provider or Redis
 compatibility, price, billing or device test is claimed. The historical Redis tests
 were replaced with direct-mode coverage; they do not describe current controls.
+
+## Revised pricing approval — local estimation
+
+Policy revision 2 keeps the pinned snapshot and provisional $0.40/M input and
+$1.60/M output rates, removes the counting-fee assumption, and binds the estimation
+method plus 512-token headroom into the approval hash:
+
+```
+AI_PRICING_APPROVAL=ai-cost-v1-a35f6ac2c59c55425d498fc85f8e95de4b61c1a44207a2138ce56a7c0b69366d
+```
+
+The old approval value fails closed. Do not set the new value until current model
+availability, pricing, structured-output support and estimation limitations are
+reviewed and approved. Counting-endpoint charges no longer affect this integration
+because it is never called. No current pricing or project access verification is
+claimed. No environment variables or activation flags were changed.
