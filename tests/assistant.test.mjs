@@ -168,6 +168,20 @@ test("direct assistant: mocked OpenAI only, no Redis or external actions", async
       assert.equal((await POST(request())).status, 409); assert.equal(calls.length, 1);
       assert.doesNotMatch(JSON.stringify(logs), /synthetic-private-key|PRIVATE_TIMEOUT|Bearer|password/);
     });
+    await t.test("provider failures never return business answers as an offline fallback", async () => {
+      for (const failure of ["timeout", "http_error", "large"]) {
+        reset(); mode = failure;
+        const response = await POST(request());
+        assert.equal(response.status, 503);
+        const body = await response.json(); assert.equal(body.answers, undefined);
+        assert.equal(typeof body.error, "string"); assert.equal(calls.length, 1);
+      }
+      reset(); payload = output(["unknown"]);
+      const response = await POST(request(["An unsupported question"]));
+      assert.equal(response.status, 200); assert.equal(calls.length, 1);
+      assert.match(JSON.stringify(await response.json()), /contact our team/);
+      assert.ok(logs.some(l => l[1]?.error_category === "success" && l[1].provider_input_tokens === 2500));
+    });
     await t.test("over-limit provider usage fails; missing usage remains explicitly unknown", async () => {
       reset(); payload.usage.output_tokens = 301;
       assert.equal((await POST(request())).status, 503);
