@@ -67,6 +67,15 @@ const sections = [
     ],
   },
   {
+    id: "customer-platform",
+    title: "Customer platform preparation",
+    paragraphs: [
+      "The customer platform foundation is disabled for public use. Separately approved staging tests use synthetic account and project information. When enabled for those tests, it stores account names, email addresses, password hashes, verification and recovery records, sessions, organization memberships, project requests and audit events in a separate PostgreSQL database.",
+      "Customer authentication uses secure, HTTP-only session cookies. Session records can include IP addresses and browser user-agent information. Authentication emails are restricted to approved test recipients; request counters use keyed hashes of IP addresses. Customer passwords and project requests are not sent to the AI assistant.",
+      "Account deactivation blocks access and revokes sessions; it does not automatically delete project or audit records. Customer-platform retention and operational arrangements require further review before public onboarding. Contact hello@monetcore.dev for clarification. We do not claim automated deletion or verified provider transfer arrangements.",
+    ],
+  },
+  {
     id: "retention",
     title: "How long information is retained",
     paragraphs: [
