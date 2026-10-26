@@ -1,0 +1,8 @@
+{
+  "release_root": "/home/REPLACE_APP_USER/monetcore-releases",
+  "state_root": "/home/REPLACE_APP_USER/private-review-state",
+  "pm2_home": "/home/REPLACE_APP_USER/.pm2",
+  "nginx_site": "/etc/nginx/sites-available/REPLACE_DEDICATED_REVIEW_FILE",
+  "previous_process_name": null,
+  "candidate_port": null
+}
