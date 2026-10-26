@@ -60,7 +60,7 @@ try {
   assert.equal(await page.locator(".technology-showcase").count(), 0);
   assert.equal(await core.getByRole("link").count(), 5);
   const heading = await page.locator("#corporate-hero h1").innerText();
-  assert.match(heading, /Build smarter.*Automate faster.*Grow further/s);
+  assert.match(heading, /Engineering software.*Automating business.*Powering the future/s);
   assert.equal(
     await page
       .locator("#corporate-hero")

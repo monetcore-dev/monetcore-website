@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
     title:
-      "Monetcore System Solutions | Build smarter. Automate faster. Grow further.",
+      "Monetcore System Solutions | Engineering software. Automating business. Powering the future.",
     description:
       "Software, AI automation, digital products and technology consulting for businesses. Based in Abuja, Nigeria.",
     url: "/",
@@ -122,24 +122,24 @@ export default function Home() {
           <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
-                Monetcore System Solutions · Business technology
+                Monetcore System Solutions · Software & intelligent automation
               </p>
               <h1 className="mt-6 text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
-                Build smarter.
+                Engineering software.
                 <br />
-                <span className="text-blue-700">Automate faster.</span>
+                <span className="text-blue-700">Automating business.</span>
                 <br />
-                Grow further.
+                Powering the future.
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
-                We build full-stack technology solutions for businesses. Custom software,
-                AI automation, websites and digital applications — connected to
-                the way your business works.
+                We develop intelligent software, scalable digital platforms and
+                AI-powered automation systems that help businesses operate more
+                efficiently.
               </p>
               <p className="mt-4 max-w-xl leading-7 text-slate-600">
-                From a professional online presence to a connected business
-                workflow, Monetcore brings software engineering and practical
-                technology thinking to your next step.
+                From full-stack web and mobile applications to connected
+                enterprise workflows, we shape the technology around your
+                requirements, with people in control of consequential decisions.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="#contact" className={primary}>

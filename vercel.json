@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "feature/monetcore-vps-completed": false
+      "feature/monetcore-vps-completed": false,
+      "feature/monetcore-2-homepage": false
     }
   }
 }

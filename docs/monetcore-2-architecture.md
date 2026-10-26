@@ -48,3 +48,25 @@ No live flags, external resources, schema, DNS, runtime services or deployment s
 ## Local verification
 
 2026-10-26: TypeScript, ESLint, optimized production build, 57 automated tests and nine offline staging checks passed. Existing Chromium homepage and AI Core suites passed: solution selection, demo lifecycle, planner handoff, mocked submission states, accessibility scans, eight-width core layout, keyboard/touch navigation, pause/reduced motion, zero unintended API calls and no browser exceptions. Browser coverage is desktop Chromium emulation, not physical mobile-device certification. No live provider readiness is claimed.
+
+## Unified directive refinement
+
+The operating hierarchy is Owner / CEO → IHUOMA → specialized agents → explicitly permitted business systems. The three experiences share design tokens but not authorization: public corporate website; tenant-isolated customer portal; private IHUOMA Owner Command Center. No Phase 2/3 route or agent is advertised as operational.
+
+The planned registry contains eight distinct agent types: software development, sales/lead generation, marketing, customer support, project management, finance/invoicing, business operations, and infrastructure monitoring. Infrastructure monitoring starts with read-only health signals and cannot restart services or deploy without explicit authorization. Registry entries declare tool IDs, tenant scope, maximum attempts, deadline, budget, approval class and emergency revocation state. The owner retains final authority over contracts, sensitive external communications, deployments, destructive changes, credentials and payments.
+
+The Owner Command Center will consolidate approved operational data: customers, projects, tasks, proposals, finances, sales, marketing, health, audit events and alerts. It will expose approval/rejection and permission revocation through authenticated server APIs. Design dashboards only after those data contracts and permissions exist; avoid fabricated metrics. Customer registration, files, deliverables, milestones, invoices, support and communication history are Phase 2 work requiring identity and tenant-isolation acceptance tests first.
+
+### Phase 1 design review
+
+Namecheap is a quality/usability benchmark, not a source of assets or copied layouts. This review assessed the existing code against the supplied criteria; it does not claim a live comparative evaluation of namecheap.com. Retain Monetcore's own navy/blue/purple identity, shared typography, existing dropdown navigation and single animated core. Refined the corporate hero to full-stack positioning, added distinct capability icons, keyboard focus parity for dropdown links, active-category indication on service/product detail pages, and lighter capability surfaces on mobile. Existing demos, process, FAQ, company sections, packages and conversion journeys remain intact. No new photographs were added.
+
+### Git provenance and deployment boundary
+
+Verified local Phase 1 commit `8c88a9999224f7fb5aa3ee25c6b781338f3744d3` and fast-forwarded the existing `feature/monetcore-2-homepage` branch from completed VPS migration commit `a67acee66ac3d0b602b4b98dceceab8440a5dba5`; no cherry-pick conflicts or source reconstruction was needed. Both commits remain in history. The dedicated branch is the development/delivery target. Its Vercel Git deployment is explicitly disabled in `vercel.json` before push, preserving the prior VPS branch block. Offline staging checks accept this development branch without changing runtime authorization. No merge, deployment, runtime configuration, DNS, Nginx or PM2 changes are authorized by this increment.
+
+### Next proposed Phase 2 increment (requires approval)
+
+First approve identity/session architecture, owner MFA/recovery, tenant-role matrix and retention scope. Then implement additive migrations for organizations/memberships/projects, server-side tenant-scoped repositories and one minimal customer project-request/dashboard journey. Test cross-tenant denial, session revocation, authorization and audit trails before adding CRM, quotations or invoicing. Keep IHUOMA execution and external actions disabled until their later phase and explicit activation approval.
+
+Unified refinement verification (2026-10-26): 57 automated tests, nine offline staging checks, TypeScript, ESLint and optimized review build passed. Chromium route suite passed eight page renders, internal links, nine responsive widths and desktop/mobile dropdown interactions. Homepage and AI Core suites passed planner/demo behavior, accessibility, keyboard/touch navigation and reduced motion. Added a dedicated corporate-foundation browser check covering eight widths (320–1440px), capability-card bounds, mobile/desktop axe and nested active navigation; passed. The old AI Core headline assertion was updated to the approved new corporate positioning; core behavior was not changed. Provider integrations and physical Android/iPhone devices were not exercised. Screenshots are local review artifacts, not deployed output.

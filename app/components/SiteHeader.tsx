@@ -230,13 +230,13 @@ export default function SiteHeader() {
             const active = openMenu === menu.id;
             const current =
               menu.id === "solutions"
-                ? pathname === "/services"
+                ? pathname === "/services" || pathname.startsWith("/services/")
                 : menu.id === "products"
                   ? [
                       "/products",
                       "/website-packages",
                       "/demo/fintech",
-                    ].includes(pathname)
+                    ].includes(pathname) || pathname.startsWith("/products/")
                   : ["/about", "/contact", "/book"].includes(pathname);
             return (
               <div key={menu.id} className="nav-disclosure">

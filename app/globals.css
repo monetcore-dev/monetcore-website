@@ -3044,3 +3044,47 @@ summary {
     max-height: calc(100dvh - 152px);
   }
 }
+
+/* Phase 1 refinement: preserve dropdown behavior; make focus as clear as hover. */
+.mega-link:focus-visible {
+  background: #f0f4fb;
+  outline: 2px solid #345be0;
+  outline-offset: -2px;
+}
+.engineering-capability {
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.engineering-capability:hover {
+  border-color: #93c5fd;
+}
+@media (max-width: 767px) {
+  /* Keep long engineering labels and the new positioning inside narrow screens. */
+  #corporate-hero h1 {
+    font-size: clamp(1.85rem, 7.6vw, 2.8rem);
+    line-height: 1.15;
+  }
+  .engineering-capabilities {
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    color: #0f172a;
+  }
+  .engineering-capabilities p,
+  .engineering-capability p {
+    color: #334155;
+  }
+  .engineering-capability {
+    background: white;
+    border-color: #cbd5e1;
+  }
+  .engineering-capability svg,
+  .engineering-capability span {
+    color: #1d4ed8;
+  }
+  .engineering-capability:focus-visible {
+    outline-color: #1d4ed8;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .engineering-capability {
+    transition: none;
+  }
+}
