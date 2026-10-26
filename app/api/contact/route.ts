@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });
   }
   try {
-    const limited = await enforceRateLimit(request, "contact");
+    const limited = await enforceRateLimit(request, staging ? "staging:contact" : "contact", 10, 600_000, staging);
     if (limited) return limited;
     const body = await readSubmission(request);
     if (body instanceof Response) return body;

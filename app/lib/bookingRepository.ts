@@ -70,6 +70,7 @@ export async function createBooking(
     ],
   );
 
+  if (result.rows.length !== 1) throw new Error("Reservation result unavailable");
   return result.rows[0];
 }
 
@@ -115,7 +116,7 @@ export async function updateBookingTracking(
 
   const values = entries.map(([, value]) => value);
 
-  await getPostgresPool().query(
+  const result = await getPostgresPool().query(
     `
     UPDATE public.bookings
     SET ${assignments.join(", ")}
@@ -123,4 +124,5 @@ export async function updateBookingTracking(
     `,
     [bookingId, ...values],
   );
+  if (result.rowCount !== 1) throw new Error("Tracking update not persisted");
 }

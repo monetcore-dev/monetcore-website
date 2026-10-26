@@ -9,6 +9,7 @@ export function assertBookingIntegrationsAllowed() {
   const account = process.env.STAGING_BOOKING_EXPECTED_SERVICE_ACCOUNT_EMAIL;
   if (
     !process.env.MONETCORE_DB_PASSWORD ||
+    process.env.STAGING_BOOKING_EXPECTED_DATABASE !== "monetcore_db" ||
     !calendar ||
     calendar !== process.env.GOOGLE_CALENDAR_ID ||
     !account ||

@@ -12,8 +12,9 @@ tls.connect = blocked;
 globalThis.fetch = async () => blocked();
 syncBuiltinESMExports();
 for (const key of [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  "MONETCORE_DB_PASSWORD",
+  "MONETCORE_STAGING",
+  "MONETCORE_VPS_REVIEW",
   "GOOGLE_CALENDAR_ID",
   "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   "GOOGLE_PRIVATE_KEY",

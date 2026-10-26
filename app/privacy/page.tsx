@@ -33,7 +33,7 @@ const sections = [
     title: "Enquiries, consultations and technology demonstrations",
     paragraphs: [
       "Contact and quotation submissions are emailed to our configured business mailbox using Namecheap Private Email. The website contact handler does not itself insert these enquiries into the booking database. Your email address is used so we can reply.",
-      "The consultation booking implementation stores reservation information in Supabase and uses Google Calendar for appointment information. Calendar entries can contain contact and project details. Booking acknowledgements and administrator notifications are sent by email. A reservation can remain stored when a Calendar or notification operation fails.",
+      "The consultation booking implementation stores reservation information in a PostgreSQL database and uses Google Calendar for appointment information. Calendar entries can contain contact and project details. Booking acknowledgements and administrator notifications are sent by email. A reservation can remain stored when a Calendar or notification operation fails.",
       "The homepage AI Core is a visual representation of our capabilities. Local interactive demonstrations use simulations; they do not themselves send real messages, create bookings, move money or submit your form information to a live AI model. The separately linked external demonstration has its own data-handling context; use fictional details there.",
       "Data processing for a separately agreed software or AI automation engagement may require additional project-specific notices and contractual terms. This website policy does not replace those arrangements.",
     ],
@@ -52,7 +52,7 @@ const sections = [
     id: "providers",
     title: "Service providers and external services",
     paragraphs: [
-      "The website implementation uses Vercel for hosting, Namecheap Private Email for email delivery, Supabase for booking records, Google Calendar for appointments and Upstash Redis where shared rate limiting is configured. Providers receive information relevant to the features involved and may process associated technical metadata.",
+      "This VPS website implementation uses Namecheap hosting, Namecheap Private Email for email delivery, PostgreSQL for booking records, Google Calendar for appointments and Upstash Redis where shared rate limiting is configured. Providers receive information relevant to the features involved and may process associated technical metadata.",
       "Google Maps is provided as an external link rather than an embedded map. Opening it, using WhatsApp or following social and external demonstration links takes you to another service whose privacy practices also apply.",
       "Information may also need to be disclosed where required by applicable law or for establishing, exercising or defending legal claims.",
     ],

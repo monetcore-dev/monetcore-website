@@ -4,15 +4,17 @@ import { createHash } from "node:crypto";
 import { POST } from "../app/api/book/route.ts";
 import { GET } from "../app/api/book/availability/route.ts";
 import { assertBookingIntegrationsAllowed } from "../app/lib/stagingBooking.ts";
-import { getSupabaseAdmin as realSupabaseFactory } from "../app/lib/supabaseAdmin.ts";
+import { getPostgresPool as realPostgresFactory } from "../app/lib/postgres.ts";
 import { getGoogleCalendar as realCalendarFactory } from "../app/lib/googleCalendar.ts";
 import { state } from "./integrations.mjs";
 
 const config = {
   MONETCORE_STAGING: "true",
   MONETCORE_VPS_REVIEW: "true",
+  MONETCORE_VPS_PROXY_VERIFIED: "true",
   NODE_ENV: "production",
   STAGING_BOOKING_ENABLED: "true",
+  STAGING_BOOKING_EXPECTED_DATABASE: "monetcore_db",
   MONETCORE_DB_PASSWORD: "synthetic-test-password-not-a-credential",
   STAGING_BOOKING_EXPECTED_CALENDAR_ID: "synthetic-calendar",
   GOOGLE_CALENDAR_ID: "synthetic-calendar",
@@ -38,20 +40,21 @@ const valid = {
   startedAt: Date.now() - 5000,
 };
 const request = (body = valid) =>
-  new Request("https://review.example/api/book", {
+  new Request("https://review.monetcore.dev/api/book", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      origin: "https://review.example",
+      origin: "https://review.monetcore.dev",
       "x-forwarded-for": "synthetic",
     },
     body: JSON.stringify(body),
   });
 const availability = () =>
   GET(
-    new Request("https://review.example/api/book/availability?date=2030-01-07"),
+    new Request("https://review.monetcore.dev/api/book/availability?date=2030-01-07"),
   );
 function reset() {
+  for (const key of ["VERCEL", "VERCEL_ENV", "VERCEL_GIT_COMMIT_REF"]) delete process.env[key];
   Object.assign(process.env, config);
   for (const key of ["bookings", "emails", "updates", "calendars"])
     state[key].length = 0;
@@ -62,6 +65,7 @@ function reset() {
     "failEmail",
     "rejectEmail",
     "failDatabase",
+    "loseReservationAck",
   ])
     state[key] = false;
   globalThis.fetch = async (url) => {
@@ -71,15 +75,16 @@ function reset() {
 }
 
 test("staging booking safety, isolation, delivery outcomes and retry boundaries (mocked services only)", async () => {
-  const saved = Object.fromEntries(
-    Object.keys(config).map((key) => [key, process.env[key]]),
-  );
+  const saved = { ...process.env };
   const originalFetch = globalThis.fetch;
   try {
     for (const patch of [
       { STAGING_BOOKING_ENABLED: "false" },
       { MONETCORE_VPS_REVIEW: "false" },
+      { MONETCORE_VPS_PROXY_VERIFIED: "false" },
       { MONETCORE_STAGING: "false" },
+      { NODE_ENV: "development" },
+      { VERCEL: "1" },
       { VERCEL_ENV: "preview" },
       { VERCEL_GIT_COMMIT_REF: "other-branch" },
     ]) {
@@ -87,15 +92,14 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
       Object.assign(process.env, patch);
       assert.equal((await POST(request())).status, 403);
       assert.equal((await availability()).status, 403);
-      assert.throws(realSupabaseFactory);
+      assert.throws(realPostgresFactory);
       assert.throws(realCalendarFactory);
       assert.equal(state.bookings.length, 0);
     }
     for (const key of Object.keys(config).filter(
       (key) =>
         ![
-          "VERCEL_ENV",
-          "VERCEL_GIT_COMMIT_REF",
+          "MONETCORE_STAGING", "MONETCORE_VPS_REVIEW", "MONETCORE_VPS_PROXY_VERIFIED", "NODE_ENV",
           "STAGING_BOOKING_ENABLED",
         ].includes(key),
     )) {
@@ -107,11 +111,7 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
       assert.equal(state.bookings.length, 0);
     }
     for (const patch of [
-      { NEXT_PUBLIC_SUPABASE_URL: "https://wrong.supabase.co" },
-      {
-        NEXT_PUBLIC_SUPABASE_URL:
-          "https://synthetic-staging.supabase.co@wrong.invalid",
-      },
+      { STAGING_BOOKING_EXPECTED_DATABASE: "production_db" },
       { GOOGLE_CALENDAR_ID: "wrong-calendar" },
       { GOOGLE_SERVICE_ACCOUNT_EMAIL: "wrong@example.invalid" },
       { MONETCORE_EMAIL: "unapproved@example.invalid" },
@@ -121,7 +121,7 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
       reset();
       Object.assign(process.env, patch);
       assert.throws(assertBookingIntegrationsAllowed);
-      assert.throws(realSupabaseFactory);
+      assert.throws(realPostgresFactory);
       assert.throws(realCalendarFactory);
       assert.equal((await POST(request())).status, 503);
     }
@@ -158,8 +158,19 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
     reset();
     state.failDatabase = true;
     assert.equal((await POST(request())).status, 500);
+    assert.equal((await availability()).status, 500);
     assert.equal(state.emails.length, 0);
     assert.equal(state.calendars.length, 0);
+    reset();
+    state.loseReservationAck = true;
+    const uncertain = await POST(request());
+    assert.equal(uncertain.status, 500);
+    assert.equal((await uncertain.json()).outcome, "unknown");
+    assert.equal(state.bookings.length, 1);
+    assert.equal(state.emails.length + state.calendars.length, 0);
+    state.loseReservationAck = false;
+    assert.equal((await POST(request())).status, 409);
+    assert.equal(state.emails.length + state.calendars.length, 0);
     reset();
     let response = await POST(request());
     assert.equal(response.status, 201);
@@ -227,6 +238,7 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
     assert.doesNotThrow(assertBookingIntegrationsAllowed);
   } finally {
     globalThis.fetch = originalFetch;
+    for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key];
     for (const [key, value] of Object.entries(saved))
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;

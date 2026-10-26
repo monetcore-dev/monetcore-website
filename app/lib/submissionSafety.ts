@@ -1,4 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
+import { submissionOrigin, isStagingContactEnabled, isStagingBookingEnabled } from "./previewSafety";
 
 /** Trust Vercel's overwritten header there; other hosts need a trusted proxy. */
 function clientAddress(request: Request) {
@@ -148,7 +149,8 @@ export async function readSubmission(
   request: Request,
 ): Promise<Record<string, unknown> | Response> {
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin)
+  const staging = isStagingContactEnabled() || isStagingBookingEnabled();
+  if ((staging && (!origin || !submissionOrigin(request))) || (origin && origin !== submissionOrigin(request)))
     return Response.json(
       { error: "Invalid submission origin." },
       { status: 403 },

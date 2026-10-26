@@ -6,7 +6,6 @@ registerHooks({
     if (
       [
         "nodemailer",
-        "@/app/lib/supabaseAdmin",
         "@/app/lib/bookingRepository",
         "@/app/lib/googleCalendar",
       ].includes(specifier)

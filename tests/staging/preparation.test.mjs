@@ -34,7 +34,7 @@ test("1 isolation: outbound fetch and sockets are blocked; fixtures contain no r
   const f = bookingFixtures();
   assert.match(f.base.email, /@example\.invalid$/);
   assert.ok(new Date(f.base.date + "T12:00:00+01:00").getTime() > Date.now());
-  assert.equal(process.env.SUPABASE_SERVICE_ROLE_KEY, undefined);
+  assert.equal(process.env.MONETCORE_DB_PASSWORD, undefined);
 });
 test("2 contract: booking field/type/date rules can be checked without a database", () => {
   const f = bookingFixtures();

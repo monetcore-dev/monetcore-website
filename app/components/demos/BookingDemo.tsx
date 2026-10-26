@@ -57,7 +57,7 @@ export default function BookingDemo() {
         </button>
       </div>
       <p>
-        Availability comes from this local sample list only, not Supabase or
+        Availability comes from this local sample list only, not a live booking database or
         Google Calendar. The demo illustrates slot conflicts and cancellation;
         it does not verify production concurrency.
       </p>

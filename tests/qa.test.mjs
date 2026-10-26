@@ -30,11 +30,12 @@ const base = {
 };
 let sequence = 0;
 function request(data, path = "contact", extras = {}) {
-  return new Request(`https://review.example/api/${path}`, {
+  const host = process.env.MONETCORE_VPS_REVIEW === "true" && !process.env.VERCEL_ENV ? "review.monetcore.dev" : "review.example";
+  return new Request(`https://${host}/api/${path}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      origin: "https://review.example",
+      origin: `https://${host}`,
       "x-forwarded-for": `test-${++sequence}`,
       ...extras,
     },
@@ -478,20 +479,23 @@ test("slot conflict gives selection guidance without repeating Calendar or notif
   );
 });
 
-test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP acceptance; booking stays blocked", async () => {
+test("staging contact opt-in is VPS-only, recipient-locked and requires SMTP acceptance; booking stays blocked", async () => {
   const keys = [
     "VERCEL_ENV",
     "VERCEL",
     "VERCEL_GIT_COMMIT_REF",
     "MONETCORE_STAGING",
     "MONETCORE_VPS_REVIEW",
+    "MONETCORE_VPS_PROXY_VERIFIED",
     "NODE_ENV",
     "STAGING_CONTACT_ENABLED",
+    "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "RATE_LIMIT_KEY_SECRET",
     "MONETCORE_EMAIL",
     "MONETCORE_EMAIL_PASSWORD",
   ];
   const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   const initial = state.emails.length;
+  const originalFetch = globalThis.fetch;
   const valid = {
     ...base,
     startedAt: Date.now() - 5000,
@@ -505,6 +509,7 @@ test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP
     process.env.VERCEL_GIT_COMMIT_REF = "feature/monetcore-stage1-websites";
     process.env.MONETCORE_STAGING = "true";
     process.env.MONETCORE_VPS_REVIEW = "true";
+    process.env.MONETCORE_VPS_PROXY_VERIFIED = "true";
     process.env.STAGING_CONTACT_ENABLED = "true";
     process.env.MONETCORE_EMAIL = "hello@monetcore.dev";
     process.env.MONETCORE_EMAIL_PASSWORD = "mock-only";
@@ -512,6 +517,10 @@ test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP
     // Vercel previews remain blocked, even with activation flags.
     assert.equal((await contact(request(valid))).status, 403);
 
+    globalThis.fetch = async () => Response.json({ result: [1, 600000] });
+    process.env.UPSTASH_REDIS_REST_URL = "https://synthetic.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "synthetic-only";
+    process.env.RATE_LIMIT_KEY_SECRET = "synthetic-long-test-key-over-thirty-two";
     // An authorized VPS review requires explicit configuration.
     delete process.env.VERCEL_ENV;
     delete process.env.VERCEL;
@@ -526,6 +535,14 @@ test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP
     assert.equal((await contact(request(valid))).status, 403);
 
     process.env.MONETCORE_VPS_REVIEW = "true";
+    process.env.MONETCORE_VPS_PROXY_VERIFIED = "true";
+    globalThis.fetch = async () => { throw new Error("synthetic Redis outage"); };
+    assert.equal((await contact(request(valid))).status, 503);
+    assert.equal(state.emails.length, initial);
+    globalThis.fetch = async () => Response.json({ result: [11, 600000] });
+    assert.equal((await contact(request(valid))).status, 429);
+    assert.equal(state.emails.length, initial);
+    globalThis.fetch = async () => Response.json({ result: [1, 600000] });
     process.env.MONETCORE_EMAIL = "unapproved@example.invalid";
     assert.equal((await contact(request(valid))).status, 503);
     assert.equal(state.emails.length, initial);
@@ -586,6 +603,7 @@ test("staging contact opt-in is branch-bound, recipient-locked and requires SMTP
       403,
     );
   } finally {
+    globalThis.fetch = originalFetch;
     state.rejectEmail = false;
     state.failEmail = false;
     for (const key of keys)

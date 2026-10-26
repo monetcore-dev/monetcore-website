@@ -14,7 +14,6 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-import { getSupabaseAdmin } from "@/app/lib/supabaseAdmin";
 import { createBooking, updateBookingTracking as updatePostgresTracking } from "@/app/lib/bookingRepository";
 import { getGoogleCalendar } from "@/app/lib/googleCalendar";
 
@@ -341,7 +340,8 @@ export async function POST(request: Request) {
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        error.code === "23505"
+        error.code === "23505" &&
+        "constraint" in error && error.constraint === "unique_active_booking_slot"
       ) {
         return respond(
           {
