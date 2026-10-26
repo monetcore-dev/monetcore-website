@@ -74,6 +74,9 @@ export const services: Service[] = [
       "Customer portals",
       "Business dashboards",
       "Internal operations platforms",
+      "Full-stack web applications and SaaS platforms",
+      "Database architecture and deployment planning",
+      "Scoped software maintenance and technical support",
     ],
     challenges: [
       "Spreadsheet duplication",

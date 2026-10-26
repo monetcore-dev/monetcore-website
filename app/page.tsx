@@ -30,6 +30,7 @@ import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
 import AICore from "./components/AICore";
+import EngineeringCapabilities from "./components/EngineeringCapabilities";
 import { corporateSolutions } from "./config/corporateSolutions";
 import {
   packagePrice,
@@ -131,7 +132,7 @@ export default function Home() {
                 Grow further.
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
-                We develop technology solutions for businesses. Custom software,
+                We build full-stack technology solutions for businesses. Custom software,
                 AI automation, websites and digital applications — connected to
                 the way your business works.
               </p>
@@ -196,6 +197,8 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        <EngineeringCapabilities />
 
         <section id="services" className="px-5 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">

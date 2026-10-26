@@ -62,7 +62,7 @@ export default function OfferingOverview({
             </p>
             <h2>
               {isService
-                ? "Seven connected service areas."
+                ? `${services.length} connected service areas.`
                 : "Six product experiences. Honest status."}
             </h2>
             <div className="offering-grid two">
