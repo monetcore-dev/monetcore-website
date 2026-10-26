@@ -1,0 +1,211 @@
+[
+  {
+    "name": "home-mobile-1",
+    "path": "/",
+    "mode": "mobile",
+    "scores": {
+      "performance": 93,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1037.749,
+      "largest-contentful-paint": 2927.4980000000005,
+      "total-blocking-time": 156,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 167334,
+    "javascriptResourceBytes": 540378
+  },
+  {
+    "name": "home-mobile-2",
+    "path": "/",
+    "mode": "mobile",
+    "scores": {
+      "performance": 96,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 993.7804,
+      "largest-contentful-paint": 2758.5608,
+      "total-blocking-time": 86.99999999999989,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 167334,
+    "javascriptResourceBytes": 540378
+  },
+  {
+    "name": "home-mobile-3",
+    "path": "/",
+    "mode": "mobile",
+    "scores": {
+      "performance": 94,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 963.5379,
+      "largest-contentful-paint": 2885.0757999999996,
+      "total-blocking-time": 125.50000000000023,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 167334,
+    "javascriptResourceBytes": 540378
+  },
+  {
+    "name": "home-desktop",
+    "path": "/",
+    "mode": "desktop",
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 263.6633,
+      "largest-contentful-paint": 630.3266,
+      "total-blocking-time": 34,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 179928,
+    "javascriptResourceBytes": 574345
+  },
+  {
+    "name": "services-mobile",
+    "path": "/services",
+    "mode": "mobile",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 907.8279,
+      "largest-contentful-paint": 2593.8279,
+      "total-blocking-time": 85,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 172259,
+    "javascriptResourceBytes": 552497
+  },
+  {
+    "name": "products-mobile",
+    "path": "/products",
+    "mode": "mobile",
+    "scores": {
+      "performance": 96,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 908.8497,
+      "largest-contentful-paint": 2741.8496999999998,
+      "total-blocking-time": 87,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 172259,
+    "javascriptResourceBytes": 552497
+  },
+  {
+    "name": "about-mobile",
+    "path": "/about",
+    "mode": "mobile",
+    "scores": {
+      "performance": 96,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 909.5089,
+      "largest-contentful-paint": 2692.5089000000003,
+      "total-blocking-time": 83,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 172259,
+    "javascriptResourceBytes": 552497
+  },
+  {
+    "name": "contact-mobile",
+    "path": "/contact",
+    "mode": "mobile",
+    "scores": {
+      "performance": 96,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1386.4548,
+      "largest-contentful-paint": 2659.9096,
+      "total-blocking-time": 77,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 167334,
+    "javascriptResourceBytes": 540378
+  },
+  {
+    "name": "book-mobile",
+    "path": "/book",
+    "mode": "mobile",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 910.9673,
+      "largest-contentful-paint": 2615.9673000000003,
+      "total-blocking-time": 47,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 175003,
+    "javascriptResourceBytes": 562226
+  },
+  {
+    "name": "packages-mobile",
+    "path": "/website-packages",
+    "mode": "mobile",
+    "scores": {
+      "performance": 96,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 909.6578999999999,
+      "largest-contentful-paint": 2608.6578999999997,
+      "total-blocking-time": 79,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 177116,
+    "javascriptResourceBytes": 567188
+  },
+  {
+    "name": "fintech-mobile",
+    "path": "/demo/fintech",
+    "mode": "mobile",
+    "scores": {
+      "performance": 95,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 931.1105,
+      "largest-contentful-paint": 2763.1105,
+      "total-blocking-time": 132,
+      "cumulative-layout-shift": 0
+    },
+    "javascriptTransferBytes": 155035,
+    "javascriptResourceBytes": 504142
+  }
+]

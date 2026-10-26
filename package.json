@@ -1,0 +1,40 @@
+{
+  "name": "monetcore-website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./tests/register.mjs --test tests/*.test.mjs",
+    "test:browser": "node tests/browser-routes.mjs && node tests/browser-home.mjs && node tests/browser-packages.mjs && node tests/browser-booking-demo.mjs && node tests/browser-audit.mjs && node tests/browser-mobile.mjs && node tests/browser-motion.mjs && node tests/browser-booking-conflicts.mjs && node tests/browser-service-experiences.mjs && node tests/browser-product-experiences.mjs && node tests/browser-offering-qa.mjs && node tests/browser-ai-core.mjs && node tests/browser-booking-outcomes.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:staging:local": "node scripts/staging/local-check.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "@vercel/analytics": "^2.0.1",
+    "googleapis": "^176.0.0",
+    "lucide-react": "^1.55.0",
+    "next": "^16.4.0",
+    "nodemailer": "^10.1.0",
+    "pg": "^8.23.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.2",
+    "playwright-core": "1.64.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
