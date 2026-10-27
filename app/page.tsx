@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  Check,
   Code2,
   Layers3,
   Workflow,
@@ -29,7 +28,7 @@ import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
-import HeroBanner from "./components/HeroBanner";
+import HeroBanner, { HeroServiceElectron } from "./components/HeroBanner";
 import { corporateSolutions } from "./config/corporateSolutions";
 import {
   packagePrice,
@@ -123,12 +122,12 @@ export default function Home() {
                 <br />
                 Grow further.
               </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
                 We develop technology solutions for businesses. Custom software,
                 AI automation, websites and digital applications — connected to
                 the way your business works.
               </p>
-              <p className="mt-4 max-w-xl leading-7 text-slate-600">
+              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
                 From a professional online presence to a connected business
                 workflow, Monetcore brings software engineering and practical
                 technology thinking to your next step.
@@ -148,13 +147,9 @@ export default function Home() {
                   "AI & automation",
                   "Web & mobile",
                   "Business integrations",
-                ].map((item) => (
+                ].map((item, index) => (
                   <span key={item} className="flex items-center gap-2">
-                    <Check
-                      size={14}
-                      aria-hidden="true"
-                      className="text-blue-700"
-                    />
+                    <HeroServiceElectron index={index} />
                     {item}
                   </span>
                 ))}

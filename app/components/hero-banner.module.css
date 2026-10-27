@@ -2,14 +2,12 @@
 .atmosphere { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(100deg,#09172d 5%,#101d39 48%,#20204c); }
 .glow { position: absolute; inset: -15%; background: radial-gradient(ellipse at 78% 35%,#426ef54d,transparent 36%),radial-gradient(ellipse at 95% 60%,#983fb72b,transparent 42%); animation: hero-breathe 9s ease-in-out infinite alternate; }
 .field { width: 100%; height: 100%; opacity: .7; mask-image: linear-gradient(90deg,transparent 25%,#000 70%); }
-.orbits { transform-origin: 1120px 410px; animation: hero-orbit 110s linear infinite; opacity: .65; }
-.trails { stroke-dasharray: 100 1150; animation: hero-flow 20s linear infinite; }
+.orbit { fill: none; stroke: currentColor; stroke-width: 1; opacity: .28; }
+.trail { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 24 976; opacity: .7; animation: hero-flow linear infinite; }
+.electron { offset-rotate: 0deg; animation: hero-electron linear infinite; }
 .particles circle { animation: hero-float 8s ease-in-out infinite alternate; }
-.controls { position: relative; max-width: 80rem; margin: 20px auto 0; display: flex; justify-content: flex-end; }
-.controls button { min-height: 44px; padding: 8px 14px; border: 1px solid #9bb8ed66; border-radius: 24px; color: #d9e6ff; background: #0b1838; font-size: .75rem; }
-.controls button:hover { background: #203458; }
-.controls button:focus-visible { outline: 2px solid #c5d7ff; outline-offset: 4px; }
-.banner[data-motion="paused"] .atmosphere * { animation-play-state: paused; }
+.serviceElectron { position: relative; display: inline-block; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 5px currentColor, 0 0 12px currentColor; animation: hero-service-glow 5s ease-in-out infinite alternate; }
+.serviceElectron::after { content: ""; position: absolute; inset: 2.5px; border-radius: 50%; background: #fff; }
 /* Keep every card and the copy inside the same continuous banner, at all sizes. */
 .banner:global(#corporate-hero) { background: #0b1830 !important; color: #fff; }
 .banner:global(#corporate-hero) h1 { color: #f5f8ff; }
@@ -20,12 +18,15 @@
 .banner:global(#corporate-hero) :global(.company-snapshot) p:first-child { color: #f1f5ff; }
 .banner:global(#corporate-hero) :global(.company-snapshot) p:last-child { color: #c6d3e8; }
 @keyframes hero-breathe { to { transform: scale(1.04); opacity: .7; } }
-@keyframes hero-orbit { to { transform: rotate(360deg); } }
-@keyframes hero-flow { to { stroke-dashoffset: -1250; } }
+@keyframes hero-electron { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes hero-flow { to { stroke-dashoffset: -1000; } }
 @keyframes hero-float { to { transform: translate(4px,-6px); opacity: .45; } }
 
-@media (max-width: 639px) { .controls { justify-content: flex-start; margin-top: 16px; } }
-@media (prefers-reduced-motion: reduce) { .atmosphere * { animation: none !important; } .controls { display: none; } }
+@keyframes hero-service-glow { to { transform: scale(.88); opacity: .7; } }
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere *, .serviceElectron { animation: none !important; transition: none !important; }
+  .trail { opacity: .35; }
+}
 
 /* Content determines height: no reserved illustration column or mobile visual. */
 .banner:global(#corporate-hero) { padding-top: 120px; padding-bottom: 32px; }
@@ -39,3 +40,7 @@
   .banner:global(#corporate-hero) :global(.company-snapshot) { margin-top: 20px; gap: 8px; }
   .banner:global(#corporate-hero) :global(.company-snapshot) > div { padding: 12px 14px; }
 }
+
+/* Older global hero styles dim every decorative div. Keep this contained field
+   at full opacity so small electron cores remain visible at every breakpoint. */
+.banner:global(#corporate-hero) > .atmosphere { opacity: 1; }

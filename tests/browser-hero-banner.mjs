@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 const base = process.env.QA_BASE_URL || 'http://127.0.0.1:4612';
 assert.ok(['127.0.0.1','localhost'].includes(new URL(base).hostname));
-const output = '/workspace/artifacts/phase2-clean-hero-review';
+const output = '/workspace/artifacts/phase2-electron-orbit-review';
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
 let checks = 0;
@@ -45,10 +45,14 @@ try {
   await page.setViewportSize({width:1440,height:1000});
   const animations = await hero.evaluate(el => el.getAnimations({subtree:true}).length);
   assert.ok(animations > 0);
-  await hero.getByRole('button',{name:'Pause background animation'}).click();
-  assert.ok(await hero.evaluate(el => el.getAnimations({subtree:true}).every(a=>a.playState === 'paused')));
-  await hero.getByRole('button',{name:'Resume background animation'}).press('Enter');
-  assert.ok(await hero.evaluate(el=>el.getAnimations({subtree:true}).some(a=>a.playState === 'running')));
+  assert.equal(await hero.getByRole('button', { name: /background animation/i }).count(), 0);
+  assert.equal(await hero.locator('[data-electron]').count(), 4);
+  const electron = hero.locator('[data-electron="0"]');
+  const before = await electron.boundingBox();
+  await page.waitForTimeout(300);
+  const after = await electron.boundingBox();
+  assert.ok(Math.hypot(after.x-before.x, after.y-before.y)>1, 'electron travels along orbit');
+  assert.equal(await hero.locator('.border-t [aria-hidden="true"]').count(), 4);
   checks++;
   const nav=page.getByRole('navigation',{name:'Main navigation'});
   for(const name of ['Solutions & Services','Products','Company']) {
@@ -75,6 +79,9 @@ try {
   await page.setViewportSize({width:390,height:844});
   await page.emulateMedia({reducedMotion:'reduce'});
   assert.equal(await hero.evaluate(el=>el.getAnimations({subtree:true}).length),0);
+  const staticBefore = await hero.locator('[data-electron="0"]').boundingBox();
+  await page.waitForTimeout(200);
+  assert.deepEqual(await hero.locator('[data-electron="0"]').boundingBox(), staticBefore);
   await hero.screenshot({path:`${output}/banner-390-reduced-motion.png`}); checks++;
   const axe=await new AxeBuilder({page}).include('#corporate-hero').withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();
   assert.deepEqual(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
