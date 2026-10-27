@@ -29,7 +29,7 @@ import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
-import AICore from "./components/AICore";
+import HeroBanner from "./components/HeroBanner";
 import { corporateSolutions } from "./config/corporateSolutions";
 import {
   packagePrice,
@@ -110,15 +110,8 @@ export default function Home() {
         id="main-content"
         className="corporate-page bg-white text-slate-950"
       >
-        <section
-          id="corporate-hero"
-          className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-24 lg:pt-44"
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-52 top-0 h-[800px] w-[800px] rounded-full border-[110px] border-blue-100/60"
-          />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
+        <HeroBanner>
+          <div className="relative mx-auto grid max-w-7xl items-center gap-8">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
                 Monetcore System Solutions · Business technology
@@ -141,12 +134,12 @@ export default function Home() {
                 technology thinking to your next step.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="#contact" className={primary}>
-                  Start Your Project{" "}
+                <Link href="/services" className={primary}>
+                  Explore Solutions{" "}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
-                <Link href="#services" className={secondary}>
-                  Explore Our Solutions
+                <Link href="/book" className={secondary}>
+                  Book Consultation
                 </Link>
               </div>
               <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-700">
@@ -166,9 +159,6 @@ export default function Home() {
                   </span>
                 ))}
               </div>
-            </div>
-            <div className="min-w-0">
-              <AICore />
             </div>
           </div>
           <div className="company-snapshot relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
@@ -195,7 +185,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </HeroBanner>
 
         <section id="services" className="px-5 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">

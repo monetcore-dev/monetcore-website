@@ -230,16 +230,28 @@ export default function SiteHeader() {
             const active = openMenu === menu.id;
             const current =
               menu.id === "solutions"
-                ? pathname === "/services"
+                ? pathname === "/services" || pathname.startsWith("/services/")
                 : menu.id === "products"
                   ? [
                       "/products",
                       "/website-packages",
                       "/demo/fintech",
-                    ].includes(pathname)
+                    ].includes(pathname) || pathname.startsWith("/products/")
                   : ["/about", "/contact", "/book"].includes(pathname);
             return (
-              <div key={menu.id} className="nav-disclosure">
+              <div
+                key={menu.id}
+                className="nav-disclosure"
+                onPointerEnter={(event) => {
+                  if (openMenu && event.pointerType === "mouse" && window.matchMedia("(min-width: 1200px)").matches)
+                    setOpenMenu(menu.id);
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === "mouse" && window.matchMedia("(min-width: 1200px)").matches &&
+                      !event.currentTarget.contains(document.activeElement))
+                    setOpenMenu(null);
+                }}
+              >
                 <button
                   ref={(element) => {
                     triggers.current[menu.id] = element;
