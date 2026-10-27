@@ -114,11 +114,13 @@ export default function Home() {
           id="corporate-hero"
           className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-24 lg:pt-44"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-52 top-0 h-[800px] w-[800px] rounded-full border-[110px] border-blue-100/60"
-          />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
+          <div aria-hidden="true" className="hero-atmosphere">
+            <span className="hero-flow hero-flow-blue" />
+            <span className="hero-flow hero-flow-purple" />
+            <span className="hero-flow hero-flow-magenta" />
+            <span className="hero-horizon" />
+          </div>
+          <div className="hero-content relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
                 Monetcore System Solutions · Business technology

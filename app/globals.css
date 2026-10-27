@@ -2431,38 +2431,6 @@ summary {
   }
 }
 @media (max-width: 767px) {
-  #corporate-hero {
-    background:
-      radial-gradient(ellipse at 100% 0%, #dce6ff, transparent 60%),
-      linear-gradient(145deg, #f7f9ff, #fff) !important;
-    color: var(--ink);
-  }
-  #corporate-hero h1 {
-    color: var(--navy);
-    font-size: clamp(2.25rem, 9.5vw, 3.5rem);
-  }
-  #corporate-hero h1 span {
-    color: #345be0;
-  }
-  #corporate-hero > .relative > div:first-child > p:first-child {
-    color: #2949bf;
-  }
-  #corporate-hero > .relative > div:first-child > p,
-  #corporate-hero > .relative > div:first-child > div.border-t {
-    color: #4c5c76;
-    border-color: #d5dff0;
-  }
-  #corporate-hero > .relative > div:first-child > div.border-t svg {
-    color: #345be0;
-  }
-  #corporate-hero .company-snapshot > div {
-    background: #fff;
-    border-color: #dce4f3;
-  }
-  #corporate-hero .company-snapshot p:first-child {
-    color: var(--ink);
-  }
-  #corporate-hero .company-snapshot p:last-child,
   .showcase-note {
     color: #4c5c76;
   }
@@ -3043,4 +3011,24 @@ summary {
   .review-preview:has(> .preview-notice) .primary-navigation.is-mobile-open {
     max-height: calc(100dvh - 152px);
   }
+}
+
+/* Keep long desktop disclosures reachable on shorter laptop viewports. */
+@media (min-width: 1200px) {
+  .mega-panel {
+    max-height: calc(100dvh - 110px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+.nav-trigger:focus-visible,
+.mobile-menu-toggle:focus-visible,
+.mega-link:focus-visible {
+  outline: 3px solid #4265df;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mega-panel:not([hidden]) { animation: none; }
+  .nav-trigger svg { transition: none; }
 }

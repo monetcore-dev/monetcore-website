@@ -115,6 +115,16 @@ export default function SiteHeader() {
   const mobileTrigger = useRef<HTMLButtonElement>(null);
   const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1200px)");
+    const reset = () => {
+      setMobileOpen(false);
+      setOpenMenu(null);
+    };
+    media.addEventListener("change", reset);
+    return () => media.removeEventListener("change", reset);
+  }, []);
+
   function closeNavigation() {
     setOpenMenu(null);
     setMobileOpen(false);
@@ -162,6 +172,20 @@ export default function SiteHeader() {
           closeNavigation();
       }}
       onKeyDown={(event) => {
+        if (event.key === "Tab" && mobileOpen && window.innerWidth < 1200) {
+          const controls = Array.from(
+            header.current?.querySelectorAll<HTMLElement>("a[href], button") ?? [],
+          ).filter((element) => element.getClientRects().length > 0 && !element.classList.contains("skip-link"));
+          const first = controls[0];
+          const last = controls.at(-1);
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }
         if (event.key === "Escape") {
           event.preventDefault();
           if (openMenu) {
@@ -230,13 +254,13 @@ export default function SiteHeader() {
             const active = openMenu === menu.id;
             const current =
               menu.id === "solutions"
-                ? pathname === "/services"
+                ? pathname === "/services" || pathname.startsWith("/services/")
                 : menu.id === "products"
                   ? [
                       "/products",
                       "/website-packages",
                       "/demo/fintech",
-                    ].includes(pathname)
+                    ].includes(pathname) || pathname.startsWith("/products/")
                   : ["/about", "/contact", "/book"].includes(pathname);
             return (
               <div key={menu.id} className="nav-disclosure">
@@ -251,13 +275,13 @@ export default function SiteHeader() {
                   className={`nav-trigger ${current ? "is-current" : ""}`}
                   onClick={() => setOpenMenu(active ? null : menu.id)}
                   onKeyDown={(event) => {
-                    if (event.key === "ArrowDown") {
+                    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                       event.preventDefault();
                       setOpenMenu(menu.id);
                       requestAnimationFrame(() =>
                         document
                           .querySelector<HTMLAnchorElement>(
-                            `#panel-${menu.id} a`,
+                            `#panel-${menu.id} ${event.key === "ArrowUp" ? ".mega-bottom a" : "a"}`,
                           )
                           ?.focus(),
                       );
