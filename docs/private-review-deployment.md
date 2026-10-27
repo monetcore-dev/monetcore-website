@@ -1,331 +1,263 @@
-# Private review deployment preparation
+# Solo-owner private-review source-staging workflow
 
-## Status and decision
+## Current boundary and verified configuration
 
-This procedure prepares protected, repeatable source validation and upload. It
-**does not activate a release**. Nothing here has been installed on the VPS;
-no Nginx/PM2 changes, database operations or production deployment are authorized.
-Leave `REVIEW_UPLOAD_ENABLED` unset until the upload account is approved and tested.
+PR #9 remains unmerged. This workflow can validate and upload approved source into
+an isolated incoming directory; it cannot build on the VPS, activate a release,
+change routing, restart services, or operate the restored website, runtime secrets,
+PostgreSQL, PM2, Nginx or production. No VPS access is part of this update.
+`REVIEW_UPLOAD_ENABLED` must remain **unset** until commissioning evidence and the
+applicable end-to-end tests have been accepted. It has not been set by this work.
 
-**Vercel exclusion verified:** the administrator saved an Ignored Build Step rule
-for `dev/private-review-workflow`. A documentation-only test push at commit
-`2b7a8db` returned Vercel status **Canceled by Ignored Build Step**. This verifies
-that branch's build is skipped; it does not establish exclusions for main or other
-branches. The earlier preparation commit `8ee48ec` had automatically created a
-non-production Preview before the rule was saved. Keep PR #9 unmerged: a main
-merge may still redeploy production. Do not change production integration settings
-without separate approval. VPS review deployment remains unperformed.
+Owner-reported completed commissioning: the receiver is installed and tested;
+the dedicated restricted key authenticates, rejects arbitrary commands and passes
+preliminary filesystem isolation checks. These are operator-reported results, not
+new remote tests by Codex. Do not recreate the account, regenerate its key, reinstall
+SSH settings or repeat completed setup unless a specific failed check requires it.
 
-The permanent boundary is: cloud development → reviewed Git commit → manual
-GitHub Actions validation → approved private staging upload → separately approved
-candidate and review-only upstream switch. Runtime secrets never enter Actions,
-source archives or the upload account. Keep the restored source and old process
-intact for comparison and rollback. Homepage/navigation work follows this setup.
+Read-only GitHub inspection confirms Environment `private-review` exists, has no
+required-reviewer rule, has administrator bypass disabled, and allows only branch
+`feature/monetcore-vps-completed`. No Environment settings or secrets were changed.
+Only the owner is available, so independent review is deliberately not required.
 
-## What was inspected
+Vercel's Ignored Build Step was verified on `dev/private-review-workflow` with
+status **Canceled by Ignored Build Step**. This does not prove main/production or
+VPS-branch exclusions. Keep PR #9 unmerged and do not push to main or change Vercel
+production settings in this task. The repository is public: archives contain only
+reviewed tracked source, never private backups, keys, env files or customer data.
 
-| Source | Finding |
-| --- | --- |
-| `main`, `804b687c87ceb70536099219adf9c3aaa038b4ce` | Older Supabase/Vercel implementation; not a VPS release baseline |
-| `feature/monetcore-vps-completed`, `a67acee66ac3d0b602b4b98dceceab8440a5dba5` | PostgreSQL changes, secret-free release checker and uploaded-source fingerprint checker |
-| `feature/monetcore-2-customer-foundation` | `scripts/vps/private_review.py`, example configuration, deployment guide and 27 existing Python tests |
+## Authorization and security limitations
 
-All advertised remote branches were searched without switching over the cloud
-checkout. The existing `private_review.py` pins application commit
-`a1ca9ad6286e9c05b2271f7365acd3e753b33fb4`; it builds separate releases and checks
-candidate health, private ingress, runtime compatibility, and rollback process
-PID/cwd. Its switch/rollback prompts are interactive and it edits/reloads Nginx
-using sudo install/mv commands. Do not grant those capabilities to an Actions key,
-remove its confirmations, or use its old application pin over restored VPS work.
-It is reference material for a later reviewed activation adapter.
+Source preparation is manual-only on the exact VPS branch. The owner supplies a
+full lowercase 40-character `candidate_sha`. It must equal the immutable commit
+GitHub captured for the selected branch at dispatch time; if the branch moved,
+the run fails and the owner must review the new tip and dispatch again. Historical
+or arbitrary cross-branch commits cannot be selected silently.
 
-The VPS branch checker runs typecheck, server tests, offline staging tests, lint
-and a review build without business credentials. Its offline runner permits only
-the VPS branches. The baseline verifier checks original uploaded files but misses
-additional/untracked files: it is not a complete drift or preservation check.
-No actual VPS Nginx, PM2, SSH, firewall or authentication configuration was read.
+Staging requires all of these checks:
 
-Operator-supplied baseline, still requiring private read-only verification:
+- `workflow_dispatch`, exact repository and exact VPS branch;
+- both initial actor and rerun actor are `monetcore-dev`;
+- explicit `stage=true`;
+- exact confirmation `REVIEWED <candidate_sha> FOR STAGING ONLY`;
+- successful authorization, receiver/security tests and secret-free release checks;
+- exact-SHA source archive, artifact selection, commit metadata and SHA256 checks;
+- repository variable `REVIEW_UPLOAD_ENABLED=true` (intentionally not set now);
+- Environment branch policy, scoped SSH secrets and trusted host-key checking.
 
-| Item | Value |
-| --- | --- |
-| VPS | `159.198.41.188` |
-| Existing account | `monetcore` — never reuse its SSH key in Actions |
-| Restored source to preserve | `/home/monetcore/monetcore-website` |
-| Existing review process | PM2 `monetcore-website`, port `3000` |
-| Review domain | `review.monetcore.dev` |
-| Production | `monetcore.dev` — excluded from every setup/switch operation |
+Pull requests run tests only. Pushes, schedules, workflow-completion events and
+repository-dispatch events cannot authorize upload. No workflow job or receiver
+command activates releases. The receiver remains unchanged and accepts only the
+`review-stage <SHA> <SHA256>` protocol, rejecting shell/activation commands and
+unsafe, oversized, duplicate, corrupt or concurrent archive uploads.
 
-## Automated repository work
+**This is weaker than independent approval.** The same owner can review code,
+change the workflow, enable uploads and dispatch. A compromised owner account,
+GitHub session or workflow definition can bypass these repository-side intent
+checks. Typing a confirmation does not prove review or create a second approver.
+Use strong MFA/passkeys, least-privilege access, audit logs and the restricted key.
+The forced command and lack of runtime/production access limit the key's scope;
+they do not make a compromised owner or malicious staged source trustworthy.
+Checksum verification detects transfer corruption, not an independently signed
+source identity. Do not describe Environment branch restrictions or manual dispatch
+as equivalent to a required independent reviewer.
 
-The four files in this change are the manual workflow, this guide, upload receiver,
-and receiver tests. No application logic or dependency declarations change.
+## Repository and Environment configuration
 
-`.github/workflows/review-release.yml` runs receiver security checks on pull
-requests affecting these four files. Release preparation/upload run only by manual
-dispatch on `feature/monetcore-vps-completed`. It uses exact action commit pins, read-only GitHub
-permissions, no persisted checkout credential, and serialized runs. It validates
-and packages source at the event SHA. Generated files, env files and node_modules
-are not copied from the workspace into the archive. The repository is public. The source artifact is retained for seven days;
-treat it as public source, not private storage. It must contain no secrets,
-backups, customer data or dumps.
-Review tracked source for secrets before packaging; git archive is not a scanner.
+The workflow uses commit-pinned actions, read-only GitHub token permissions,
+non-persisted checkout credentials and serialized runs. The authorization checker
+is `scripts/vps/authorize_review_stage.py`. The validated SHA is passed through job
+outputs into checkout, archive creation, artifact names, commit metadata and upload.
+The preparation job also verifies the actual checkout SHA. Reruns retain the original
+pin but are checked against the rerunning actor and the current upload gate.
 
-Default dispatch (`stage=false`) performs validation only. Upload additionally
-requires `stage=true`, `REVIEW_UPLOAD_ENABLED=true`, and `private-review` Environment
-approval. Its secrets are scoped to the upload step. SSH uses a separately issued
-key and a trusted pinned known_hosts entry. No automatic upload on push/PR, arbitrary ref input,
-production job, migration or activation command exists.
+The source validation runner on the VPS branch performs typecheck, server tests,
+offline staging tests, lint and a flags-off review build with business credentials
+removed. It needs the local VPS branch name; the workflow creates that name only
+inside the disposable runner checkout. It never changes a VPS working tree.
 
-`scripts/vps/review_receive.py` accepts exactly:
+Keep the existing Environment branch policy. Do not add a required-reviewer rule
+that blocks the sole owner, and do not fall back to repository-wide credentials.
+If adjusting an accidentally retained reviewer rule, do so through Settings →
+Environments → private-review, preserving the exact branch policy and bypass
+setting. No such adjustment was needed at the time of this update.
 
-```text
-review-stage <40 lowercase hex commit SHA> <64 lowercase hex archive SHA256>
-```
+The administrator enters the existing NEW restricted deployment identity only
+through the secure Environment-secret UI; never send keys to Codex or put them in
+repository files, commands, logs, backup artifacts or PR comments:
 
-One gzip tar archive arrives on stdin. The receiver verifies checksum, size/count
-limits and paths before extracting regular files/directories into a fresh private
-staging directory. It rejects shell/activation commands, path traversal, links,
-special files, sparse entries, duplicate paths, env/key patterns, existing releases
-and simultaneous uploads. Compressed input is limited to 64 MiB, expanded files to
-256 MiB, with a separate bounded tar-header allowance and 180-second deadline.
-Staging holds at most 20 completed releases; administrator-managed disk quota and
-retention provide a further boundary. It never runs npm, Git, PM2, Nginx, sudo,
-application code, SQL or network calls. Success is **staged-only**, never deployed.
-A supplied SHA is a source label, not independent proof that archive contents
-match GitHub; provenance depends on trusted Actions and PR/Environment review.
-
-## One-time administrator procedure — approval required before execution
-
-Run these steps privately through the existing trusted administration channel,
-not Actions. They are documented here; none has been executed by Codex. Do not
-share passwords, existing SSH keys, env contents, database credentials or dumps.
-
-### 1. Preserve and reconcile the restored source
-
-Record current branch/status, process PID/cwd/port and relevant config paths
-without printing environment values or raw PM2/nginx configuration. Make a private,
-timestamped recoverable archive outside source/release roots covering the full
-working tree, ignored/untracked files, Git metadata (including external metadata
-if linked), and relevant review configuration. Protect the backup as secret-bearing
-material: mode 0700 directory/0600 archive, separate recovery storage, no GitHub
-artifact upload. Verify checksums, manifest completeness and restoration into an
-isolated directory before any future switch. Maintain the existing database
-backup/recovery policy; this task does not authorize SQL or customer-data exports.
-
-Compare the preserved source with the completed VPS branch and uploaded fingerprint,
-including all added booking/PostgreSQL/preview-safety files. Secret-scan locally.
-Bring reviewed source changes into the VPS branch through a PR; omit secrets/data.
-Keep the restored directory byte-for-byte unchanged. Never reset, clean, pull,
-checkout over, or rsync into `/home/monetcore/monetcore-website`.
-
-### 2. Create the dedicated upload account and private storage
-
-Confirm these proposed names/paths do not already exist or overlap live resources.
-Use an unprivileged `monetcore-review-deploy` account with no sudo, Docker/PM2
-membership, database access, runtime secrets or write access to restored source.
-Use a distinct UID from `monetcore`. Proposed layout:
-
-```text
-/srv/monetcore-review/                   root-owned, mode 0755
-/srv/monetcore-review/incoming/          upload-account-owned, mode 0700
-/srv/monetcore-review/releases/          reserved for future runtime identity
-/usr/local/libexec/monetcore-review-receive   root-owned receiver, mode 0755
-```
-
-After review, an administrator can create only the account/incoming directory and
-install the receiver from the reviewed commit. Do not create/switch a live release:
-
-```sh
-sudo useradd --create-home --shell /bin/sh monetcore-review-deploy
-sudo install -d -o root -g root -m 0755 /srv/monetcore-review
-sudo install -d -o monetcore-review-deploy -g monetcore-review-deploy -m 0700 /srv/monetcore-review/incoming
-sudo install -o root -g root -m 0755 scripts/vps/review_receive.py /usr/local/libexec/monetcore-review-receive
-```
-
-These are not blindly rerunnable: inspect existing identities/paths first. The
-receiver requires Python 3.12+ and real, non-group/world-writable ancestors owned
-by root/upload account. Apply a dedicated disk quota and approved manual retention.
-Do not give the upload account access to the existing PM2 home or runtime config.
-
-### 3. Issue a new restricted key and configure SSH
-
-Generate a NEW dedicated Ed25519 key on the administrator's trusted machine:
-
-```sh
-ssh-keygen -t ed25519 -f monetcore-review-actions -C monetcore-private-review-actions
-```
-
-For unattended Actions, use a dedicated key without an interactive passphrase;
-its narrow forced-command authorization, protected Environment and rotation policy
-are essential. Do not reuse/request the monetcore/root private key. Transfer only
-the new public key to the VPS through the trusted administration channel.
-
-Store the public key in a root-owned dedicated AuthorizedKeysFile outside the
-account's home, e.g. `/etc/ssh/authorized_keys/monetcore-review-deploy`, mode 0644
-with root-owned non-writable parents. The complete key entry is:
-
-```text
-restrict,command="/usr/bin/python3 -I /usr/local/libexec/monetcore-review-receive" ssh-ed25519 REPLACE_WITH_NEW_PUBLIC_KEY_BASE64 monetcore-private-review-actions
-```
-
-Replace only the public-key field. Python isolated mode excludes user Python
-startup/import configuration. No user-writable wrapper or shell interpolation is
-needed. In an approved dedicated sshd Match block, require the same ForceCommand
-as defense in depth and disable alternate authentication, forwarding, PTY, user rc
-and environment files. Example to adapt to the actual supported OpenSSH version:
-
-```text
-Match User monetcore-review-deploy
-    AuthorizedKeysFile /etc/ssh/authorized_keys/%u
-    AuthenticationMethods publickey
-    PasswordAuthentication no
-    KbdInteractiveAuthentication no
-    PermitTTY no
-    DisableForwarding yes
-    PermitUserRC no
-    ForceCommand /usr/bin/python3 -I /usr/local/libexec/monetcore-review-receive
-Match all
-```
-
-Confirm the existing global `PermitUserEnvironment` is `no` and `AcceptEnv` does
-not admit executable-loader or Python configuration variables.
-`PermitUserEnvironment` is not valid inside a Match block. If global policy differs,
-stop for a narrowly reviewed SSH policy adjustment; do not change other accounts
-blindly. Inspect effective settings for this account with `sshd -T -C user=...` and validate
-with `sshd -t` before a separately approved SSH reload. Preserve unrelated SSH
-settings and the current administrator session. Confirm account lock/expiry/PAM
-policy permits the intended key-only login on this OS. Never relax production
-access or grant general shell, SFTP, sudo, agent forwarding or TCP forwarding.
-
-Obtain the VPS host public-key fingerprint through the trusted VPS console/provider,
-then compare it out of band with the intended SSH endpoint. Store the verified
-known_hosts line; do not trust ssh-keyscan alone or disable host-key checking.
-Use `159.198.41.188` for port 22, or `[159.198.41.188]:PORT` for another verified port.
-
-### 4. Protect GitHub before supplying the new key
-
-Protect `feature/monetcore-vps-completed` with PR review, applicable required checks,
-no force pushes, and trusted review of workflow/receiver changes. Require separate
-review for later changes to activation code. Place the reviewed four files on the
-default branch so manual dispatch is registered, and copy those files through a
-separate PR to the reconciled VPS branch. Do not merge the older main application
-into the VPS source or vice versa just to distribute tooling. The dedicated PR
-against main only introduces these four files and does not deploy anything.
-
-Create GitHub Environment **private-review**, restrict deployment branches to the
-exact VPS branch, require an independent reviewer, prevent self-review, and disable
-administrator bypass where supported. Verify the repository's GitHub plan actually
-enforces these rules. If equivalent approval protection is unavailable, keep upload
-disabled; do not fall back to unrestricted repository secrets.
-
-Add these **Environment secrets**, never repository-wide application credentials:
-
-| Secret | Value to enter securely |
+| Environment secret | Intended binding |
 | --- | --- |
 | `REVIEW_SSH_HOST` | `159.198.41.188` |
-| `REVIEW_SSH_PORT` | Privately verified SSH port, explicitly including `22` if applicable |
+| `REVIEW_SSH_PORT` | Actual privately verified SSH port |
 | `REVIEW_SSH_USER` | `monetcore-review-deploy` |
-| `REVIEW_SSH_KEY` | Only the newly generated restricted private key |
-| `REVIEW_SSH_KNOWN_HOSTS` | Host public-key line verified through the trusted channel |
+| `REVIEW_SSH_KEY` | Dedicated restricted key, never existing application/root key |
+| `REVIEW_SSH_KNOWN_HOSTS` | Host-key entry verified through the trusted console/channel |
 
-No database, review Basic auth, production API or existing account secrets belong
-in Actions. Retain/revoke/rotate this new key separately from production access.
-Leave repository variable `REVIEW_UPLOAD_ENABLED` unset/false during commissioning.
+No application/DB/Basic-auth/production credentials belong in Actions. The source
+artifact is retained for seven days in a public repository; treat it as public
+source. The SSH upload job does not check out or execute source from the artifact.
 
-### 5. Commission staging only
+## Commissioning procedure: keep upload gate unset
 
-Run the receiver security suite in a disposable test account/layout and test SSH
-restriction enforcement with a temporary test key before connecting the Actions
-key. Attempt shell/id, SFTP, PTY and forwarding; all must fail. Test a valid archive,
-wrong digest, unsafe archive, same-SHA retry, interrupted transfer and simultaneous
-upload; verify only incoming changes. Delete/revoke the temporary test key.
-Confirm source, Nginx, old PM2 PID/cwd/port and production configuration are unchanged.
+1. Record the installed receiver's reviewed source revision/hash, forced-command
+   path, account UID/groups, incoming path/mode, trusted host-key fingerprint and
+   the owner's already completed restriction/isolation results. Store no private
+   key or application secret in that evidence. Verify account separation from
+   `monetcore`, no sudo/PM2/service privileges, root-owned receiver/key restrictions,
+   and no read access to actual runtime-secret paths or write access to restored
+   files. Preliminary checks do not prove all paths or service policies are covered.
+   This task does not connect to or probe those protected resources.
+2. Confirm the existing preservation evidence covers dirty, untracked and ignored
+   booking/PostgreSQL/preview-safety files plus external Git/config metadata, and
+   includes a successful isolated restore comparison. Do not choose a release SHA
+   by resetting/pulling over the restored source. Reconcile approved source through
+   a separate PR before it becomes a VPS release baseline. A GitHub branch alone
+   is not proof of what is currently restored.
+3. Run local tests without server access:
 
-Run the Actions dispatch on the reconciled VPS branch with `stage=false`; inspect
-checks, exact SHA and artifact. After explicit upload-account commissioning approval,
-set repository variable `REVIEW_UPLOAD_ENABLED=true`, request `stage=true`, and
-approve through the protected Environment. Verify `activated=false`, exact metadata,
-private directory permissions and unchanged live state. This uploads source only.
+   ```sh
+   python3 -B -m unittest discover -s tests -p 'test_review_*.py' -v
+   actionlint .github/workflows/review-release.yml
+   ```
 
-## Future activation and rollback — not connected to Actions
+   Authorization tests cover automatic events, wrong branches/repos/actors/reruns,
+   malformed or moved pins, missing/mismatched review confirmation, and the separate
+   upload-enable condition. All existing receiver security tests are retained.
+4. Keep `REVIEW_UPLOAD_ENABLED` absent. An administrator can verify this via Settings
+   → Secrets and variables → Actions → Variables. A 403 API response is not proof
+   of absence. Do not enable the gate to work around an incomplete test or to make
+   this PR runnable. No new manual dispatch is performed in this update.
+5. Complete the approved isolated end-to-end SSH commissioning test with the owner
+   through the already restricted identity, using a reviewed harmless source fixture
+   and a unique test SHA, only in the incoming directory. Check successful staged-only
+   metadata, matching checksum, no overwrite, wrong digest, interrupted/concurrent
+   transfer, and unsafe-archive rejection. Verify no shell/SFTP/PTY/forwarding and no
+   runtime/service privileges. Do not use real runtime credentials or invoke PM2,
+   Nginx, database queries or release activation. Tests that were already completed
+   only need their evidence recorded. This is not a claim that the GitHub upload job
+   has executed end to end; the live upload gate is still closed.
+6. The workflow must eventually be present on the default branch for manual dispatch
+   registration and on the reconciled VPS branch for execution. PR #9 is deliberately
+   unmerged, so do not merge just to test dispatch. Later publication requires separate
+   approval and a verified way to avoid production/Vercel deployment. Once publication
+   is approved, a `stage=false` validation run can exercise the GitHub preparation path
+   while the gate stays unset. Review its exact SHA, artifact and all check results.
+7. Only after commissioning and applicable end-to-end evidence are accepted, obtain
+   explicit separate authorization for a bounded first GitHub upload test. Enabling
+   `REVIEW_UPLOAD_ENABLED` and sending source are not authorized by this runbook update.
+   If final GitHub-to-VPS transport remains untested, record that fact: do not call the
+   system end-to-end verified merely because unit tests or direct SSH tests passed.
 
-No activation adapter is installed or invoked by this change. Before later approval:
-verify actual review-only Nginx file, Basic auth on every route/assets/API, TLS,
-trusted overwritten proxy headers, Node loopback binding, memory/CPU/disk capacity,
-and a genuinely unused candidate port distinct from 3000. Do not modify DNS,
-production server blocks or production process. Noindex alone is not private access.
+## Exact solo-owner dispatch procedure: future authorization only
 
-Build an approved release as an unprivileged build identity in a NEW directory,
-without runtime/production secrets. Use compatible Node 24/Linux architecture/glibc
-and the existing secret-free release checker. Never run uploaded build scripts as
-root, the privileged activation helper, or a user with production credentials.
-Runtime settings must be allowlisted with booking/contact/customer/AI flags false,
-AI emergency stop true, review markers true, no Vercel metadata, and no existing
-live `.env` loaded wholesale. Proxy attestation requires verified ingress.
+Do not execute these dispatch commands in the current task. They are the repeatable
+procedure after the publication/commissioning gates above are separately approved.
+The owner reviews the candidate diff, tests and workflow from a trusted session:
 
-Adapt the inspected interactive tool's fixed source pin and branch handling only
-through reviewed changes. Keep its candidate health, ownership, private-ingress,
-configuration-digest checks, explicit switch confirmation and rollback checks.
-Preserve the exact original review configuration and old PM2 PID/cwd/port before
-switching. A future narrowly scoped activation helper must accept only verified
-review releases and never arbitrary sudo/PM2 commands or source paths.
+```sh
+REPO=monetcore-dev/monetcore-website
+BRANCH=feature/monetcore-vps-completed
+CANDIDATE_SHA=$(gh api "repos/$REPO/git/ref/heads/$BRANCH" --jq .object.sha)
+printf 'Review this exact commit: %s\n' "$CANDIDATE_SHA"
+# Inspect the complete source/workflow diff and checks for this commit first.
+# Validation only; upload gate remains unset:
+gh workflow run review-release.yml --repo "$REPO" --ref "$BRANCH" \
+  -f candidate_sha="$CANDIDATE_SHA" -F stage=false
+```
 
-Candidate checks must verify exact release/build marker, expected routes/noindex,
-robots/sitemap, disabled APIs and no unexpected browser errors. After a separately
-approved review-only switch, check unauthenticated HTTPS 401/403 and authenticated
-homepage 200, exact marker and disabled synthetic API requests; make no real
-bookings/emails/provider calls. Keep the old process online and avoid `pm2 save`.
+After successful validation, re-check that the branch still points to the reviewed
+SHA. Do not silently update the pin if it moved. For an explicitly authorized later
+staging-only run, owner confirmation is mandatory:
 
-On failed switch/health: restore only the exact saved review upstream/configuration
-if current digest still matches the expected state; verify the original process
-PID/cwd/port still match, run nginx validation and approved review reload, and
-recheck authenticated/private health. Preserve both processes if recovery is
-uncertain; do not overwrite later operator edits or claim rollback succeeded.
-For operator rollback after acceptance, use the exact recorded state/config backup;
-do not blindly run the old pinned tool on a new source release. Power loss/SIGKILL
-requires inspecting retained state. Production and restored source stay untouched.
+```sh
+# Preconditions: approved candidate, accepted commissioning, upload explicitly
+# authorized, and gate enabled through the owner's approved separate action.
+test "$(gh api "repos/$REPO/git/ref/heads/$BRANCH" --jq .object.sha)" = "$CANDIDATE_SHA"
+gh workflow run review-release.yml --repo "$REPO" --ref "$BRANCH" \
+  -f candidate_sha="$CANDIDATE_SHA" -F stage=true \
+  -f owner_confirmation="REVIEWED $CANDIDATE_SHA FOR STAGING ONLY"
+```
 
-## Validation and next action
+Inspect the exact run SHA/actor, authorization output, all checks, artifact digest
+and receiver response `activated=false`. Never treat a successful upload as an
+activated release. Each new source candidate needs a new owner review and matching
+confirmation; a rerun is not approval of a changed branch tip.
 
-Executed locally: all 17 receiver tests passed; all 27 existing deployment-tool
-tests passed from an isolated copy of the customer-foundation branch (mocked
-PM2/Nginx only); actionlint 1.7.7 passed (official release checksum verified).
-The documented SSH Match block also passed local `sshd -T` parsing/effective-policy
-assertions using a temporary test host key; the actual VPS policy was not changed.
-A real source archive from the VPS branch passed checksum, extraction and
-staged-only metadata checks in a disposable directory. These results are also
-recorded in PR #9. Its GitHub receiver-security job also passed; prepare and
-stage jobs were skipped as intended on the PR. These checks do not prove VPS
-SSH/Nginx/PM2 health. Review does not require server access; merging remains blocked
-until production auto-deployment behavior is addressed separately.
+## Solo-owner abort and staging rollback
 
-Next required setup approval: authorize **preservation/read-only VPS inventory
-and dedicated upload-account commissioning only**, following the administrator
-procedure above. Configure the new restricted key and protected `private-review`
-Environment; keep `REVIEW_UPLOAD_ENABLED` unset until commissioning checks pass.
-Do not merge PR #9 or change production auto-deployment settings as part of this
-approval. Before any later merge, separately verify that tooling-only main changes
-will not redeploy production. Activation remains
-separately unapproved. Obtain preservation/drift evidence before choosing a first
-release commit. Once the account, host key and protected Environment are configured,
-the staging procedure is reusable; later homepage fixes use reviewed commits rather
-than repeated manual setup.
+There is no live-release rollback in this workflow because it never switches a
+release. On unexpected staging intent, remove the enable variable and cancel the
+specific run from a trusted owner session:
 
-## Commissioning checkpoint: blocked on administrator access
+```sh
+REPO=monetcore-dev/monetcore-website
+# Only if the variable exists; absence is the desired current state.
+gh variable delete REVIEW_UPLOAD_ENABLED --repo "$REPO"
+# Replace with the verified numeric run ID; do not cancel unrelated work.
+gh run cancel RUN_ID --repo "$REPO"
+```
 
-PR #9 remains unmerged. No VPS connection, inventory, backup, account creation or
-live isolation test has occurred. The cloud has no SSH key/agent, no trusted VPS
-host-key entry and no configured TCP destination grant. Do not infer VPS state from
-the GitHub branch. Existing website, uncommitted work, database, PM2 and Nginx have
-not been touched. Do not supply existing private keys or passwords to Codex.
+Removing a variable does not stop an already-running SSH process. Cancellation may
+arrive after extraction; inspect only the incoming release metadata through an
+approved commissioning channel, retain evidence, and do not claim an in-flight
+upload was undone. The receiver refuses overwrite, so retrying the same SHA is not
+an idempotent replacement. Revoke the restricted key through the approved account
+administrator if misuse is suspected; no root password is needed by Codex.
 
-GitHub inspection found no `private-review` Environment and only one collaborator,
-`monetcore-dev`. The integration rejected Environment creation and variable access
-with HTTP 403, Resource not accessible by integration. No Environment, protection,
-secret or variable was changed. `REVIEW_UPLOAD_ENABLED` has not been set by Codex;
-its actual absence cannot be established through the denied API. The repository is
-public, so source artifacts must never be treated as private backup storage.
+If a staged directory must be quarantined, an administrator may separately approve
+this fixed incoming-only operation. It does not remove data or touch the restored
+website. Replace the SHA only with the verified uploaded commit before execution;
+do not run it in the current task:
+
+```sh
+sudo -u monetcore-review-deploy /usr/bin/python3 -I - <<'PY'
+import json, os, re
+from pathlib import Path
+sha = 'REPLACE_WITH_VERIFIED_40_CHARACTER_SHA'
+assert re.fullmatch('[a-f0-9]{40}', sha)
+root = Path('/srv/monetcore-review/incoming')
+assert root.is_dir() and not root.is_symlink() and root.resolve() == root
+source = root / sha
+assert source.is_dir() and not source.is_symlink()
+metadata_path = source / 'release.json'
+assert metadata_path.is_file() and not metadata_path.is_symlink()
+metadata = json.loads(metadata_path.read_text())
+assert metadata['commit'] == sha and metadata['activated'] is False
+assert metadata['status'] == 'staged-only'
+target = root / ('.quarantine-' + sha)
+assert not os.path.lexists(target)
+source.rename(target)
+print('Quarantined incoming source only; no release activation or service change')
+PY
+```
+
+Quarantine still consumes retention quota; do not automate deletion or weaken the
+receiver's no-overwrite check. Reconcile before retrying. Any future activation and
+its rollback require a separate reviewed adapter, exact known-good release/process
+identity and configuration backup, explicit owner approval, and verified recovery.
+The historical `private_review.py` on the customer-foundation branch pins an older
+application commit and can modify Nginx: do not run it blindly, remove its prompts,
+or call it from this workflow. Production, the restored source and live routing
+remain outside all staging and abort procedures.
+
+## Remaining blockers and next action
+
+Owner reports receiver/key installation and preliminary isolation complete; GitHub
+Environment branch policy and lack of reviewer rule were verified read-only. The
+workflow and runbook are prepared for the solo-owner policy, but no live upload or
+activation is performed. Keep PR #9 unmerged and `REVIEW_UPLOAD_ENABLED` unset.
+Record remaining commissioning/preservation/restore evidence and validate the
+candidate source baseline. Future workflow publication and any bounded GitHub-to-VPS
+upload test need separate authorization and production-safe publication handling.
+No independent reviewer or existing administrator password is required.
+
+## Preservation reference: only if evidence is still missing
+
+The following previously prepared inventory/backup plan is reference material for
+the owner. Do not rerun completed work, connect to protected resources in this task,
+or treat it as authorization to change the restored source. It has not been run by
+Codex. Keep secret-bearing backups outside this public repository and Actions.
 
 ### A. Administrator-run read-only inventory
 
@@ -393,84 +325,3 @@ paths separately if discovered. Record the existing database backup/recovery pol
 without SQL, exports or migrations. This source archive is not a transactionally
 consistent database backup or complete system snapshot. Never restore over the
 running tree, remove the original, or claim backup verified before these checks run.
-
-### C. GitHub administrator actions: no secrets supplied to Codex
-
-Use the existing administrator GitHub session, not a new shared token. Inspect
-current settings first; PUT replaces supplied protection fields. These exact
-non-secret requests prepare a blocking Environment with no secrets:
-
-```sh
-gh api --method PUT repos/monetcore-dev/monetcore-website/environments/private-review --input - <<'JSON'
-{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"User","id":320996694}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true},"can_admins_bypass":false}
-JSON
-gh api --method POST repos/monetcore-dev/monetcore-website/environments/private-review/deployment-branch-policies --input - <<'JSON'
-{"name":"feature/monetcore-vps-completed","type":"branch"}
-JSON
-```
-
-Only the owner exists as a collaborator. With self-review prevention the owner
-cannot approve their own dispatch: nominate/invite an independent trusted reviewer
-and update required reviewers before operational use. If approval protection cannot
-be enforced, keep uploads disabled. Use an authorized administrator request for
-`GET repos/monetcore-dev/monetcore-website/actions/variables/REVIEW_UPLOAD_ENABLED`:
-404 confirms absence only when access is authorized; 403 does not. Keep it unset.
-Do not set any secret yet. After isolation is verified, the administrator alone
-enters only the NEW restricted key directly through GitHub's secure Environment
-UI. The agent must never receive/copy private keys. Existing application/DB and
-production credentials remain outside GitHub.
-
-### D. Elevated server approval boundary and isolation tests
-
-Stop before the exact `sudo useradd` and `sudo install` commands already listed
-in steps 2–3 above. They are the next server mutations requiring administrator
-approval, and may run only after preservation is verified. SSH policy installation
-and any SSH reload also need explicit approval; no reload is authorized here.
-Keep the new key unusable until restrictions are verified. No sudo/PM2/DB privilege
-may be assigned to the upload identity.
-
-After administrator provisioning, these exact inspections require administrator
-approval and must be run privately, not by Codex under this task:
-
-```sh
-id monetcore
-id monetcore-review-deploy
-sudo -l -U monetcore-review-deploy
-sudo /usr/sbin/sshd -t
-sudo /usr/sbin/sshd -T -C user=monetcore-review-deploy,host=localhost,addr=127.0.0.1
-```
-
-Require a distinct UID, approved unprivileged groups, no sudo capability, effective
-forced command, no passwords/PTY/forwarding/user rc/environment-file access, and
-root-owned non-writable receiver/key policy. Inspect full SSH settings privately;
-share only restriction outcomes. Do not invoke PM2 as the upload identity: it may
-start a competing daemon.
-
-For access probes, the following impersonation command also needs administrator
-approval. It never opens secret files, sends signals or contacts services:
-
-```sh
-sudo -u monetcore-review-deploy /usr/bin/python3 -I - <<'PY'
-import os
-from pathlib import Path
-source = Path('/home/monetcore/monetcore-website')
-assert os.geteuid() != 0
-for path in [source, source / '.git', Path('/home/monetcore/.pm2'),
-             Path('/etc/nginx'), Path('/etc/ssh/authorized_keys/monetcore-review-deploy'),
-             Path('/usr/local/libexec/monetcore-review-receive')]:
-    assert not os.access(path, os.W_OK), 'STOP: upload identity can modify a protected path'
-for name in ['.env', '.env.local', '.env.production', '.env.production.local']:
-    assert not os.access(source / name, os.R_OK), 'STOP: readable secret path'
-assert not os.access('/home/monetcore/.pm2/rpc.sock', os.R_OK | os.W_OK), 'STOP: accessible PM2 socket'
-assert os.access('/srv/monetcore-review/incoming', os.R_OK | os.W_OK | os.X_OK)
-print('PASS listed path probes; actual secret paths and service policies still need review')
-PY
-```
-
-Extend probes to actual runtime secrets, custom PM2 home/socket and ACLs discovered
-in inventory; inspect sudo/polkit/service and DB auth policy privately. These checks
-are necessary, not a complete proof. A failed check requires a separate reviewed
-correction; do not chmod or alter restored files under this task. Test shell/SFTP,
-PTY/forwarding rejection and staged-only upload with a new temporary key after
-approved restriction installation. Existing disposable receiver tests do not prove
-real VPS identity isolation. Live isolation and backup verification remain pending.

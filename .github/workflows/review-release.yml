@@ -6,7 +6,9 @@ on:
     paths:
       - .github/workflows/review-release.yml
       - scripts/vps/review_receive.py
+      - scripts/vps/authorize_review_stage.py
       - tests/test_review_receive.py
+      - tests/test_review_authorization.py
       - docs/private-review-deployment.md
   workflow_dispatch:
     inputs:
@@ -14,6 +16,15 @@ on:
         description: Upload to isolated review staging (never activates)
         type: boolean
         default: false
+      candidate_sha:
+        description: Full 40-character SHA reviewed by owner; must equal selected branch tip at dispatch
+        required: true
+        type: string
+      owner_confirmation:
+        description: 'For stage=true enter: REVIEWED <candidate_sha> FOR STAGING ONLY'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -33,17 +44,38 @@ jobs:
       - name: Test restricted upload receiver without external services
         run: |
           test -f tests/test_review_receive.py
-          python3 -B -m unittest discover -s tests -p test_review_receive.py -v
+          test -f tests/test_review_authorization.py
+          python3 -B -m unittest discover -s tests -p 'test_review_*.py' -v
+
+  authorize:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.intent.outputs.sha }}
+      stage_authorized: ${{ steps.intent.outputs.stage_authorized }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require owner review and exact dispatch commit
+        id: intent
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          STAGE_REQUESTED: ${{ inputs.stage }}
+          OWNER_CONFIRMATION: ${{ inputs.owner_confirmation }}
+        run: python3 -I scripts/vps/authorize_review_stage.py
 
   prepare:
-    needs: receiver-security
+    needs: [receiver-security, authorize]
     if: github.event_name == 'workflow_dispatch' && github.repository == 'monetcore-dev/monetcore-website' && github.ref == 'refs/heads/feature/monetcore-vps-completed'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.authorize.outputs.sha }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -53,13 +85,16 @@ jobs:
           set -euo pipefail
           test -f scripts/vps/check-release.mjs
           test -f app/lib/postgres.ts
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
           test "$(git branch --show-current)" = feature/monetcore-vps-completed || git switch --create feature/monetcore-vps-completed
           npm ci --no-audit --no-fund
+        env:
+          RELEASE_SHA: ${{ needs.authorize.outputs.sha }}
       - name: Run existing secret-free release checks
         run: node scripts/vps/check-release.mjs
       - name: Package immutable source (no runtime secrets or generated files)
         env:
-          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_SHA: ${{ needs.authorize.outputs.sha }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/review-release"
@@ -69,15 +104,15 @@ jobs:
           printf '%s\n' "$RELEASE_SHA" > commit.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: review-source-${{ github.sha }}
+          name: review-source-${{ needs.authorize.outputs.sha }}
           path: ${{ runner.temp }}/review-release/
           if-no-files-found: error
           retention-days: 7
 
   stage:
-    needs: prepare
+    needs: [authorize, prepare]
     # Repository variable is intentionally unset/false until VPS commissioning.
-    if: inputs.stage && vars.REVIEW_UPLOAD_ENABLED == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'monetcore-dev/monetcore-website' && github.ref == 'refs/heads/feature/monetcore-vps-completed' && github.actor == 'monetcore-dev' && github.triggering_actor == 'monetcore-dev' && inputs.stage && needs.authorize.outputs.stage_authorized == 'true' && vars.REVIEW_UPLOAD_ENABLED == 'true'
     environment:
       name: private-review
     runs-on: ubuntu-24.04
@@ -85,11 +120,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: review-source-${{ github.sha }}
+          name: review-source-${{ needs.authorize.outputs.sha }}
           path: ${{ runner.temp }}/review-release
       - name: Stage source through restricted review-only receiver
         env:
-          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_SHA: ${{ needs.authorize.outputs.sha }}
           REVIEW_SSH_HOST: ${{ secrets.REVIEW_SSH_HOST }}
           REVIEW_SSH_PORT: ${{ secrets.REVIEW_SSH_PORT }}
           REVIEW_SSH_USER: ${{ secrets.REVIEW_SSH_USER }}
