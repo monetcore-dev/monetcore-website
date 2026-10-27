@@ -1,0 +1,124 @@
+name: Prepare private review release
+
+# Pull requests run receiver tests only. Upload is manual and cannot activate code.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/review-release.yml
+      - scripts/vps/review_receive.py
+      - tests/test_review_receive.py
+      - docs/private-review-deployment.md
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Upload to isolated review staging (never activates)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monetcore-private-review
+  cancel-in-progress: false
+
+jobs:
+  receiver-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test restricted upload receiver without external services
+        run: |
+          test -f tests/test_review_receive.py
+          python3 -B -m unittest discover -s tests -p test_review_receive.py -v
+
+  prepare:
+    needs: receiver-security
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'monetcore-dev/monetcore-website' && github.ref == 'refs/heads/feature/monetcore-vps-completed'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Verify VPS baseline and install locked dependencies
+        run: |
+          set -euo pipefail
+          test -f scripts/vps/check-release.mjs
+          test -f app/lib/postgres.ts
+          test "$(git branch --show-current)" = feature/monetcore-vps-completed || git switch --create feature/monetcore-vps-completed
+          npm ci --no-audit --no-fund
+      - name: Run existing secret-free release checks
+        run: node scripts/vps/check-release.mjs
+      - name: Package immutable source (no runtime secrets or generated files)
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/review-release"
+          git archive --format=tar.gz --output="$RUNNER_TEMP/review-release/source.tar.gz" "$RELEASE_SHA"
+          cd "$RUNNER_TEMP/review-release"
+          sha256sum source.tar.gz > source.sha256
+          printf '%s\n' "$RELEASE_SHA" > commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: review-source-${{ github.sha }}
+          path: ${{ runner.temp }}/review-release/
+          if-no-files-found: error
+          retention-days: 7
+
+  stage:
+    needs: prepare
+    # Repository variable is intentionally unset/false until VPS commissioning.
+    if: inputs.stage && vars.REVIEW_UPLOAD_ENABLED == 'true'
+    environment:
+      name: private-review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: review-source-${{ github.sha }}
+          path: ${{ runner.temp }}/review-release
+      - name: Stage source through restricted review-only receiver
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          REVIEW_SSH_HOST: ${{ secrets.REVIEW_SSH_HOST }}
+          REVIEW_SSH_PORT: ${{ secrets.REVIEW_SSH_PORT }}
+          REVIEW_SSH_USER: ${{ secrets.REVIEW_SSH_USER }}
+          REVIEW_SSH_KEY: ${{ secrets.REVIEW_SSH_KEY }}
+          REVIEW_SSH_KNOWN_HOSTS: ${{ secrets.REVIEW_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$REVIEW_SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$REVIEW_SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "$REVIEW_SSH_PORT" =~ ^[0-9]{1,5}$ ]]
+          (( 10#$REVIEW_SSH_PORT >= 1 && 10#$REVIEW_SSH_PORT <= 65535 ))
+          keydir=$(mktemp -d)
+          trap 'rm -rf "$keydir"' EXIT
+          chmod 700 "$keydir"
+          umask 077
+          printf '%s\n' "$REVIEW_SSH_KEY" > "$keydir/key"
+          printf '%s\n' "$REVIEW_SSH_KNOWN_HOSTS" > "$keydir/known_hosts"
+          cd "$RUNNER_TEMP/review-release"
+          test "$(cat commit.txt)" = "$RELEASE_SHA"
+          sha256sum --check source.sha256
+          digest=$(sha256sum source.tar.gz)
+          digest=${digest%% *}
+          # The forced command validates SSH_ORIGINAL_COMMAND; no remote shell.
+          # A successful upload means staged source only; it never switches services.
+          ssh -F /dev/null -T -i "$keydir/key" -p "$REVIEW_SSH_PORT" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$keydir/known_hosts" -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+            "$REVIEW_SSH_USER@$REVIEW_SSH_HOST" \
+            "review-stage $RELEASE_SHA $digest" < source.tar.gz
