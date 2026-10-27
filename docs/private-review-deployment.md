@@ -7,6 +7,15 @@ This procedure prepares protected, repeatable source validation and upload. It
 no Nginx/PM2 changes, database operations or production deployment are authorized.
 Leave `REVIEW_UPLOAD_ENABLED` unset until the upload account is approved and tested.
 
+**Observed integration warning:** pushing preparation commit
+`8ee48ecef18a791fff1dba6add2a203984398e61` automatically caused the existing Vercel
+integration to complete a non-production Preview deployment (GitHub deployment
+`7355246179`). The new workflow did not activate it. Do not push further or merge
+this tooling PR until the Vercel administrator has arranged verified exclusions
+for tooling-only changes. A main merge may otherwise redeploy production. Do not
+disable or modify production integration settings without separate approval.
+VPS review deployment remains unperformed.
+
 The permanent boundary is: cloud development → reviewed Git commit → manual
 GitHub Actions validation → approved private staging upload → separately approved
 candidate and review-only upstream switch. Runtime secrets never enter Actions,
@@ -289,7 +298,10 @@ recorded in the PR. They do not prove
 VPS SSH/Nginx/PM2 health or that a GitHub workflow has run. No server access or remote
 mutation is needed to review/merge these preparation files.
 
-Next administrator decision: review the PR, then authorize **preservation/read-only
+Immediate administrator action: arrange and verify the Vercel tooling-branch
+preview exclusion before another push. Before merging, also confirm a tooling-only
+merge will not redeploy production; leave the PR unmerged until this is resolved.
+Then review the PR and authorize **preservation/read-only
 VPS inventory and dedicated upload-account commissioning only**. Activation remains
 separately unapproved. Obtain preservation/drift evidence before choosing a first
 release commit. Once the account, host key and protected Environment are configured,
