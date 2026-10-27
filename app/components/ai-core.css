@@ -545,6 +545,11 @@
 #corporate-hero:has(.ai-core[data-paused="true"]) .hero-flow,
 #corporate-hero:has(.ai-core:hover) .hero-flow,
 #corporate-hero:has(.ai-core:focus-within) .hero-flow { animation-play-state: paused; }
+/* Older browsers without relational selectors get an always-static background,
+   rather than decorative motion that cannot follow the shared pause control. */
+@supports not selector(:has(*)) {
+  .hero-flow { animation: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-flow { animation: none; }
 }

@@ -91,6 +91,21 @@ class BuildPreparationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.prepare()
 
+    def test_runtime_and_unrelated_output_roots_are_not_allowed(self):
+        for path in [
+            '/home/monetcore/.pm2', '/home/monetcore/.ssh', '/home/monetcore/postgres-data',
+            '/home/monetcore/monetcore-website', '/home/monetcore/monetcore-releases',
+            '/srv/monetcore-review/incoming', '/etc/nginx', '/var/lib/postgresql',
+            '/workspace/monetcore-website', '/tmp', '/workspace/scratch',
+            '/tmp/../etc/nginx', '/workspace/scratch/../../home/monetcore/.pm2',
+        ]:
+            with self.subTest(path=path):
+                self.assertFalse(build.allowed_build_root(Path(path)))
+        for path in ['/home/monetcore/monetcore-review-builds',
+                     '/workspace/scratch/private-build', '/tmp/private-build/root']:
+            with self.subTest(path=path):
+                self.assertTrue(build.allowed_build_root(Path(path)))
+
     def test_unpinned_reference_refused(self):
         with self.assertRaises(ValueError):
             build.prepare(self.repo, self.staged, 'HEAD', self.output)

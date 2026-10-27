@@ -49,6 +49,15 @@ by this invocation is removed on failure. It emits `.review-source.json` with
 The reference checkout and its reviewed Git objects must not be controlled by the
 upload identity. No secret or customer data belongs in the source/reference tree.
 
+Review hardening restricts output to the exact dedicated VPS build root or a private
+child of `/workspace/scratch` or `/tmp`. Unrelated service/config paths are rejected,
+even if writable by the caller. This code is a source-copy verifier, not an OS
+sandbox: real isolation still requires the separately privileged builder identity,
+trusted mount layout (no bind-mount aliases of live directories), and no service/DB
+credentials or control sockets. It contains no SQL, PM2, Nginx or service commands;
+its only subprocesses read Git objects. A privileged or compromised host/caller is
+outside these code-level guarantees. Do not execute it against the VPS in this phase.
+
 ## Proposed repeatable process — future approval required
 
 1. **Choose source, not a running directory.** Owner reviews a new development SHA
@@ -164,7 +173,10 @@ Navigation remains a set of disclosures/native links, not ARIA application menus
 
 Executed locally: lint, type generation/checking, 55 mocked server tests, nine
 offline staging tests and the optimized review build passed. All 40 Python
-security/source-preparation tests passed. Preparing the approved b7e198b Git
+security/source-preparation tests passed. Review hardening adds one output-root
+policy regression test (41 total) and a static atmosphere fallback on browsers
+without CSS `:has`, so shared pause support never depends on unsupported selectors.
+Preparing the approved b7e198b Git
 snapshot verified 186 source blobs in a disposable directory without building
 or activating it. The complete 13-program browser regression suite and new Phase 2 browser checks
 passed after correcting a conflicting legacy mobile light-surface rule found by
@@ -177,9 +189,10 @@ No hardware frame-rate/field performance claim follows from transform-only anima
 
 ## Exact owner approvals still needed
 
-- Accept the local UI/tooling diff and select a new approved source SHA; pushing or
-  staging this branch is separate and currently unperformed. Its branch has not been
-  verified excluded from Vercel previews, so do not assume a push is nondeploying.
+- Accept the UI/tooling diff and select a new approved source SHA. Review hardening
+  adds a `vercel.json` Git-deployment opt-out for this exact development branch,
+  preserving the existing VPS-branch opt-out and leaving main/production untouched.
+  A non-production PR is authorized for review; staging/build/deployment is separate.
 - Approve the build host, compatible pinned image, resource/egress isolation, source
   handoff and dedicated builder storage/identity. Installing rootless tooling, account
   changes or permissions require explicit administrator approval, not passwords here.

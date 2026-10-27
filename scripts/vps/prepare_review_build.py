@@ -19,6 +19,17 @@ PROTECTED = tuple(map(Path, (
     '/home/monetcore/monetcore-releases', '/srv/monetcore-review/incoming',
     '/etc', '/var', '/root',
 )))
+VPS_BUILD_ROOT = Path('/home/monetcore/monetcore-review-builds')
+
+
+def allowed_build_root(path):
+    # A denylist cannot enumerate every possible runtime/config directory.
+    # Only the dedicated server root and private local scratch children qualify.
+    path = Path(os.path.abspath(path))
+    return path == VPS_BUILD_ROOT or any(
+        path != parent and path.is_relative_to(parent)
+        for parent in (Path('/workspace/scratch'), Path('/tmp'))
+    )
 
 
 def require(condition, reason):
@@ -78,6 +89,7 @@ def read_file(root, name):
 def prepare(repo, staged, commit, build_root):
     repo, staged, build_root = map(real_directory, (repo, staged, build_root))
     require(os.geteuid() != 0, 'Never prepare source as root')
+    require(allowed_build_root(build_root), 'Use the dedicated review-build root or private local scratch')
     require(build_root.stat().st_uid == os.geteuid() and stat.S_IMODE(build_root.stat().st_mode) == 0o700,
             'Build root must be owned by this user with mode 0700')
     for parent in build_root.parents:
