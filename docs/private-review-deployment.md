@@ -7,14 +7,14 @@ This procedure prepares protected, repeatable source validation and upload. It
 no Nginx/PM2 changes, database operations or production deployment are authorized.
 Leave `REVIEW_UPLOAD_ENABLED` unset until the upload account is approved and tested.
 
-**Observed integration warning:** pushing preparation commit
-`8ee48ecef18a791fff1dba6add2a203984398e61` automatically caused the existing Vercel
-integration to complete a non-production Preview deployment (GitHub deployment
-`7355246179`). The new workflow did not activate it. Do not push further or merge
-this tooling PR until the Vercel administrator has arranged verified exclusions
-for tooling-only changes. A main merge may otherwise redeploy production. Do not
-disable or modify production integration settings without separate approval.
-VPS review deployment remains unperformed.
+**Vercel exclusion verified:** the administrator saved an Ignored Build Step rule
+for `dev/private-review-workflow`. A documentation-only test push at commit
+`2b7a8db` returned Vercel status **Canceled by Ignored Build Step**. This verifies
+that branch's build is skipped; it does not establish exclusions for main or other
+branches. The earlier preparation commit `8ee48ec` had automatically created a
+non-production Preview before the rule was saved. Keep PR #9 unmerged: a main
+merge may still redeploy production. Do not change production integration settings
+without separate approval. VPS review deployment remains unperformed.
 
 The permanent boundary is: cloud development → reviewed Git commit → manual
 GitHub Actions validation → approved private staging upload → separately approved
@@ -294,15 +294,18 @@ The documented SSH Match block also passed local `sshd -T` parsing/effective-pol
 assertions using a temporary test host key; the actual VPS policy was not changed.
 A real source archive from the VPS branch passed checksum, extraction and
 staged-only metadata checks in a disposable directory. These results are also
-recorded in the PR. They do not prove
-VPS SSH/Nginx/PM2 health or that a GitHub workflow has run. No server access or remote
-mutation is needed to review/merge these preparation files.
+recorded in PR #9. Its GitHub receiver-security job also passed; prepare and
+stage jobs were skipped as intended on the PR. These checks do not prove VPS
+SSH/Nginx/PM2 health. Review does not require server access; merging remains blocked
+until production auto-deployment behavior is addressed separately.
 
-Immediate administrator action: arrange and verify the Vercel tooling-branch
-preview exclusion before another push. Before merging, also confirm a tooling-only
-merge will not redeploy production; leave the PR unmerged until this is resolved.
-Then review the PR and authorize **preservation/read-only
-VPS inventory and dedicated upload-account commissioning only**. Activation remains
+Next required setup approval: authorize **preservation/read-only VPS inventory
+and dedicated upload-account commissioning only**, following the administrator
+procedure above. Configure the new restricted key and protected `private-review`
+Environment; keep `REVIEW_UPLOAD_ENABLED` unset until commissioning checks pass.
+Do not merge PR #9 or change production auto-deployment settings as part of this
+approval. Before any later merge, separately verify that tooling-only main changes
+will not redeploy production. Activation remains
 separately unapproved. Obtain preservation/drift evidence before choosing a first
 release commit. Once the account, host key and protected Environment are configured,
 the staging procedure is reusable; later homepage fixes use reviewed commits rather
