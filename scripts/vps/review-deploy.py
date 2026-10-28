@@ -29,7 +29,7 @@ import uuid
 ROOT = Path('/srv/monetcore-review-deploy')
 CONFIG = Path('/etc/monetcore-review-deploy.json')
 DEPLOY_USER = 'monetcore_review_actions'
-DEPLOY_HOME = Path('/var/lib/monetcore-review-actions')
+DEPLOY_HOME = Path('/var/lib/monetcore-review-automation')
 LEGACY_USER = 'monetcore-review-deploy'
 LEGACY_HOME = '/var/lib/monetcore-review-deploy'
 LEGACY_UID = 999

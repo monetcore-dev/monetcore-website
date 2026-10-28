@@ -446,7 +446,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_new_identity_plan_preserves_existing_legacy_home_without_reading_contents(self):
         with collision_context() as touched:result=identities.audit()
         self.assertEqual(result['deployment_user'],'monetcore_review_actions')
-        self.assertEqual(result['deployment_home'],'/var/lib/monetcore-review-actions')
+        self.assertEqual(result['deployment_home'],'/var/lib/monetcore-review-automation')
         self.assertFalse(result['writes_performed']);self.assertFalse(result['activation_authorized'])
         self.assertTrue(all(not p.startswith(str(identities.LEGACY_HOME)) for p in touched))
         self.assertEqual(identities.DEPLOY_USER,m.DEPLOY_USER);self.assertEqual(identities.DEPLOY_HOME,m.DEPLOY_HOME)

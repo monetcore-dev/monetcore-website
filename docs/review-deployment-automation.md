@@ -43,7 +43,7 @@ from application code running under the same UID. Existing `monetcore` source,
 uncommitted changes and processes remain intact.
 
 - `monetcore_review_actions`, group `monetcore_review_actions`, home
-  `/var/lib/monetcore-review-actions`: new dedicated SSH-only principal, root-owned forced
+  `/var/lib/monetcore-review-automation`: new dedicated SSH-only principal, root-owned forced
   command; sudo allows only this reviewed controller with narrowly matched args.
 - `monetcore_review_runtime`: separate PM2 daemon and systemd unit; no SSH/sudo.
   The daemon startup environment is cleared with `env -i`, so manager-level
@@ -210,11 +210,11 @@ existing directory is never silently adopted. The following is **not executed**:
 set -eu
 sudo python3 -I scripts/vps/review-identity-preflight.py
 sudo useradd --system --user-group --no-create-home --home-dir /var/lib/monetcore-review-runtime --shell /usr/sbin/nologin monetcore_review_runtime
-sudo useradd --system --user-group --no-create-home --home-dir /var/lib/monetcore-review-actions --shell /bin/sh monetcore_review_actions
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/monetcore-review-automation --shell /bin/sh monetcore_review_actions
 sudo mkdir -m 0700 /var/lib/monetcore-review-runtime
 sudo chown monetcore_review_runtime:monetcore_review_runtime /var/lib/monetcore-review-runtime
-sudo mkdir -m 0755 /var/lib/monetcore-review-actions
-sudo mkdir -m 0755 /var/lib/monetcore-review-actions/.ssh
+sudo mkdir -m 0755 /var/lib/monetcore-review-automation
+sudo mkdir -m 0755 /var/lib/monetcore-review-automation/.ssh
 sudo mkdir -m 0755 /srv/monetcore-review-deploy
 sudo mkdir -m 0755 /srv/monetcore-review-deploy/releases
 sudo mkdir -m 0700 /srv/monetcore-review-deploy/state /srv/monetcore-review-deploy/incoming
@@ -257,7 +257,7 @@ shells, generic sudo, Nginx editors, systemctl or PM2 to the SSH/runtime account
 
 Generate a **new dedicated Ed25519 deployment key on the owner's computer**. Put
 only its public key in root-owned mode-0644
-`/var/lib/monetcore-review-actions/.ssh/authorized_keys`, prefixed exactly:
+`/var/lib/monetcore-review-automation/.ssh/authorized_keys`, prefixed exactly:
 
 ```text
 restrict,command="/usr/bin/python3 -I /usr/local/libexec/monetcore-review-ssh" ssh-ed25519 REPLACE_WITH_PUBLIC_KEY review-actions

@@ -9,7 +9,7 @@ import stat
 import sys
 
 DEPLOY_USER = 'monetcore_review_actions'
-DEPLOY_HOME = Path('/var/lib/monetcore-review-actions')
+DEPLOY_HOME = Path('/var/lib/monetcore-review-automation')
 RUNTIME_USER = 'monetcore_review_runtime'
 RUNTIME_HOME = Path('/var/lib/monetcore-review-runtime')
 LEGACY_USER = 'monetcore-review-deploy'
