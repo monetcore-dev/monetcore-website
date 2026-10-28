@@ -1,0 +1,145 @@
+name: Deploy isolated Monetcore review (manual)
+
+on:
+  pull_request:
+    branches: [feature/phase2-clean-review]
+    paths:
+      - .github/workflows/review-deploy.yml
+      - scripts/vps/review-deploy*
+      - scripts/vps/package-review.mjs
+      - scripts/vps/review-artifact.mjs
+      - scripts/vps/smoke-review.mjs
+      - scripts/vps/monetcore-review-pm2.service
+      - scripts/vps/review-pm2-start.sh
+      - scripts/vps/review-identity-preflight.py
+      - docs/examples/review-deploy-default-branch.stub.yml
+      - docs/review-deployment-automation.md
+      - tests/test_review_deploy.py
+      - tests/review-artifact.test.mjs
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [deploy, rollback]
+        required: true
+      candidate_sha:
+        description: For deploy, full reviewed SHA; must equal dispatch commit
+        type: string
+        default: ''
+      rollback_release:
+        description: For rollback, deployment ID printed by successful deploy
+        type: string
+        default: ''
+      confirmation:
+        description: 'DEPLOY <sha> REVIEW ONLY or ROLLBACK <release-id> REVIEW ONLY'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+# Share the existing source-staging workflow's exclusion group. Never cancel a switch.
+concurrency:
+  group: monetcore-private-review
+  cancel-in-progress: false
+
+jobs:
+  security-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.19.0'
+      - run: python3 -B -m unittest discover -s tests -p 'test_review_*.py' -v
+      - run: node --test tests/review-artifact.test.mjs
+
+  authorize:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'monetcore-dev/monetcore-website' && github.ref == 'refs/heads/feature/phase2-clean-review' && github.actor == 'monetcore-dev' && github.triggering_actor == 'monetcore-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate immutable intent; no user input is evaluated by a shell
+        env:
+          OPERATION: ${{ inputs.operation }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ROLLBACK_RELEASE: ${{ inputs.rollback_release }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          python3 -I - <<'PY'
+          import os, re
+          e=os.environ
+          if e['OPERATION']=='deploy':
+              assert re.fullmatch('[a-f0-9]{40}',e['CANDIDATE_SHA'])
+              assert e['CANDIDATE_SHA']==e['DISPATCH_SHA']
+              assert not e['ROLLBACK_RELEASE']
+              assert e['CONFIRMATION']=='DEPLOY '+e['CANDIDATE_SHA']+' REVIEW ONLY'
+          else:
+              assert e['OPERATION']=='rollback' and not e['CANDIDATE_SHA']
+              assert re.fullmatch('[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}',e['ROLLBACK_RELEASE'])
+              assert e['CONFIRMATION']=='ROLLBACK '+e['ROLLBACK_RELEASE']+' REVIEW ONLY'
+          print('PASS immutable review-only intent')
+          PY
+
+  build:
+    needs: [authorize, security-tests]
+    if: inputs.operation == 'deploy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.19.0'
+      - name: Locked install and secret-free review build
+        env:
+          MONETCORE_REVIEW_ARTIFACT: 'true'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git switch --create feature/phase2-clean-review
+          npm ci --no-audit --no-fund
+          node scripts/vps/check-release.mjs
+          node scripts/vps/package-review.mjs "$GITHUB_SHA" "$RUNNER_TEMP/review-artifact"
+          node scripts/vps/smoke-review.mjs "$RUNNER_TEMP/review-artifact/review.tar.gz" "$GITHUB_SHA"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: review-${{ github.sha }}
+          path: ${{ runner.temp }}/review-artifact/
+          retention-days: 3
+          if-no-files-found: error
+
+  deploy:
+    needs: [authorize, security-tests, build]
+    if: always() && needs.authorize.result == 'success' && needs.security-tests.result == 'success' && (needs.build.result == 'success' || (inputs.operation == 'rollback' && needs.build.result == 'skipped')) && vars.REVIEW_DEPLOY_ENABLED == 'true'
+    environment: review-deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: inputs.operation == 'deploy'
+        with:
+          name: review-${{ github.sha }}
+          path: ${{ runner.temp }}/review-artifact
+      - name: Restricted deploy or rollback; never production
+        env:
+          OPERATION: ${{ inputs.operation }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ROLLBACK_RELEASE: ${{ inputs.rollback_release }}
+          ARTIFACT_DIR: ${{ runner.temp }}/review-artifact
+          REVIEW_DEPLOY_HOST: ${{ secrets.REVIEW_DEPLOY_HOST }}
+          REVIEW_DEPLOY_PORT: ${{ secrets.REVIEW_DEPLOY_PORT }}
+          REVIEW_DEPLOY_KEY: ${{ secrets.REVIEW_DEPLOY_KEY }}
+          REVIEW_DEPLOY_KNOWN_HOSTS: ${{ secrets.REVIEW_DEPLOY_KNOWN_HOSTS }}
+        run: bash scripts/vps/review-deploy-transport.sh

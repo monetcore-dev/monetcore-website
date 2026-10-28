@@ -7,7 +7,7 @@ const branch = execFileSync("git", ["branch", "--show-current"], {
   cwd,
   encoding: "utf8",
 }).trim();
-if (!["feature/monetcore-vps-staging", "feature/monetcore-vps-completed", "feature/phase2-clean-review"].includes(branch))
+if (!["feature/monetcore-vps-staging", "feature/monetcore-vps-completed", "feature/phase2-clean-review", "feature/review-deployment-automation"].includes(branch))
   throw new Error("Use the approved development branch.");
 const result = spawnSync(
   process.execPath,

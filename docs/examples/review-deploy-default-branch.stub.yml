@@ -1,0 +1,35 @@
+# TEMPLATE ONLY: not an active workflow at this documentation path.
+# A separate owner-approved, workflow-only default-branch registration is required.
+name: Deploy isolated Monetcore review (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [deploy, rollback]
+        required: true
+      candidate_sha:
+        description: For deploy, full reviewed SHA; must equal dispatch commit
+        type: string
+        default: ''
+      rollback_release:
+        description: For rollback, deployment ID printed by successful deploy
+        type: string
+        default: ''
+      confirmation:
+        description: 'DEPLOY <sha> REVIEW ONLY or ROLLBACK <release-id> REVIEW ONLY'
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  registration-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - name: Never deploy from this default-branch stub
+        run: |
+          echo 'Registration only. Select feature/phase2-clean-review after separate commissioning approval.' >&2
+          exit 1

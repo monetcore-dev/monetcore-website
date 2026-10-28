@@ -1,0 +1,4 @@
+{
+  "nginx_site": "/etc/nginx/sites-enabled/monetcore-review",
+  "other_nginx_sha256": "SET_FROM_ROOT_INSPECT_AFTER_CONFIGURATION_REVIEW"
+}
