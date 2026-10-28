@@ -31,6 +31,7 @@ USER = 'monetcore_review_runtime'
 HOME = '/var/lib/monetcore-review-runtime'
 UNIT = 'monetcore-review-pm2.service'
 HOST = 'review.monetcore.dev'
+REVIEW_ENABLED_SITE = Path('/etc/nginx/sites-enabled/monetcore-review')
 PM2 = '/usr/bin/pm2'
 NODE = '/usr/bin/node'
 NGINX = '/usr/sbin/nginx'
@@ -228,6 +229,7 @@ def nginx_snapshot(site, inventory=False):
     for i in range(1,len(parts),2):
         name,body=parts[i:i+2]
         if Path(name).resolve()==site:
+            require(site!=REVIEW_ENABLED_SITE or Path(name)==site,'enabled_review_must_be_loaded_directly')
             seen+=1
             require(body.strip()==site.read_text().strip(), 'effective_review_config_mismatch')
         else:
@@ -378,13 +380,19 @@ def unpack(stream, sha, checksum, dest):
         user=pwd.getpwnam(USER);os.chown(cache,user.pw_uid,user.pw_gid);cache.chmod(0o700)
 
 
+def validate_site_path(site):
+    # Add only the owner-verified enabled regular file, not arbitrary enabled sites.
+    legacy=site.parent in (Path('/etc/nginx/sites-available'),Path('/etc/nginx/conf.d')) and site.name!='nginx.conf'
+    require(site==REVIEW_ENABLED_SITE or legacy,'dedicated_site_path_required')
+    return trusted(site)  # lstat: root-owned regular file, no symlink/writable ancestors.
+
+
 def load_config():
     trusted(CONFIG)
     cfg=json.loads(CONFIG.read_text())
     require(set(cfg)=={'nginx_site','other_nginx_sha256'},'invalid_config_keys')
     site=Path(cfg['nginx_site'])
-    require(site.parent in (Path('/etc/nginx/sites-available'),Path('/etc/nginx/conf.d')) and site.name!='nginx.conf','dedicated_site_path_required')
-    trusted(site);vhost(site.read_text())
+    validate_site_path(site);vhost(site.read_text())
     return cfg,site
 
 

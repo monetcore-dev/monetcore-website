@@ -66,7 +66,8 @@ also verify application-level disabling.
 Use the existing private-console source inventory/verified-backup procedure in
 `docs/private-review-deployment.md`. Preserve the original source/uncommitted
 changes, process and config. Reconcile VPS-only source before selecting any release
-SHA. Inspect the *actual* review site/upstream; do not assume 3003 or 3004. Confirm
+SHA. The owner reports the current review listener at `127.0.0.1:3004`; the
+controller re-reads the actual upstream and verifies its process each run. Confirm
 no unrelated Nginx edits are pending on disk: a global graceful reload can load
 them even when this tool changes only review routing.
 
@@ -85,7 +86,12 @@ use, and invokes only the separate review UID/PM2_HOME. This workspace has not
 independently connected to the VPS to repeat that inventory.
 
 The supported review file is intentionally narrow: a **dedicated, root-owned
-regular file** in `/etc/nginx/sites-available` or `/etc/nginx/conf.d`, containing
+regular file**. The verified active path is exactly
+`/etc/nginx/sites-enabled/monetcore-review`, **not a symbolic link**. It is accepted
+in place; do not move it to sites-available, create a symlink, or replace other
+sites-enabled files. Only this exact sites-enabled filename is allowlisted; the
+previous regular-file support in sites-available/conf.d remains compatible.
+All file/ancestor root-ownership and non-writable checks still apply. It contains
 one HTTPS server for exactly `review.monetcore.dev`, public access (`auth_basic off`
 or no local auth directive),
 existing certificates, one `/` proxy and both an exact `/api` block and a `/api/` prefix block:
@@ -119,9 +125,11 @@ admits no extra/regex locations which could override it. An exact
 `location = /api { return 403; }` is also mandatory. If inventory shows it missing
 or either URL not returning 403, commissioning stops; obtain separate approval for
 that review-only repair. The deployment does not silently add API locations.
-The latest owner inventory explicitly reports no exact `location = /api` yet;
-that remains a commissioning blocker needing a separate review-only fix/approval.
-This PM2-path update does not alter the running Nginx configuration.
+The latest owner update confirms public HTTPS 200 and both `/api` and `/api/`
+returning 403 at the verified active path. This supersedes the earlier missing-exact-
+API report; that is no longer an owner-reported blocker. The controller still
+verifies both blocks and HTTP behavior before any switch. This is owner-provided
+inventory, not a new remote inspection by this workspace.
 
 The homepage stays public, with HTTPS 200 and no login challenge. Non-off Basic
 Auth is rejected rather than introduced; no Basic password secret is needed.
@@ -145,6 +153,8 @@ stat -Lc '%U %G %a %F %n' /usr/bin/node /usr/bin/pm2
 free -m
 df -h /srv /home/monetcore
 ls -l /etc/nginx/sites-enabled
+test ! -L /etc/nginx/sites-enabled/monetcore-review
+stat -c '%U %G %a %F %n' /etc/nginx/sites-enabled/monetcore-review
 ss -ltnp
 curl --head --silent --show-error --max-time 10 https://review.monetcore.dev/
 curl --head --silent --show-error --max-time 10 https://review.monetcore.dev/api
@@ -211,7 +221,9 @@ principal). Keep password login disabled under the existing SSH policy. Do not
 change production SSH keys. A non-deployment command such as `whoami` must be
 rejected; do not test the deployment verb yet. Never paste the private key in chat.
 
-Set `nginx_site` in the private root-only JSON to the verified review-only file.
+Set `nginx_site` in the private root-only JSON to exactly
+`/etc/nginx/sites-enabled/monetcore-review` (the example now uses this path).
+No symlink conversion, relocation or Nginx edit is required for path compatibility.
 Run `sudo /usr/local/libexec/monetcore-review-deploy inspect`. It outputs only the
 review port/domain and SHA-256 fingerprint of other loaded configuration. Review
 that evidence, then set `other_nginx_sha256` to that exact hash in the JSON.
@@ -323,12 +335,20 @@ operation `deploy`, exact reviewed current branch SHA, empty rollback ID, and
 commit/artifact. The build is immutable even if the branch later moves. A missing
 gate yields a skipped deploy job, never a successful deployment claim.
 
-The root controller uses fresh ports 4300–4310; existing 3003/3004 is only observed
-from the actual vhost. It proves a new candidate returns 200 and the exact marker,
+The root controller uses fresh ports 4300–4310; the owner-reported existing
+3004 listener is verified again from the actual vhost, not hardcoded. It proves a new candidate returns 200 and the exact marker,
 checks disabled backend behavior, stores a private config backup/transaction,
-changes only the literal review upstream, tests Nginx, gracefully reloads, then
+changes only the literal review upstream in that same regular file (atomic replace,
+mode/group preserved), tests Nginx, gracefully reloads, then
 rechecks public HTTPS pages (200), the exact new release marker and API 403. Clear sanitized JSON phases and
 final release ID appear in Actions. It preserves all earlier processes/files.
+Only the chosen review file is excluded from the other-configuration fingerprint,
+not its directory: production/other sites in sites-enabled remain included.
+The enabled review file must appear directly and exactly once in Nginx's loaded
+configuration; aliases, duplicate loading, unrelated edits and changed directory
+entries stop the operation. Backups/transaction files stay in root-only state under
+`/srv/monetcore-review-deploy/state`, outside Nginx's include directories. Rollback
+restores the same active filename, never a relocated copy.
 Only the isolated daemon's PM2 dump is saved; production PM2 state is never touched.
 
 The review site is intentionally public. Automated TLS checks use no credentials

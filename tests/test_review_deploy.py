@@ -7,6 +7,7 @@ import json
 import os
 import runpy
 import socket
+import stat
 import shlex
 from types import SimpleNamespace
 from pathlib import Path
@@ -34,7 +35,7 @@ SITE='''server {
    proxy_set_header X-Forwarded-Host $host;
    proxy_set_header X-Forwarded-Proto $scheme;
    proxy_set_header X-Forwarded-For $remote_addr;
-   proxy_pass http://127.0.0.1:3003;
+   proxy_pass http://127.0.0.1:3004;
  }
 }
 '''
@@ -58,13 +59,13 @@ def artifact(extra=(), remove=()):
 
 class ReviewDeployTests(unittest.TestCase):
     def test_valid_vhost_and_exact_rewrite(self):
-        port,node=m.vhost(SITE);self.assertEqual(port,3003)
+        port,node=m.vhost(SITE);self.assertEqual(port,3004)
         result=m.rewrite(SITE,4300)
-        self.assertEqual(result,SITE.replace('127.0.0.1:3003','127.0.0.1:4300'))
+        self.assertEqual(result,SITE.replace('127.0.0.1:3004','127.0.0.1:4300'))
         self.assertEqual(m.vhost(result)[0],4300)
 
     def test_api_bypass_rejected(self):
-        for old,new in [('return 403','return 200'),('location = /api { return 403; }',''),('proxy_pass http://127.0.0.1:3003','proxy_pass http://other:3003')]:
+        for old,new in [('return 403','return 200'),('location = /api { return 403; }',''),('proxy_pass http://127.0.0.1:3004','proxy_pass http://other:3004')]:
             with self.subTest(new=new),self.assertRaises(m.Stop): m.vhost(SITE.replace(old,new))
 
     def test_wrong_or_multiple_domains_and_servers(self):
@@ -82,18 +83,18 @@ class ReviewDeployTests(unittest.TestCase):
 
     def test_public_auth_off_or_absent_and_plain_api_prefix(self):
         for text in [SITE,SITE.replace(' auth_basic off;',''),SITE.replace('location ^~ /api/','location /api/')]:
-            self.assertEqual(m.vhost(text)[0],3003)
-            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3003','127.0.0.1:4301'))
+            self.assertEqual(m.vhost(text)[0],3004)
+            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3004','127.0.0.1:4301'))
 
     def test_certbot_redirect_order_comments_and_tls_config_preserved(self):
         for text in [SITE+CERTBOT_HTTP,CERTBOT_HTTP+SITE]:
-            self.assertEqual(m.vhost(text)[0],3003)
-            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3003','127.0.0.1:4301'))
+            self.assertEqual(m.vhost(text)[0],3004)
+            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3004','127.0.0.1:4301'))
             self.assertIn(CERTBOT_HTTP,m.rewrite(text,4301))
 
     def test_simple_review_redirect_is_preserved(self):
         http='server { listen 80; server_name review.monetcore.dev; return 308 https://review.monetcore.dev$request_uri; }'
-        self.assertEqual(m.rewrite(SITE+http,4302),(SITE+http).replace('127.0.0.1:3003','127.0.0.1:4302'))
+        self.assertEqual(m.rewrite(SITE+http,4302),(SITE+http).replace('127.0.0.1:3004','127.0.0.1:4302'))
 
     def test_unsafe_http_certbot_shapes_and_production_domains_rejected(self):
         for http in [CERTBOT_HTTP.replace('review.monetcore.dev','monetcore.dev'),CERTBOT_HTTP.replace('https://$host$request_uri','https://evil.example$request_uri'),CERTBOT_HTTP.replace('$host = review.monetcore.dev','$host != review.monetcore.dev'),CERTBOT_HTTP.replace('return 404','return 200'),CERTBOT_HTTP+CERTBOT_HTTP]:
@@ -134,8 +135,83 @@ class ReviewDeployTests(unittest.TestCase):
         self.assertIn('permissions: {}',stub)
         self.assertIn('exit 1',stub)
 
+    def test_load_config_accepts_verified_regular_enabled_file(self):
+        site=m.REVIEW_ENABLED_SITE
+        cfg={'nginx_site':str(site),'other_nginx_sha256':'0'*64}
+        def read(p):
+            if p==m.CONFIG:return json.dumps(cfg)
+            if p==site:return SITE
+            raise AssertionError('Unexpected path')
+        with patch.object(m,'trusted',side_effect=lambda p:p) as trust,patch.object(Path,'read_text',autospec=True,side_effect=read):
+            result,actual=m.load_config()
+        self.assertEqual(actual,site);self.assertEqual(result,cfg)
+        self.assertEqual(trust.call_args_list,[unittest.mock.call(m.CONFIG),unittest.mock.call(site)])
+        self.assertEqual(json.loads((SOURCE/'scripts/vps/review-deploy.config.example.json').read_text())['nginx_site'],str(site))
+
+    def test_enabled_path_allowlist_is_exact_and_legacy_paths_remain(self):
+        with patch.object(m,'trusted',side_effect=lambda p:p) as trust:
+            for site in [m.REVIEW_ENABLED_SITE,Path('/etc/nginx/sites-available/review.monetcore.dev'),Path('/etc/nginx/conf.d/review.conf')]:
+                self.assertEqual(m.validate_site_path(site),site)
+            trust.reset_mock()
+            for name in ['/etc/nginx/sites-enabled/production','/etc/nginx/sites-enabled/monetcore-review-copy','/etc/nginx/nginx.conf','/tmp/monetcore-review']:
+                with self.assertRaisesRegex(m.Stop,'dedicated_site_path_required'):m.validate_site_path(Path(name))
+            trust.assert_not_called()
+
+    def test_enabled_file_and_all_ancestors_require_root_nonwritable_regular_layout(self):
+        site=m.REVIEW_ENABLED_SITE
+        def check(overrides):
+            def metadata(p):
+                mode,uid=overrides.get(p,(stat.S_IFREG|0o644,0) if p==site else (stat.S_IFDIR|0o755,0))
+                return SimpleNamespace(st_mode=mode,st_uid=uid)
+            with patch.object(Path,'lstat',autospec=True,side_effect=metadata),patch.object(Path,'is_file',autospec=True,side_effect=lambda p:stat.S_ISREG(metadata(p).st_mode)):
+                return m.validate_site_path(site)
+        self.assertEqual(check({}),site)
+        for entry,mode,uid in [(site,stat.S_IFLNK|0o777,0),(site,stat.S_IFREG|0o644,1000),(site,stat.S_IFREG|0o664,0),(site,stat.S_IFREG|0o646,0),(site,stat.S_IFDIR|0o755,0),(site.parent,stat.S_IFLNK|0o777,0),(site.parent,stat.S_IFDIR|0o775,0),(site.parent,stat.S_IFDIR|0o755,1000)]:
+            with self.subTest(entry=entry,mode=mode,uid=uid),self.assertRaises(m.Stop):check({entry:(mode,uid)})
+
+    def test_enabled_directory_fingerprint_excludes_only_review_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);enabled=root/'sites-enabled';enabled.mkdir()
+            site=enabled/'monetcore-review';site.write_text(SITE)
+            other=enabled/'production';other.write_text('production unchanged')
+            main=root/'nginx.conf';main.write_text('include sites-enabled/*;')
+            def dump(*args):return ''.join('# configuration file '+str(p)+':\n'+p.read_text()+'\n' for p in [main,site,other])
+            with patch.object(m,'REVIEW_ENABLED_SITE',site),patch.object(m,'command',side_effect=dump):
+                before=m.nginx_snapshot(site,inventory=True)
+                self.assertIn(str(other),before['files']);self.assertNotIn(str(site),before['files'])
+                site.write_text(m.rewrite(SITE,4300))
+                after=m.nginx_snapshot(site,inventory=True)
+                self.assertEqual(before['sha256'],after['sha256'])
+                self.assertEqual(before['directories'],after['directories'])
+                other.write_text('changed production')
+                self.assertNotEqual(m.nginx_snapshot(site),before['sha256'])
+
+    def test_enabled_file_must_be_loaded_directly_once_with_matching_contents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);site=root/'monetcore-review';site.write_text(SITE)
+            other=root/'other';other.write_text('other')
+            alias=root/'alias';alias.symlink_to(site)
+            def dump(paths):return ''.join('# configuration file '+str(p)+':\n'+p.read_text()+'\n' for p in paths)
+            for output in [dump([other]),dump([site,site]),dump([alias]),dump([site]).replace('127.0.0.1:3004','127.0.0.1:3005')]:
+                with patch.object(m,'REVIEW_ENABLED_SITE',site),patch.object(m,'command',return_value=output),self.assertRaises(m.Stop):m.nginx_snapshot(site)
+
+    def test_rollback_restores_enabled_regular_file_in_place_without_touching_other_site(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'state').mkdir();enabled=root/'sites-enabled';enabled.mkdir()
+            site=enabled/'monetcore-review';new=m.rewrite(SITE,4300);site.write_text(new);site.chmod(0o640)
+            other=enabled/'production';other.write_text('never change')
+            ident='20261028T120000Z-aaaaaaaa';(root/'state'/f'{ident}.nginx').write_text(SITE)
+            state={'id':ident,'before_hash':m.digest(SITE.encode()),'after_hash':m.digest(new.encode()),'previous_port':3004,'previous_process':{'pid':4},'other_files':{str(other):m.digest(other.read_bytes())},'other_directories':{str(enabled):sorted(p.name for p in enabled.iterdir())}}
+            with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command'),patch.object(m,'direct_health'),patch.object(m,'public_health'):
+                m.recover(state,site)
+            self.assertFalse(site.is_symlink());self.assertEqual(site.read_text(),SITE)
+            self.assertEqual(site.stat().st_mode&0o777,0o640)
+            self.assertEqual(other.read_text(),'never change')
+            self.assertEqual(sorted(p.name for p in enabled.iterdir()),['monetcore-review','production'])
+            self.assertFalse((root/'sites-available').exists())
+
     def test_candidate_ports_fixed(self):
-        for port in [3000,3003,80,4311,65535]:
+        for port in [3000,3004,80,4311,65535]:
             with self.assertRaises(m.Stop): m.rewrite(SITE,port)
 
     def test_archive_accepts_standalone(self):
@@ -190,7 +266,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_switch_success_retains_backup_and_records_active(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'state').mkdir();site=root/'site';site.write_text(SITE)
-            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3003,'previous_process':{'pid':4},'status':'pending'}
+            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3004,'previous_process':{'pid':4},'status':'pending'}
             new=m.rewrite(SITE,4300)
             with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command'),patch.object(m,'runtime'),patch.object(m,'direct_health'),patch.object(m,'public_health'):
                 m.switch(state,site,new)
@@ -200,7 +276,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_postswitch_failure_invokes_verified_recovery(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'state').mkdir();site=root/'site';site.write_text(SITE)
-            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3003,'previous_process':{'pid':4},'status':'pending'}
+            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3004,'previous_process':{'pid':4},'status':'pending'}
             with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command'),patch.object(m,'direct_health',side_effect=lambda port,*args: (_ for _ in ()).throw(m.Stop('health')) if port==4300 else None),patch.object(m,'recover') as recovery:
                 with self.assertRaisesRegex(m.Stop,'rollback_verified'):m.switch(state,site,m.rewrite(SITE,4300))
             recovery.assert_called_once();self.assertEqual(state['status'],'rolled-back')
@@ -208,7 +284,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_nginx_test_failure_recovers_before_success(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'state').mkdir();site=root/'site';site.write_text(SITE)
-            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3003,'previous_process':{'pid':4},'status':'pending'}
+            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3004,'previous_process':{'pid':4},'status':'pending'}
             with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command',side_effect=m.Stop('syntax')),patch.object(m,'direct_health'),patch.object(m,'recover') as recovery:
                 with self.assertRaisesRegex(m.Stop,'rollback_verified'):m.switch(state,site,m.rewrite(SITE,4300))
             recovery.assert_called_once()
@@ -216,7 +292,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_recovery_failure_is_critical_not_false_success(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'state').mkdir();site=root/'site';site.write_text(SITE)
-            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3003,'previous_process':{'pid':4},'status':'pending'}
+            state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3004,'previous_process':{'pid':4},'status':'pending'}
             with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command',side_effect=m.Stop('syntax')),patch.object(m,'direct_health'),patch.object(m,'recover',side_effect=m.Stop('recovery')):
                 with self.assertRaisesRegex(m.Stop,'CRITICAL'):m.switch(state,site,m.rewrite(SITE,4300))
             self.assertEqual(state['status'],'CRITICAL-rollback-unconfirmed')
@@ -225,7 +301,7 @@ class ReviewDeployTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'state').mkdir();site=root/'site';new=m.rewrite(SITE,4300);site.write_text(new)
             ident='20261027T120000Z-aaaaaaaa';(root/'state'/f'{ident}.nginx').write_text(SITE)
-            state={'id':ident,'before_hash':m.digest(SITE.encode()),'after_hash':m.digest(new.encode()),'previous_port':3003,'previous_process':{'pid':4},'other_files':{},'other_directories':{}}
+            state={'id':ident,'before_hash':m.digest(SITE.encode()),'after_hash':m.digest(new.encode()),'previous_port':3004,'previous_process':{'pid':4},'other_files':{},'other_directories':{}}
             with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'direct_health') as health,patch.object(m,'public_health'),patch.object(m,'command') as cmd:
                 m.recover(state,site)
             self.assertEqual(site.read_text(),SITE);self.assertEqual(health.call_count,2);self.assertEqual(cmd.call_count,2)
@@ -233,7 +309,7 @@ class ReviewDeployTests(unittest.TestCase):
     def test_recover_refuses_unrelated_edits_or_changed_previous_process(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);site=root/'site';site.write_text(SITE);other=root/'production';other.write_text('changed')
-            state={'after_hash':m.digest(SITE.encode()),'before_hash':m.digest(SITE.encode()),'previous_port':3003,'previous_process':{'pid':4},'other_files':{str(other):m.digest(b'original')},'other_directories':{}}
+            state={'after_hash':m.digest(SITE.encode()),'before_hash':m.digest(SITE.encode()),'previous_port':3004,'previous_process':{'pid':4},'other_files':{str(other):m.digest(b'original')},'other_directories':{}}
             with patch.object(m,'process_at',return_value={'pid':5}),patch.object(m,'command') as cmd:
                 with self.assertRaises(m.Stop):m.recover(state,site)
                 state['other_files']={}
