@@ -7,6 +7,7 @@ const names=['PATH','HOME','TMPDIR','TMP','TEMP','HTTP_PROXY','HTTPS_PROXY','NO_
 const neutral=Object.fromEntries(names.filter(k=>process.env[k]!==undefined).map(k=>[k,process.env[k]]));
 for (const task of ['typecheck','test','test:staging:local','lint','build']) {
   const env=task==='build'?{...neutral,NODE_ENV:'production',MONETCORE_STAGING:'true',MONETCORE_VPS_REVIEW:'true',
+    ...(process.env.MONETCORE_REVIEW_ARTIFACT==='true'?{MONETCORE_REVIEW_ARTIFACT:'true'}:{}),
     STAGING_BOOKING_ENABLED:'false',STAGING_CONTACT_ENABLED:'false',AI_ASSISTANT_ENABLED:'false',AI_OWNER_TEST_ENABLED:'false',STAGING_AI_ASSISTANT_ENABLED:'false',AI_ASSISTANT_EMERGENCY_STOP:'true'}:neutral;
   const result=spawnSync('npm',['run',task],{env,stdio:'inherit'});
   if (result.error) throw new Error('Verification process failed');

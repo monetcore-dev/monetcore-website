@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Opt-in for the secret-free review artifact only; normal builds are unchanged.
+  ...(process.env.MONETCORE_REVIEW_ARTIFACT === "true" &&
+    process.env.MONETCORE_STAGING === "true" &&
+    process.env.MONETCORE_VPS_REVIEW === "true" &&
+    !process.env.VERCEL_ENV && !process.env.VERCEL
+      ? { output: "standalone" as const } : {}),
   async headers() {
     return [
       {

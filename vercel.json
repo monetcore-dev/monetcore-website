@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "feature/monetcore-vps-completed": false,
-      "feature/phase2-clean-review": false
+      "feature/phase2-clean-review": false,
+      "feature/review-deployment-automation": false
     }
   }
 }
