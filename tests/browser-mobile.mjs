@@ -76,12 +76,12 @@ import assert from "node:assert/strict";
       "Build & Review",
       "Launch & Support",
     ]) {
-      await p.locator(".workflow-card").filter({ hasText: name }).tap();
-      assert.ok(
-        await p
-          .locator(".workflow-detail")
-          .evaluate((e) => e.scrollHeight <= e.clientHeight + 1),
-      );
+      const step = p.locator(".workflow-card-mobile").filter({ hasText: name });
+      await step.tap();
+      assert.equal(await step.getAttribute("aria-expanded"), "true");
+      const panel = p.locator("#" + await step.getAttribute("aria-controls"));
+      assert.ok(await panel.isVisible());
+      assert.ok(await panel.evaluate(e => e.scrollHeight <= e.clientHeight + 1));
     }
     for (let i = 0; i < 4; i++) {
       const t = p.locator("#faq-trigger-" + i);

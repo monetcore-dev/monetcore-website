@@ -1053,7 +1053,8 @@ summary {
   transform: translateY(-3px);
   border-color: var(--step-accent);
 }
-.workflow-card[aria-pressed="true"] {
+.workflow-card[aria-pressed="true"],
+.workflow-card[aria-expanded="true"] {
   border-color: var(--step-accent);
   background: var(--step-tint);
   box-shadow: 0 12px 32px -26px var(--step-accent);
@@ -2285,7 +2286,8 @@ summary {
 .workflow-cards > li:not(:last-child)::after {
   background: #6f80ae;
 }
-.workflow-card[aria-pressed="true"] {
+.workflow-card[aria-pressed="true"],
+.workflow-card[aria-expanded="true"] {
   box-shadow:
     0 0 0 1px var(--step-accent),
     0 12px 32px -26px var(--step-accent);
@@ -3042,5 +3044,58 @@ summary {
 @media (max-width: 767px) {
   .review-preview:has(> .preview-notice) .primary-navigation.is-mobile-open {
     max-height: calc(100dvh - 152px);
+  }
+}
+
+/* How We Work: inline single-open accordion below the tablet breakpoint. */
+.workflow-card-mobile,
+.workflow-detail-mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .workflow-card-desktop,
+  .workflow-detail-desktop,
+  .workflow-navigation {
+    display: none;
+  }
+  .workflow-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-card-mobile {
+    display: flex;
+    height: auto;
+    min-height: 0;
+  }
+  .workflow-card-mobile .workflow-prompt {
+    padding-top: 16px;
+  }
+  .workflow-chevron {
+    transition: transform 0.2s ease;
+  }
+  .workflow-card-mobile[aria-expanded="true"] .workflow-chevron {
+    transform: rotate(180deg);
+  }
+  .workflow-detail-mobile:not([hidden]) {
+    display: block;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+    margin-top: 10px;
+    padding: 24px 20px;
+  }
+  .workflow-detail-mobile[hidden] {
+    display: none;
+  }
+  .workflow-detail-mobile .workflow-detail-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workflow-chevron {
+    transition: none;
+  }
+  .workflow-detail-mobile .workflow-detail-content {
+    animation: none;
   }
 }

@@ -10,6 +10,7 @@ import {
   Rocket,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 const steps = [
@@ -79,51 +80,143 @@ const steps = [
   },
 ];
 
+type WorkflowStep = (typeof steps)[number];
+
+function StepDetails({ step, index }: { step: WorkflowStep; index: number }) {
+  const Icon = step.icon;
+  return (
+    <div className="workflow-detail-content">
+      <div>
+        <p className="eyebrow">
+          Step 0{index + 1} · {step.title}
+        </p>
+        <h3>
+          <Icon size={23} aria-hidden="true" />
+          {step.heading}
+        </h3>
+        <p>{step.detail}</p>
+      </div>
+      <div>
+        <p className="workflow-deliverables-label">
+          Deliverables to agree at this stage
+        </p>
+        <ul>
+          {step.points.map((point) => (
+            <li key={point}>
+              <Check size={17} aria-hidden="true" />
+              {point}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function StepCardContent({
+  step,
+  index,
+  selected,
+  mobile = false,
+}: {
+  step: WorkflowStep;
+  index: number;
+  selected: boolean;
+  mobile?: boolean;
+}) {
+  const Icon = step.icon;
+  return (
+    <>
+      <span className="workflow-top">
+        <span className="workflow-icon">
+          <Icon size={25} strokeWidth={1.6} aria-hidden="true" />
+        </span>
+        <span className="workflow-number">0{index + 1}</span>
+      </span>
+      <span className="workflow-title">{step.title}</span>
+      <span className="workflow-summary">{step.summary}</span>
+      <span className="workflow-prompt">
+        {mobile
+          ? selected
+            ? "Hide details"
+            : "Show details"
+          : selected
+            ? "Currently exploring"
+            : "Explore this step"}
+        {mobile ? (
+          <ChevronDown
+            size={16}
+            className="workflow-chevron"
+            aria-hidden="true"
+          />
+        ) : (
+          <ArrowUpRight size={16} aria-hidden="true" />
+        )}
+      </span>
+    </>
+  );
+}
+
 export default function ProjectWorkflow() {
   const [active, setActive] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState<number | null>(null);
   const selected = steps[active];
-  const Icon = selected.icon;
   return (
     <div className="workflow-explorer">
       <ol className="workflow-cards" aria-label="Project workflow steps">
-        {steps.map((step, index) => {
-          const StepIcon = step.icon;
-          return (
-            <li
-              key={step.title}
-              style={
-                {
-                  "--step-accent": step.accent,
-                  "--step-tint": step.tint,
-                } as CSSProperties
-              }
+        {steps.map((step, index) => (
+          <li
+            key={step.title}
+            style={
+              {
+                "--step-accent": step.accent,
+                "--step-tint": step.tint,
+              } as CSSProperties
+            }
+          >
+            <button
+              type="button"
+              id={`workflow-step-${index}`}
+              aria-pressed={active === index}
+              aria-controls="workflow-detail"
+              onClick={() => setActive(index)}
+              className="workflow-card workflow-card-desktop"
             >
-              <button
-                type="button"
-                id={`workflow-step-${index}`}
-                aria-pressed={active === index}
-                aria-controls="workflow-detail"
-                onClick={() => setActive(index)}
-                className="workflow-card"
-              >
-                <span className="workflow-top">
-                  <span className="workflow-icon">
-                    <StepIcon size={25} strokeWidth={1.6} aria-hidden="true" />
-                  </span>
-                  <span className="workflow-number">0{index + 1}</span>
-                </span>
-                <span className="workflow-title">{step.title}</span>
-                <span className="workflow-summary">{step.summary}</span>
-                <span className="workflow-prompt">
-                  {active === index
-                    ? "Currently exploring"
-                    : "Explore this step"}
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                </span>
-              </button>
-            </li>
-          );
-        })}
+              <StepCardContent
+                step={step}
+                index={index}
+                selected={active === index}
+              />
+            </button>
+            <button
+              type="button"
+              id={`workflow-mobile-step-${index}`}
+              aria-expanded={mobileOpen === index}
+              aria-controls={`workflow-mobile-detail-${index}`}
+              onClick={() => {
+                setActive(index);
+                setMobileOpen((current) => (current === index ? null : index));
+              }}
+              className="workflow-card workflow-card-mobile"
+            >
+              <StepCardContent
+                step={step}
+                index={index}
+                selected={mobileOpen === index}
+                mobile
+              />
+            </button>
+            <div
+              id={`workflow-mobile-detail-${index}`}
+              role="region"
+              aria-labelledby={`workflow-mobile-step-${index}`}
+              className="workflow-detail workflow-detail-mobile"
+              hidden={mobileOpen !== index}
+            >
+              <StepDetails step={step} index={index} />
+            </div>
+          </li>
+        ))}
       </ol>
       <div className="workflow-navigation">
         <p>
@@ -157,7 +250,7 @@ export default function ProjectWorkflow() {
         aria-label="Workflow step details"
         aria-live="polite"
         aria-atomic="true"
-        className="workflow-detail"
+        className="workflow-detail workflow-detail-desktop"
         style={
           {
             "--step-accent": selected.accent,
@@ -165,31 +258,7 @@ export default function ProjectWorkflow() {
           } as CSSProperties
         }
       >
-        <div key={active} className="workflow-detail-content">
-          <div>
-            <p className="eyebrow">
-              Step 0{active + 1} · {selected.title}
-            </p>
-            <h3>
-              <Icon size={23} aria-hidden="true" />
-              {selected.heading}
-            </h3>
-            <p>{selected.detail}</p>
-          </div>
-          <div>
-            <p className="workflow-deliverables-label">
-              Deliverables to agree at this stage
-            </p>
-            <ul>
-              {selected.points.map((point) => (
-                <li key={point}>
-                  <Check size={17} aria-hidden="true" />
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <StepDetails key={active} step={selected} index={active} />
       </div>
     </div>
   );
