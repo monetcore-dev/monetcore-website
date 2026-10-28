@@ -3099,3 +3099,15 @@ summary {
     animation: none;
   }
 }
+
+/* Selective warm service accents; identical on desktop and mobile. */
+.corporate-page .solution-card:nth-child(2) .solution-icon {
+  color: #b63c14;
+  background: #fff2e8;
+  border-color: #F97316;
+}
+.corporate-page .solution-card:nth-child(5) .solution-icon {
+  color: #a82d4b;
+  background: #fff0f3;
+  border-color: #FB7185;
+}

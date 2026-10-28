@@ -8,6 +8,7 @@
 .products:global(#products) {
   color: #f8fafc;
   background:
+    radial-gradient(ellipse at 10% 100%, #FB71850A, transparent 45%),
     radial-gradient(ellipse at 80% 0%, #192957 0%, transparent 55%), #071126;
 }
 .technology {
@@ -465,4 +466,18 @@
   .pause {
     display: none;
   }
+}
+
+/* Sparse warm accents; all surfaces and primary actions remain navy/blue. */
+.card:first-child .solutionIcon {
+  color: #F97316;
+  background: #302739;
+  border-color: #8e5437;
+}
+.card:nth-child(3) .chart rect:last-child {
+  fill: #F97316;
+}
+.quote:hover {
+  border-color: #FB7185;
+  box-shadow: 0 10px 24px -18px #F97316;
 }

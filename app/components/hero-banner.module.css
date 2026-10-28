@@ -1,6 +1,6 @@
 .banner { isolation: isolate; }
 .atmosphere { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(100deg,#09172d 5%,#101d39 48%,#20204c); }
-.glow { position: absolute; inset: -15%; background: radial-gradient(ellipse at 78% 35%,#426ef54d,transparent 36%),radial-gradient(ellipse at 95% 60%,#983fb72b,transparent 42%); animation: hero-breathe 9s ease-in-out infinite alternate; }
+.glow { position: absolute; inset: -15%; background: radial-gradient(ellipse at 78% 35%,#426ef54d,transparent 36%),radial-gradient(ellipse at 95% 60%,#983fb72b,transparent 42%),radial-gradient(ellipse at 85% 75%,#FB71850D,transparent 38%); animation: hero-breathe 9s ease-in-out infinite alternate; }
 .field { width: 100%; height: 100%; opacity: .7; mask-image: linear-gradient(90deg,transparent 25%,#000 70%); }
 .orbit { fill: none; stroke: currentColor; stroke-width: 1; opacity: .28; }
 .trail { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 24 976; opacity: .7; animation: hero-flow linear infinite; }
@@ -44,3 +44,8 @@
 /* Older global hero styles dim every decorative div. Keep this contained field
    at full opacity so small electron cores remain visible at every breakpoint. */
 .banner:global(#corporate-hero) > .atmosphere { opacity: 1; }
+
+/* Warm edge light only: keep the primary CTA and core banner navy/blue. */
+.banner:global(#corporate-hero) a[href="/services"]:hover {
+  box-shadow: inset 0 0 0 1px #FB7185, 0 10px 24px -18px #F97316;
+}

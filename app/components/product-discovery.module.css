@@ -1,5 +1,6 @@
 .discovery {
   background:
+    radial-gradient(ellipse at 100% 0%, #F9731608, transparent 45%),
     radial-gradient(ellipse at 5% 0%, #dce9ff, transparent 60%), #f1f5fc;
   color: #132344;
   padding: 5rem 1.25rem;
@@ -906,4 +907,13 @@
   .discoveryCard:focus-within {
     transform: none;
   }
+}
+
+/* A small warm activity highlight, not a live status or performance claim. */
+.signal i:last-child {
+  background: linear-gradient(#F97316, #EF4444);
+}
+.primary:hover {
+  border-color: #FB7185;
+  box-shadow: 0 10px 24px -18px #F97316;
 }

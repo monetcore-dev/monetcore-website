@@ -13,7 +13,7 @@ const orbits = [
   { path: ellipse(340, 145, -32), color: "#55e9ff", seconds: 32, delay: -7, reverse: false },
   { path: ellipse(310, 170, 42), color: "#668fff", seconds: 41, delay: -22, reverse: true },
   { path: ellipse(350, 130, 77), color: "#bd8aff", seconds: 47, delay: -13, reverse: false },
-  { path: ellipse(360, 120, 6), color: "#ffc77b", seconds: 56, delay: -38, reverse: true },
+  { path: ellipse(360, 120, 6), color: "#F97316", seconds: 56, delay: -38, reverse: true },
 ];
 
 /** Decorative capabilities visual only: CSS animation, no browser JS or requests. */
@@ -34,18 +34,18 @@ export default function HeroBanner({ children }: { children: ReactNode }) {
                 <path d={orbit.path} className={styles.orbit} />
                 <path d={orbit.path} pathLength="1000" className={styles.trail} style={timing} />
                 <g className={styles.electron} data-electron={index} style={{ ...timing, offsetPath: `path('${orbit.path}')`, offsetDistance: `${18 + index * 21}%` }}>
-                  <circle r="16" fill="currentColor" opacity=".045" />
-                  <circle r="10" fill="currentColor" opacity=".1" />
-                  <circle r="6" fill="currentColor" opacity=".3" />
-                  <circle r="3.3" fill="currentColor" />
-                  <circle r="1.6" fill="#f8ffff" />
+                  <circle r="18" fill="currentColor" opacity=".05" />
+                  <circle r="11.5" fill="currentColor" opacity=".11" />
+                  <circle r="7.2" fill="currentColor" opacity=".3" />
+                  <circle r="4.3" fill="currentColor" />
+                  <circle r="2.1" fill="#f8ffff" />
                 </g>
               </g>
             );
           })}
           <g className={styles.particles}>
             {Array.from({ length: 24 }, (_, i) => (
-              <circle key={i} cx={710 + (i * 137) % 720} cy={70 + (i * 113) % 850} r={i % 5 === 0 ? 2 : 1} fill={i % 7 === 0 ? "#ffce91" : "#a9caff"} style={{ animationDelay: `${-i * 0.6}s` }} />
+              <circle key={i} cx={710 + (i * 137) % 720} cy={70 + (i * 113) % 850} r={i % 5 === 0 ? 2 : 1} fill={i % 7 === 0 ? "#FB7185" : "#a9caff"} style={{ animationDelay: `${-i * 0.6}s` }} />
             ))}
           </g>
         </svg>
@@ -56,6 +56,6 @@ export default function HeroBanner({ children }: { children: ReactNode }) {
 }
 
 export function HeroServiceElectron({ index }: { index: number }) {
-  const accents = ["#bd8aff", "#55e9ff", "#ffc77b", "#78e7ad"];
+  const accents = ["#bd8aff", "#55e9ff", "#F97316", "#78e7ad"];
   return <span aria-hidden="true" className={styles.serviceElectron} style={{ color: accents[index % accents.length], animationDelay: `${-index}s` }} />;
 }
