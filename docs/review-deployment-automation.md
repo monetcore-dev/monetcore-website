@@ -79,8 +79,9 @@ Two review releases run concurrently during a switch; assess actual resource use
 
 The supported review file is intentionally narrow: a **dedicated, root-owned
 regular file** in `/etc/nginx/sites-available` or `/etc/nginx/conf.d`, containing
-one HTTPS server for exactly `review.monetcore.dev`, explicit Basic authentication,
-existing certificates, one `/` proxy and exactly these API locations:
+one HTTPS server for exactly `review.monetcore.dev`, public access (`auth_basic off`
+or no local auth directive),
+existing certificates, one `/` proxy and both an exact `/api` block and a `/api/` prefix block:
 
 ```nginx
 location = /api { return 403; }
@@ -97,11 +98,58 @@ location / {
 This is a validation shape, **not a command to overwrite the existing site**.
 The current review app must already have an unambiguous `127.0.0.1` listener
 with a verifiable PID/cwd; otherwise commissioning must stop for review.
-Multi-server/HTTP redirects should stay in a separate existing file. Complex
-includes, auth changes, rewrites or extra locations require separate review; the
-controller stops rather than guessing. API blocks and authentication must already
-be verified before this automation can run. It never reads password/certificate
-private-key contents.
+The existing Certbot HTTP redirect may remain in the **same file**, before or after
+HTTPS. The controller accepts the standard review-only `if ($host =
+review.monetcore.dev) { return 301 https://$host$request_uri; }` plus `return 404`
+shape, or a simple review-only 301/308 HTTPS redirect. It changes neither the HTTP
+block nor comments/certificate directives; only the HTTPS loopback upstream changes.
+A separate existing redirect file also stays untouched. Production/mixed-domain,
+extra HTTPS, arbitrary conditional/redirect, regex-location or complex routing
+layouts are rejected for manual review. No silent vhost splitting or rewriting.
+
+A plain `location /api/ { return 403; }` is supported as well as `^~`: the parser
+admits no extra/regex locations which could override it. An exact
+`location = /api { return 403; }` is also mandatory. If inventory shows it missing
+or either URL not returning 403, commissioning stops; obtain separate approval for
+that review-only repair. The deployment does not silently add API locations.
+
+The homepage stays public, with HTTPS 200 and no login challenge. Non-off Basic
+Auth is rejected rather than introduced; no Basic password secret is needed.
+The controller never reads password/certificate private-key contents.
+
+Before proceeding past this section, the owner must have **read-only VPS evidence**
+for Ubuntu/version/architecture, resolved Node and PM2 paths with root ownership,
+actual loaded Nginx/Certbot file layout, free memory/disk, and current review
+listener PID/cwd/port. Public access and both API blocks must be confirmed. This
+workspace has no secure VPS connection; those host facts are not yet verified.
+No account, key, unit or config installation is authorized by this document alone.
+
+Read-only inventory examples for an already-authorized private VPS console (not
+executed here):
+
+```sh
+cat /etc/os-release
+uname -m
+realpath -e /usr/bin/node /usr/local/bin/pm2
+stat -Lc '%U %G %a %F %n' /usr/bin/node /usr/local/bin/pm2
+free -m
+df -h /srv /home/monetcore
+ls -l /etc/nginx/sites-enabled
+ss -ltnp
+curl --head --silent --show-error --max-time 10 https://review.monetcore.dev/
+curl --head --silent --show-error --max-time 10 https://review.monetcore.dev/api
+curl --head --silent --show-error --max-time 10 https://review.monetcore.dev/api/
+```
+
+Inspect the actual selected review vhost and associated Certbot redirect read-only
+in that private console, correlate its port with the listener PID and `/proc/PID/cwd`,
+and verify resolved binary ancestors are root-owned/non-writable. Do not dump
+process environments, PM2 JSON, private keys or raw full Nginx configuration into
+chat/Actions logs. Return sanitized paths/ownership, listener/layout facts and
+HTTP statuses only. Missing exact `/api` protection, unexpected auth, unsupported
+layout, uncommitted source reconciliation or insufficient resources is a stop
+condition before account/key installation, not a reason to rewrite live config.
+
 
 ### 2. Install dedicated identities and trusted files
 
@@ -199,11 +247,63 @@ set the **repository variable** `REVIEW_DEPLOY_ENABLED=true` (a repository varia
 is deliberate: the job-level gate is evaluated before Environment secrets load).
 Do not set any automatic push deployment trigger.
 
-GitHub requires a workflow_dispatch workflow to exist on the default branch before
-it can be dispatched. If this workflow is not there, stop: separately approve how
-to make its definition available. This task does not merge into/change main or the
-default branch. Never use a write-token workaround. Dispatch must still select
-`feature/phase2-clean-review`, not default/main or this automation proposal branch.
+### Default-branch dispatch bootstrap — separate approval, not performed
+
+GitHub requires the workflow file with `workflow_dispatch` on the default branch.
+Read-only Git inspection on 28 October 2026 found default branch `main` at
+`804b687c87ceb70536099219adf9c3aaa038b4ce`, without
+`.github/workflows/review-deploy.yml` (and without the older review-release file).
+A branch-only file or a registered-looking Actions entry does not remove this
+requirement. Do not try repository_dispatch, a write token, a new push/tag trigger,
+changing the default branch, or merging the application into main to bypass it.
+
+Minimal proposed solution, **requiring separate owner approval**:
+
+1. Finish this PR's compatibility review and the read-only inventory; keep PR #11
+   **draft** until live commissioning checks pass. Do not install accounts/keys yet.
+2. Before ANY main commit, separately verify/approve how the existing Vercel Git
+   integration will skip this exact workflow-only bootstrap change. A main push can
+   trigger Production even when only YAML changes. The review-branch exclusion
+   does **not** cover main. Do not assume `[skip ci]` prevents Vercel deployment.
+   If no production-safe publication path is verified, stop: bootstrap stays blocked.
+3. In a separately reviewed one-file default-branch change, copy
+   `docs/examples/review-deploy-default-branch.stub.yml` to the **same path**
+   `.github/workflows/review-deploy.yml` on main. Do not merge/cherry-pick this PR or
+   any application/backend code into main. No main/settings changes are made here.
+   The inert stub has no checkout, secrets, Environment, upload or deployment;
+   dispatching its own main version prints a message and fails immediately.
+4. Confirm Actions is enabled, the owner can manually run workflows, official
+   pinned Actions are allowed, and `review-deploy.yml` is now dispatchable. Its
+   full implementation must also exist on `feature/phase2-clean-review` after a
+   separately approved integration. The bootstrap and branch version have identical
+   input names/types/defaults so the UI/API accepts the same form.
+5. Keep `REVIEW_DEPLOY_ENABLED` false and upload gate unchanged until separate
+   commissioning/activation approval. Then select **feature/phase2-clean-review**
+   in Run workflow (or API `ref`), never main. GitHub runs the branch's full version;
+   owner/ref/SHA/confirmation/Environment gates remain unchanged. Dispatch on main
+   runs only the fail-closed stub, never privileged deployment logic.
+
+Precise GitHub preconditions: registered default-branch path and dispatch event;
+review branch containing the full workflow at the approved source SHA; repository
+Actions policy permitting pinned checkout/setup/artifact Actions; owner permissions
+to dispatch and approve; protected `review-deploy` Environment restricted to the
+review branch with the four Environment secrets; repository enable variable
+explicitly approved. The required reviewer must be able to approve (solo-owner
+self-review policy must be chosen deliberately). Credentials/environment creation,
+bootstrap publication, merging/integration and activation each remain unperformed.
+
+After those separate approvals only, an example dispatch is:
+
+```sh
+gh workflow run review-deploy.yml --repo monetcore-dev/monetcore-website \
+  --ref feature/phase2-clean-review \
+  -f operation=deploy -f candidate_sha=REVIEWED_FULL_SHA \
+  -f rollback_release= -f 'confirmation=DEPLOY REVIEWED_FULL_SHA REVIEW ONLY'
+```
+
+There is no legitimate way to activate this repository's workflow_dispatch before
+the default-branch precondition. This PR supplies the inert template/plan, not a
+claim that dispatch already works or permission to publish it to main.
 
 ### 5. First controlled dispatch (separate approval required)
 
@@ -217,14 +317,17 @@ The root controller uses fresh ports 4300–4310; existing 3003/3004 is only obs
 from the actual vhost. It proves a new candidate returns 200 and the exact marker,
 checks disabled backend behavior, stores a private config backup/transaction,
 changes only the literal review upstream, tests Nginx, gracefully reloads, then
-rechecks HTTP health, TLS/Basic gate and API 403. Clear sanitized JSON phases and
+rechecks public HTTPS pages (200), the exact new release marker and API 403. Clear sanitized JSON phases and
 final release ID appear in Actions. It preserves all earlier processes/files.
 Only the isolated daemon's PM2 dump is saved; production PM2 state is never touched.
 
-No successful claim is made for authenticated browser rendering through Nginx:
-automated TLS checks intentionally send no Basic password and expect 401; candidate
-pages/marker are tested directly on loopback. Owner must also inspect the protected
-review homepage/navigation/contact/booking on desktop/mobile after commissioning.
+The review site is intentionally public. Automated TLS checks use no credentials
+and require 200 for the homepage and other public pages. After switching, the
+HTTPS release marker must match the exact new SHA; all checked GET, HEAD, POST,
+PUT, PATCH, DELETE and OPTIONS API requests must return 403 for both `/api` and
+`/api/…`. Rollback again requires public pages 200 and blocked APIs. No new password
+or HTTP 401 expectation is introduced. Owner must also inspect desktop/mobile
+rendering/navigation after separately approved live commissioning.
 
 ### 6. Rollback
 
@@ -261,5 +364,5 @@ Local tests use temporary archives/files and mocked sudo/PM2/Nginx/health calls.
 The standalone artifact is built and smoke-tested locally with integrations off.
 No actual SSH, privileged installation, Nginx reload, PM2 switch, provider call,
 Actions deployment or rollback has been executed on the VPS. Live host layout,
-resource capacity, sandbox enforcement, Basic auth, certificates, rollback and
+resource capacity, sandbox enforcement, public HTTPS/API blocking, certificates, rollback and
 GitHub Environment/default-branch availability require commissioning evidence.

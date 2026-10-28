@@ -140,43 +140,80 @@ def single(nodes, key):
     require(len(values) == 1, "Expected one nginx directive: " + key)
     return values[0]
 
-def vhost(text):
-    nodes = parse_nginx(text)
-    require(len(nodes)==1 and nodes[0].words==['server'] and nodes[0].children, 'dedicated_https_vhost_required')
-    server = nodes[0].children
-    require(single(server,'server_name').words==['server_name',HOST], 'wrong_review_domain')
-    listeners = [n.words[1:] for n in server if n.words[0]=='listen']
-    require(listeners and all(x[0] in ('443','[::]:443','127.0.0.1:443') and 'ssl' in x and set(x[1:]) <= {'ssl','http2'} for x in listeners), 'https_only_required')
-    locations = [n for n in server if n.words[0]=='location']
-    require(len(locations)==3, 'exact_review_locations_required')
-    proxy = next((n for n in locations if n.words==['location','/']), None)
-    require(proxy is not None and proxy.children, 'proxy_location_required')
-    for shape in (['location','^~','/api/'], ['location','=','/api']):
-        api = next((n for n in locations if n.words==shape), None)
-        require(api is not None and api.children and all(n.words==['return','403'] and n.children is None for n in api.children) and len(api.children)==1, 'api_403_required')
-    server_allow = {'server_name','listen','location','ssl_certificate','ssl_certificate_key','ssl_protocols','ssl_ciphers','ssl_prefer_server_ciphers','ssl_session_cache','ssl_session_timeout','ssl_session_tickets','ssl_dhparam','auth_basic','auth_basic_user_file','access_log','error_log','add_header','client_max_body_size','include','http2'}
-    proxy_allow = {'proxy_pass','proxy_set_header','proxy_http_version','proxy_buffering','proxy_read_timeout','proxy_connect_timeout','proxy_send_timeout','auth_basic','auth_basic_user_file','add_header'}
+def review_listeners(server):
+    listeners=[n.words[1:] for n in server if n.words[0]=='listen']
+    require(listeners and all(x for x in listeners),'listeners_required')
+    return listeners
+
+
+def validate_redirect(server):
+    """Accept only unchanged standard review-only HTTP/Certbot redirects."""
+    listeners=review_listeners(server)
+    require(all(x[0] in ('80','[::]:80','127.0.0.1:80') and not x[1:] for x in listeners),'http_redirect_listener_required')
+    allowed={'listen','server_name','return','if','access_log','error_log','auth_basic'}
+    targets={'https://$host$request_uri','https://review.monetcore.dev$request_uri'}
+    def redirect(node):
+        return node.children is None and len(node.words)==3 and node.words[:2] in (['return','301'],['return','308']) and node.words[2] in targets
+    returns=[n for n in server if n.words[0]=='return']
+    conditions=[n for n in server if n.words[0]=='if']
     for n in server:
-        require(n.words[0] in server_allow and (n.children is None or n in locations), 'unsupported_server_directive')
+        require(n.words[0] in allowed,'unsupported_redirect_directive')
+        if n.words[0]=='auth_basic':require(n.words==['auth_basic','off'],'public_review_required')
+        if n.words[0]!='if':require(n.children is None,'nested_redirect_block_forbidden')
+    if conditions:
+        require(len(conditions)==1 and len(returns)==1 and returns[0].words==['return','404'],'certbot_fallback_required')
+        node=conditions[0]
+        require(re.fullmatch(r'\(\s*\$host\s*=\s*review\.monetcore\.dev\s*\)', ' '.join(node.words[1:])) is not None,'review_host_condition_required')
+        require(node.children and len(node.children)==1 and redirect(node.children[0]),'certbot_https_redirect_required')
+    else:
+        require(len(returns)==1 and redirect(returns[0]),'https_redirect_required')
+
+
+def vhost(text):
+    nodes=parse_nginx(text)
+    require(1<=len(nodes)<=2 and all(n.words==['server'] and n.children for n in nodes),'dedicated_review_servers_required')
+    for node in nodes:
+        require(single(node.children,'server_name').words==['server_name',HOST],'wrong_review_domain')
+    https=[]
+    for node in nodes:
+        listeners=review_listeners(node.children)
+        if all(x[0] in ('443','[::]:443','127.0.0.1:443') and 'ssl' in x and set(x[1:])<={'ssl','http2'} for x in listeners):
+            https.append(node)
+        else: validate_redirect(node.children)
+    require(len(https)==1,'one_https_review_server_required')
+    server=https[0].children
+    locations=[n for n in server if n.words[0]=='location']
+    require(len(locations)==3,'exact_review_locations_required')
+    proxy=next((n for n in locations if n.words==['location','/']),None)
+    require(proxy is not None and proxy.children,'proxy_location_required')
+    exact=[n for n in locations if n.words==['location','=','/api']]
+    prefix=[n for n in locations if n.words in (['location','^~','/api/'],['location','/api/'])]
+    # Plain /api/ is equivalent here: extra/regex locations are rejected.
+    require(len(exact)==1 and len(prefix)==1,'api_exact_and_prefix_required')
+    for api in exact+prefix:
+        require(api.children and len(api.children)==1 and api.children[0].words==['return','403'] and api.children[0].children is None,'api_403_required')
+    server_allow={'server_name','listen','location','ssl_certificate','ssl_certificate_key','ssl_protocols','ssl_ciphers','ssl_prefer_server_ciphers','ssl_session_cache','ssl_session_timeout','ssl_session_tickets','ssl_dhparam','auth_basic','auth_basic_user_file','access_log','error_log','add_header','client_max_body_size','include','http2'}
+    proxy_allow={'proxy_pass','proxy_set_header','proxy_http_version','proxy_buffering','proxy_read_timeout','proxy_connect_timeout','proxy_send_timeout','auth_basic','auth_basic_user_file','add_header'}
+    for n in server:
+        require(n.words[0] in server_allow and (n.children is None or n in locations),'unsupported_server_directive')
         if n.words[0]=='include':
-            require(len(n.words)==2 and '*' not in n.words[1] and Path(n.words[1]).is_absolute(), 'explicit_tls_include_required')
+            require(len(n.words)==2 and '*' not in n.words[1] and Path(n.words[1]).is_absolute(),'explicit_tls_include_required')
             included=parse_nginx(trusted(n.words[1]).read_text())
-            require(included and all(x.children is None and x.words[0].startswith('ssl_') for x in included), 'tls_only_include_required')
+            require(included and all(x.children is None and x.words[0].startswith('ssl_') for x in included),'tls_only_include_required')
     for n in proxy.children:
-        require(n.words[0] in proxy_allow and n.children is None, 'unsupported_proxy_directive')
-    for n in server + proxy.children:
-        if n.words[0]=='auth_basic': require(len(n.words)==2 and n.words[1]!='off','basic_auth_required')
-    auth = [n for n in proxy.children if n.words[0]=='auth_basic'] or [n for n in server if n.words[0]=='auth_basic']
-    auth_file = [n for n in proxy.children if n.words[0]=='auth_basic_user_file'] or [n for n in server if n.words[0]=='auth_basic_user_file']
-    require(len(auth)==1 and len(auth_file)==1 and len(auth_file[0].words)==2 and Path(auth_file[0].words[1]).is_absolute(),'explicit_basic_auth_required')
-    single(server,'ssl_certificate'); single(server,'ssl_certificate_key')
-    headers = [n.words[1:] for n in proxy.children if n.words[0]=='proxy_set_header']
+        require(n.words[0] in proxy_allow and n.children is None,'unsupported_proxy_directive')
+    for context in (server,proxy.children):
+        auth=[n for n in context if n.words[0]=='auth_basic']
+        require(len(auth)<=1 and all(n.words==['auth_basic','off'] for n in auth),'public_review_required')
+    single(server,'ssl_certificate');single(server,'ssl_certificate_key')
+    headers=[n.words[1:] for n in proxy.children if n.words[0]=='proxy_set_header']
     for key,val in [('Host','$host'),('X-Forwarded-Host','$host'),('X-Forwarded-Proto','$scheme'),('X-Forwarded-For','$remote_addr')]:
         require([x for x in headers if x and x[0].lower()==key.lower()]==[[key,val]],'overwritten_proxy_headers_required')
     upstream=single(proxy.children,'proxy_pass')
     m=re.fullmatch(r'http://127\.0\.0\.1:([0-9]{4,5})',upstream.words[1] if len(upstream.words)==2 else '')
     require(m and 1024<=int(m[1])<=65535,'literal_loopback_required')
-    return int(m[1]), upstream
+    return int(m[1]),upstream
+
 
 def rewrite(text, port):
     require(port in PORTS, 'invalid_candidate_port')
@@ -240,10 +277,14 @@ def direct_health(port, sha=None):
         require(request(port,'/api/book/availability?date=2030-01-07')[0]==403,'availability_guard_failed')
         require(request(port,'/api/assistant','POST')[0]==503,'assistant_guard_failed')
 
-def private_health():
-    require(request(443,'/',tls=True)[0]==401,'private_auth_gate_failed')
+def public_health(sha=None):
+    for page in PAGES:
+        require(request(443,page,tls=True)[0]==200,'public_page_health_failed')
+    if sha:
+        status,body=request(443,MARKER,tls=True)
+        require(status==200 and json.loads(body)=={'commit':sha,'integrations':'disabled'},'public_release_marker_mismatch')
     for path in ('/api','/api/','/api/contact','/api/book/availability?date=2030-01-07','/api/assistant'):
-        for method in ('GET','POST','OPTIONS'):
+        for method in ('GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'):
             require(request(443,path,method,tls=True)[0]==403,'nginx_api_guard_failed')
 
 
@@ -365,7 +406,7 @@ def recover(state, site):
     require(digest(backup.read_bytes())==state['before_hash'],'backup_integrity_failed')
     write_site(site,backup.read_text())
     command([NGINX,'-t']);command(['/usr/bin/systemctl','reload','nginx'])
-    direct_health(state['previous_port']);private_health()
+    direct_health(state['previous_port']);public_health()
 
 
 def switch(state, site, new_text):
@@ -379,7 +420,7 @@ def switch(state, site, new_text):
         progress('switching_review_upstream')
         write_site(site,new_text)
         command([NGINX,'-t']);command(['/usr/bin/systemctl','reload','nginx'])
-        direct_health(state['port'],state['commit']);private_health()
+        direct_health(state['port'],state['commit']);public_health(state['commit'])
         progress('post_switch_health_passed')
         runtime(['save','--force'])  # Isolated review daemon only, never production PM2.
         state['status']='active';save(ROOT/'state'/f"{state['id']}.json",state)
@@ -397,7 +438,7 @@ def switch(state, site, new_text):
 def deploy(stream, sha, checksum, cfg, site):
     before=site.read_text();oldport,_=vhost(before)
     snapshot=nginx_snapshot(site,inventory=True);other=snapshot['sha256'];require(other==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
-    previous=process_at(oldport);direct_health(oldport);private_health()
+    previous=process_at(oldport);direct_health(oldport);public_health()
     available=next((int(x.split()[1]) for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:')),0)
     require(available>=768*1024,'insufficient_memory_headroom')
     require(shutil.disk_usage(ROOT).free>=2*MAX_EXPANDED+MAX_UPLOAD,'insufficient_disk_headroom')

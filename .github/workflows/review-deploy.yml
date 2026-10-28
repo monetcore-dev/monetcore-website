@@ -10,6 +10,8 @@ on:
       - scripts/vps/review-artifact.mjs
       - scripts/vps/smoke-review.mjs
       - scripts/vps/monetcore-review-pm2.service
+      - docs/examples/review-deploy-default-branch.stub.yml
+      - docs/review-deployment-automation.md
       - tests/test_review_deploy.py
       - tests/review-artifact.test.mjs
   workflow_dispatch:

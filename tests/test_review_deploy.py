@@ -23,8 +23,7 @@ SITE='''server {
  server_name review.monetcore.dev;
  ssl_certificate /etc/letsencrypt/live/review/fullchain.pem;
  ssl_certificate_key /etc/letsencrypt/live/review/privkey.pem;
- auth_basic "Private review";
- auth_basic_user_file /etc/nginx/review.htpasswd;
+ auth_basic off;
  location ^~ /api/ { return 403; }
  location = /api { return 403; }
  location / {
@@ -36,6 +35,9 @@ SITE='''server {
  }
 }
 '''
+
+
+CERTBOT_HTTP='server {\n if ($host = review.monetcore.dev) {\n   return 301 https://$host$request_uri;\n } # managed by Certbot\n listen 80;\n listen [::]:80;\n server_name review.monetcore.dev;\n return 404; # managed by Certbot\n}\n'
 
 
 def artifact(extra=(), remove=()):
@@ -59,7 +61,7 @@ class ReviewDeployTests(unittest.TestCase):
         self.assertEqual(m.vhost(result)[0],4300)
 
     def test_api_bypass_rejected(self):
-        for old,new in [('return 403','return 200'),('location ^~ /api/','location /api/'),('location = /api { return 403; }',''),('proxy_pass http://127.0.0.1:3003','proxy_pass http://other:3003')]:
+        for old,new in [('return 403','return 200'),('location = /api { return 403; }',''),('proxy_pass http://127.0.0.1:3003','proxy_pass http://other:3003')]:
             with self.subTest(new=new),self.assertRaises(m.Stop): m.vhost(SITE.replace(old,new))
 
     def test_wrong_or_multiple_domains_and_servers(self):
@@ -67,13 +69,67 @@ class ReviewDeployTests(unittest.TestCase):
             with self.assertRaises(m.Stop): m.vhost(text)
 
     def test_auth_and_headers_fail_closed(self):
-        for text in [SITE.replace('auth_basic "Private review"','auth_basic off'),SITE.replace('auth_basic_user_file /etc/nginx/review.htpasswd;',''),SITE.replace('X-Forwarded-For $remote_addr','X-Forwarded-For $proxy_add_x_forwarded_for'),SITE.replace('location / {','location / { rewrite ^ /unsafe;')]:
+        for text in [SITE.replace('auth_basic off','auth_basic "Private review"'),SITE.replace('auth_basic off;','auth_basic off; auth_basic off;'),SITE.replace('X-Forwarded-For $remote_addr','X-Forwarded-For $proxy_add_x_forwarded_for'),SITE.replace('location / {','location / { rewrite ^ /unsafe;')]:
             with self.assertRaises(m.Stop): m.vhost(text)
 
     def test_extra_location_and_unsafe_include(self):
         for text in [SITE.replace(' location / {',' location /other { return 200; }\n location / {'),SITE.replace(' listen 443 ssl;',' include /tmp/untrusted;\n listen 443 ssl;')]:
             with patch.object(m,'trusted',side_effect=m.Stop('untrusted')):
                 with self.assertRaises(m.Stop): m.vhost(text)
+
+    def test_public_auth_off_or_absent_and_plain_api_prefix(self):
+        for text in [SITE,SITE.replace(' auth_basic off;',''),SITE.replace('location ^~ /api/','location /api/')]:
+            self.assertEqual(m.vhost(text)[0],3003)
+            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3003','127.0.0.1:4301'))
+
+    def test_certbot_redirect_order_comments_and_tls_config_preserved(self):
+        for text in [SITE+CERTBOT_HTTP,CERTBOT_HTTP+SITE]:
+            self.assertEqual(m.vhost(text)[0],3003)
+            self.assertEqual(m.rewrite(text,4301),text.replace('127.0.0.1:3003','127.0.0.1:4301'))
+            self.assertIn(CERTBOT_HTTP,m.rewrite(text,4301))
+
+    def test_simple_review_redirect_is_preserved(self):
+        http='server { listen 80; server_name review.monetcore.dev; return 308 https://review.monetcore.dev$request_uri; }'
+        self.assertEqual(m.rewrite(SITE+http,4302),(SITE+http).replace('127.0.0.1:3003','127.0.0.1:4302'))
+
+    def test_unsafe_http_certbot_shapes_and_production_domains_rejected(self):
+        for http in [CERTBOT_HTTP.replace('review.monetcore.dev','monetcore.dev'),CERTBOT_HTTP.replace('https://$host$request_uri','https://evil.example$request_uri'),CERTBOT_HTTP.replace('$host = review.monetcore.dev','$host != review.monetcore.dev'),CERTBOT_HTTP.replace('return 404','return 200'),CERTBOT_HTTP+CERTBOT_HTTP]:
+            with self.subTest(http=http),self.assertRaises(m.Stop):m.vhost(SITE+http)
+
+    def test_https_auth_cannot_silently_be_enabled(self):
+        for text in [SITE.replace('auth_basic off','auth_basic "Password"'),SITE.replace('location / {','location / { auth_basic "Password";')]:
+            with self.assertRaisesRegex(m.Stop,'public_review_required'):m.vhost(text)
+
+    def test_public_health_requires_200_and_api_403_all_methods(self):
+        def respond(port,path,method='GET',tls=False):
+            self.assertTrue(tls)
+            if path.startswith('/api'):return 403,b''
+            if path==m.MARKER:return 200,json.dumps({'commit':SHA,'integrations':'disabled'}).encode()
+            return 200,b'public page'
+        with patch.object(m,'request',side_effect=respond) as req:
+            m.public_health(SHA)
+        calls=req.call_args_list
+        self.assertEqual({c.args[2] for c in calls if c.args[1].startswith('/api')},{'GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'})
+        self.assertIn('/api',{c.args[1] for c in calls})
+        self.assertIn('/api/',{c.args[1] for c in calls})
+
+    def test_public_health_rejects_login_redirect_api_bypass_or_stale_marker(self):
+        for failure in ['login','redirect','api','marker']:
+            def respond(port,path,method='GET',tls=False):
+                if path.startswith('/api'):return (200 if failure=='api' else 403),b''
+                if path==m.MARKER:return 200,json.dumps({'commit':'b'*40 if failure=='marker' else SHA,'integrations':'disabled'}).encode()
+                return (401 if failure=='login' else 302 if failure=='redirect' else 200),b''
+            with patch.object(m,'request',side_effect=respond),self.assertRaises(m.Stop):m.public_health(SHA)
+
+    def test_inert_default_branch_template_has_identical_dispatch_schema(self):
+        source=(SOURCE/'.github/workflows/review-deploy.yml').read_text()
+        stub=(SOURCE/'docs/examples/review-deploy-default-branch.stub.yml').read_text()
+        def schema(text):return text.split('  workflow_dispatch:\n',1)[1].split('\npermissions:',1)[0]
+        self.assertEqual(schema(source),schema(stub))
+        for forbidden in ['secrets.','environment:','uses:','\n  push:','\n  pull_request:']:
+            self.assertNotIn(forbidden,stub)
+        self.assertIn('permissions: {}',stub)
+        self.assertIn('exit 1',stub)
 
     def test_candidate_ports_fixed(self):
         for port in [3000,3003,80,4311,65535]:
@@ -133,7 +189,7 @@ class ReviewDeployTests(unittest.TestCase):
             root=Path(tmp);(root/'state').mkdir();site=root/'site';site.write_text(SITE)
             state={'id':'20261027T120000Z-aaaaaaaa','before_hash':m.digest(SITE.encode()),'other_hash':'o','port':4300,'commit':SHA,'previous_port':3003,'previous_process':{'pid':4},'status':'pending'}
             new=m.rewrite(SITE,4300)
-            with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command'),patch.object(m,'runtime'),patch.object(m,'direct_health'),patch.object(m,'private_health'):
+            with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'nginx_snapshot',return_value='o'),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'command'),patch.object(m,'runtime'),patch.object(m,'direct_health'),patch.object(m,'public_health'):
                 m.switch(state,site,new)
             self.assertEqual(site.read_text(),new);self.assertEqual(state['status'],'active')
             self.assertEqual(json.loads((root/'state'/f"{state['id']}.json").read_text())['status'],'active')
@@ -167,7 +223,7 @@ class ReviewDeployTests(unittest.TestCase):
             root=Path(tmp);(root/'state').mkdir();site=root/'site';new=m.rewrite(SITE,4300);site.write_text(new)
             ident='20261027T120000Z-aaaaaaaa';(root/'state'/f'{ident}.nginx').write_text(SITE)
             state={'id':ident,'before_hash':m.digest(SITE.encode()),'after_hash':m.digest(new.encode()),'previous_port':3003,'previous_process':{'pid':4},'other_files':{},'other_directories':{}}
-            with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'direct_health') as health,patch.object(m,'private_health'),patch.object(m,'command') as cmd:
+            with patch.object(m.os,'chown'),patch.object(m,'ROOT',root),patch.object(m,'process_at',return_value={'pid':4}),patch.object(m,'direct_health') as health,patch.object(m,'public_health'),patch.object(m,'command') as cmd:
                 m.recover(state,site)
             self.assertEqual(site.read_text(),SITE);self.assertEqual(health.call_count,2);self.assertEqual(cmd.call_count,2)
 
