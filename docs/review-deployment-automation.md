@@ -42,7 +42,8 @@ PM2 home. A forced command on that account does not isolate production secrets
 from application code running under the same UID. Existing `monetcore` source,
 uncommitted changes and processes remain intact.
 
-- `monetcore_review_deploy`: dedicated SSH-only principal, root-owned forced
+- `monetcore_review_actions`, group `monetcore_review_actions`, home
+  `/var/lib/monetcore-review-actions`: new dedicated SSH-only principal, root-owned forced
   command; sudo allows only this reviewed controller with narrowly matched args.
 - `monetcore_review_runtime`: separate PM2 daemon and systemd unit; no SSH/sudo.
   The daemon startup environment is cleared with `env -i`, so manager-level
@@ -173,16 +174,52 @@ condition before account/key installation, not a reason to rewrite live config.
 
 ### 2. Install dedicated identities and trusted files
 
-After approving the inventory, an administrator uses the reviewed automation
-checkout (not a pipe from a moving URL). Example one-time commands:
+**Protected legacy identity — never reuse or modify:** the owner's final inventory
+reports `monetcore-review-deploy`, UID **999**, group `monetcore-review-deploy`, home
+`/var/lib/monetcore-review-deploy`. That directory contains shell configuration and
+cache files. Absence of matching processes is not evidence that it is disposable.
+Do not inspect its contents, clean/chown/chmod/rename/delete it, add keys there,
+change its groups, or reuse UID 999. Existing production/review processes stay as-is.
+The proposed runtime remains `monetcore_review_runtime` at
+`/var/lib/monetcore-review-runtime`; it is not replaced with the legacy identity.
+
+Before **any** new account/key/path creation, run the reviewed read-only first-install
+check in the already-authorized private VPS console:
 
 ```sh
-sudo useradd --system --create-home --home-dir /var/lib/monetcore-review-runtime --shell /usr/sbin/nologin monetcore_review_runtime
-sudo useradd --system --no-create-home --home-dir /var/lib/monetcore-review-deploy --shell /bin/sh monetcore_review_deploy
-sudo install -d -o root -g root -m 0755 /srv/monetcore-review-deploy /srv/monetcore-review-deploy/releases /usr/local/libexec
-sudo install -d -o root -g root -m 0700 /srv/monetcore-review-deploy/state /srv/monetcore-review-deploy/incoming
-sudo install -d -o root -g root -m 0755 /var/lib/monetcore-review-deploy /var/lib/monetcore-review-deploy/.ssh
-sudo chmod 0700 /var/lib/monetcore-review-runtime
+sudo python3 -I scripts/vps/review-identity-preflight.py
+```
+
+It checks new user/group names through NSS, existing home aliases/dangling group
+memberships, and all proposed homes, controller/config/state/unit/sudoers targets.
+Existing regular files, directories or broken symlinks are collisions. Existing
+parents must be root-owned directories without group/world write or symlinks;
+permission/NSS failures stop the check. It never reads legacy home contents or
+creates/changes accounts/files. Exit zero is **not activation approval**. If any
+planned resource already exists, stop for separate inventory; no automatic reuse
+or idempotent overwrite is allowed, including partially installed new resources.
+Do not fall back to any legacy/deployment/production account.
+
+After separate approval of the inventory and collision-check output, use one
+controlled `set -e` administrator shell and the reviewed checkout (not a moving
+URL). Coordinate against concurrent administrator changes and rerun preflight
+immediately before creation. `--no-create-home` plus exclusive `mkdir` ensure an
+existing directory is never silently adopted. The following is **not executed**:
+
+```sh
+set -eu
+sudo python3 -I scripts/vps/review-identity-preflight.py
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/monetcore-review-runtime --shell /usr/sbin/nologin monetcore_review_runtime
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/monetcore-review-actions --shell /bin/sh monetcore_review_actions
+sudo mkdir -m 0700 /var/lib/monetcore-review-runtime
+sudo chown monetcore_review_runtime:monetcore_review_runtime /var/lib/monetcore-review-runtime
+sudo mkdir -m 0755 /var/lib/monetcore-review-actions
+sudo mkdir -m 0755 /var/lib/monetcore-review-actions/.ssh
+sudo mkdir -m 0755 /srv/monetcore-review-deploy
+sudo mkdir -m 0755 /srv/monetcore-review-deploy/releases
+sudo mkdir -m 0700 /srv/monetcore-review-deploy/state /srv/monetcore-review-deploy/incoming
+# Create this shared parent only if it is absent; never reset its existing metadata.
+if ! test -e /usr/local/libexec; then sudo mkdir -m 0755 /usr/local/libexec; fi
 sudo install -o root -g root -m 0755 scripts/vps/review-deploy.py /usr/local/libexec/monetcore-review-deploy
 sudo install -o root -g root -m 0755 scripts/vps/review-deploy-ssh.py /usr/local/libexec/monetcore-review-ssh
 sudo install -o root -g root -m 0755 scripts/vps/review-pm2-start.sh /usr/local/libexec/monetcore-review-pm2-start
@@ -190,27 +227,37 @@ sudo install -o root -g root -m 0644 scripts/vps/monetcore-review-pm2.service /e
 sudo install -o root -g root -m 0600 scripts/vps/review-deploy.config.example.json /etc/monetcore-review-deploy.json
 ```
 
-Stop if any proposed account/path already exists until ownership and prior use
-are confirmed. Do not reuse a differently configured account. Verify that all
+System allocation must choose new UID/GIDs; do not specify or repurpose UID 999.
+Before every deploy/rollback, the root controller additionally verifies the actual
+sudo caller is `monetcore_review_actions`, its UID/GID/home match NSS, it is not root,
+UID 999, a legacy group, the runtime UID/GID, or an alias of another account/home.
+Unexpected supplemental memberships are rejected. It checks the new root-owned
+SSH home/authorized-key metadata (never key contents) and private runtime home.
+A legacy account or wrong home cannot invoke deployment through this controller.
+The runtime unit masks `/var/lib/monetcore-review-deploy` inside its own namespace,
+without editing that directory or changing any existing process. The controller
+checks that mask before using the review daemon.
+
+Verify that all
 production secrets outside `/home` are inaccessible to the review runtime UID.
 `ProtectHome=true` hides `/home/monetcore`; it does not magically hide arbitrary
 world-readable secrets elsewhere. No production permission changes are automated.
 
-Use `sudo visudo -f /etc/sudoers.d/monetcore-review-deploy` to install **only**:
+Use `sudo visudo -f /etc/sudoers.d/monetcore-review-actions` to install **only**:
 
 ```sudoers
-monetcore_review_deploy ALL=(root) NOPASSWD: /usr/local/libexec/monetcore-review-deploy ^deploy [a-f0-9]{40} [a-f0-9]{64}$, /usr/local/libexec/monetcore-review-deploy ^rollback [0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$
+monetcore_review_actions ALL=(root) NOPASSWD: /usr/local/libexec/monetcore-review-deploy ^deploy [a-f0-9]{40} [a-f0-9]{64}$, /usr/local/libexec/monetcore-review-deploy ^rollback [0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$
 ```
 
 Ubuntu 24.04 sudo supports anchored argument regexes; validate with
-`sudo visudo -cf /etc/sudoers.d/monetcore-review-deploy`. Do not grant wildcard
+`sudo visudo -cf /etc/sudoers.d/monetcore-review-actions`. Do not grant wildcard
 shells, generic sudo, Nginx editors, systemctl or PM2 to the SSH/runtime accounts.
 
 ### 3. Restricted key, runtime and baseline fingerprint
 
 Generate a **new dedicated Ed25519 deployment key on the owner's computer**. Put
 only its public key in root-owned mode-0644
-`/var/lib/monetcore-review-deploy/.ssh/authorized_keys`, prefixed exactly:
+`/var/lib/monetcore-review-actions/.ssh/authorized_keys`, prefixed exactly:
 
 ```text
 restrict,command="/usr/bin/python3 -I /usr/local/libexec/monetcore-review-ssh" ssh-ed25519 REPLACE_WITH_PUBLIC_KEY review-actions

@@ -11,6 +11,7 @@ on:
       - scripts/vps/smoke-review.mjs
       - scripts/vps/monetcore-review-pm2.service
       - scripts/vps/review-pm2-start.sh
+      - scripts/vps/review-identity-preflight.py
       - docs/examples/review-deploy-default-branch.stub.yml
       - docs/review-deployment-automation.md
       - tests/test_review_deploy.py

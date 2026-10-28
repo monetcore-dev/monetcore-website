@@ -1,4 +1,5 @@
 """No SSH, sudo, PM2, Nginx reload or provider calls: disposable files + mocks only."""
+from contextlib import contextmanager, ExitStack
 import gzip
 import hashlib
 import importlib.util
@@ -21,6 +22,54 @@ from unittest.mock import patch
 SOURCE=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('review_deploy',SOURCE/'scripts/vps/review-deploy.py')
 m=importlib.util.module_from_spec(spec);sys.modules[spec.name]=m;spec.loader.exec_module(m)
+identity_spec=importlib.util.spec_from_file_location('identity_preflight',SOURCE/'scripts/vps/review-identity-preflight.py')
+identities=importlib.util.module_from_spec(identity_spec);identity_spec.loader.exec_module(identities)
+
+@contextmanager
+def collision_context(users=None,groups=None,entries=None):
+    users=users if users is not None else [SimpleNamespace(pw_name=identities.LEGACY_USER,pw_uid=999,pw_gid=999,pw_dir=str(identities.LEGACY_HOME))]
+    groups=groups if groups is not None else [SimpleNamespace(gr_name=identities.LEGACY_USER,gr_gid=999,gr_mem=[])]
+    entries=entries or {}
+    parents={str(p) for target in identities.NEW_PATHS for p in target.parents}
+    touched=[]
+    def lookup(records,key,name):
+        for record in records:
+            if getattr(record,key)==name:return record
+        raise KeyError(name)
+    def metadata(p):
+        name=str(p);touched.append(name)
+        if name in entries:
+            value=entries[name]
+            if isinstance(value,Exception):raise value
+            return value
+        if name in parents:return SimpleNamespace(st_uid=0,st_mode=stat.S_IFDIR|0o755)
+        raise FileNotFoundError(name)
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(identities.pwd,'getpwnam',side_effect=lambda n:lookup(users,'pw_name',n)))
+        stack.enter_context(patch.object(identities.pwd,'getpwall',return_value=users))
+        stack.enter_context(patch.object(identities.grp,'getgrnam',side_effect=lambda n:lookup(groups,'gr_name',n)))
+        stack.enter_context(patch.object(identities.grp,'getgrall',return_value=groups))
+        stack.enter_context(patch.object(identities.os,'lstat',side_effect=metadata))
+        for method in ['mkdir','chown','unlink','rename']:
+            stack.enter_context(patch.object(identities.os,method,side_effect=AssertionError('Read-only check attempted write')))
+        yield touched
+
+
+def commissioned_records():
+    users=[SimpleNamespace(pw_name=m.DEPLOY_USER,pw_uid=1003,pw_gid=1003,pw_dir=str(m.DEPLOY_HOME)),SimpleNamespace(pw_name=m.USER,pw_uid=1004,pw_gid=1004,pw_dir=m.HOME),SimpleNamespace(pw_name=m.LEGACY_USER,pw_uid=999,pw_gid=999,pw_dir=m.LEGACY_HOME)]
+    groups=[SimpleNamespace(gr_name=u.pw_name,gr_gid=u.pw_gid,gr_mem=[]) for u in users]
+    return users,groups
+
+@contextmanager
+def commissioned_context(users=None,groups=None,runtime_mode=None):
+    defaults=commissioned_records();users=users or defaults[0];groups=groups or defaults[1]
+    def lookup(records,key,name):return next(r for r in records if getattr(r,key)==name)
+    def metadata(p):
+        if p!=Path(m.HOME):raise AssertionError('Unexpected home inspection')
+        return SimpleNamespace(st_uid=users[1].pw_uid,st_gid=users[1].pw_gid,st_mode=runtime_mode if runtime_mode is not None else stat.S_IFDIR|0o700)
+    with patch.object(m.pwd,'getpwnam',side_effect=lambda n:lookup(users,'pw_name',n)),patch.object(m.pwd,'getpwall',return_value=users),patch.object(m.grp,'getgrnam',side_effect=lambda n:lookup(groups,'gr_name',n)),patch.object(m.grp,'getgrall',return_value=groups),patch.object(m,'trusted',side_effect=lambda p,**kwargs:p) as trust,patch.object(Path,'lstat',autospec=True,side_effect=metadata):
+        yield trust
+
 SHA='a'*40
 SITE='''server {
  listen 443 ssl;
@@ -369,7 +418,7 @@ class ReviewDeployTests(unittest.TestCase):
             (pm2/'pm2.pid').write_text('123')
             proc=Path(tmp)/'proc';(proc/'123').mkdir(parents=True)
             (proc/'123/cgroup').write_text('0::/system.slice/'+m.UNIT+'\n')
-            props='\n'.join(['User='+m.USER,'NoNewPrivileges=yes','ProtectHome=yes','ProtectSystem=strict','ProtectProc=invisible','IPAddressDeny=0.0.0.0/0 ::/0','IPAddressAllow=127.0.0.0/8 ::1/128'])
+            props='\n'.join(['User='+m.USER,'NoNewPrivileges=yes','ProtectHome=yes','ProtectSystem=strict','ProtectProc=invisible','IPAddressDeny=0.0.0.0/0 ::/0','IPAddressAllow=127.0.0.0/8 ::1/128','InaccessiblePaths='+m.LEGACY_HOME])
             with socket.socket(socket.AF_UNIX) as rpc:
                 rpc.bind(str(pm2/'rpc.sock'))
                 def local_path(value):return proc if str(value)=='/proc' else Path(value)
@@ -393,6 +442,77 @@ class ReviewDeployTests(unittest.TestCase):
                 if saved:(home/'.pm2/dump.pm2').write_text('{}')
                 subprocess.run(['/bin/sh',str(launcher)],env={'PATH':'/usr/bin:/bin','HOME':str(home),'PM2_HOME':str(home/'.pm2')},check=True,capture_output=True)
                 self.assertEqual(capture.read_text().strip(),expected)
+
+    def test_new_identity_plan_preserves_existing_legacy_home_without_reading_contents(self):
+        with collision_context() as touched:result=identities.audit()
+        self.assertEqual(result['deployment_user'],'monetcore_review_actions')
+        self.assertEqual(result['deployment_home'],'/var/lib/monetcore-review-actions')
+        self.assertFalse(result['writes_performed']);self.assertFalse(result['activation_authorized'])
+        self.assertTrue(all(not p.startswith(str(identities.LEGACY_HOME)) for p in touched))
+        self.assertEqual(identities.DEPLOY_USER,m.DEPLOY_USER);self.assertEqual(identities.DEPLOY_HOME,m.DEPLOY_HOME)
+        self.assertEqual(identities.RUNTIME_USER,m.USER);self.assertEqual(str(identities.RUNTIME_HOME),m.HOME)
+
+    def test_preflight_rejects_existing_planned_user_or_group(self):
+        for name,home in identities.IDENTITIES:
+            user=SimpleNamespace(pw_name=name,pw_uid=1003,pw_gid=1003,pw_dir=str(home))
+            group=SimpleNamespace(gr_name=name,gr_gid=1003,gr_mem=[])
+            with collision_context(users=[user]),self.assertRaisesRegex(identities.Collision,'planned_user_exists'):identities.audit()
+            with collision_context(groups=[group]),self.assertRaisesRegex(identities.Collision,'planned_group_exists'):identities.audit()
+
+    def test_preflight_rejects_alias_homes_and_dangling_group_memberships(self):
+        for name,home in identities.IDENTITIES:
+            user=SimpleNamespace(pw_name='different',pw_uid=1003,pw_dir=str(home))
+            group=SimpleNamespace(gr_name='sudo',gr_gid=27,gr_mem=[name])
+            with collision_context(users=[user]),self.assertRaisesRegex(identities.Collision,'planned_home_assigned'):identities.audit()
+            with collision_context(groups=[group]),self.assertRaisesRegex(identities.Collision,'existing_group_membership'):identities.audit()
+
+    def test_preflight_rejects_all_existing_targets_including_broken_links(self):
+        for target in identities.NEW_PATHS:
+            for mode in [stat.S_IFREG|0o600,stat.S_IFDIR|0o700,stat.S_IFLNK|0o777]:
+                with collision_context(entries={str(target):SimpleNamespace(st_uid=999,st_mode=mode)}),self.assertRaisesRegex(identities.Collision,'planned_path_already_exists'):identities.audit()
+
+    def test_preflight_rejects_untrusted_parents_and_permission_uncertainty(self):
+        for uid,mode in [(1000,stat.S_IFDIR|0o755),(0,stat.S_IFDIR|0o775),(0,stat.S_IFLNK|0o777)]:
+            with collision_context(entries={'/var/lib':SimpleNamespace(st_uid=uid,st_mode=mode)}),self.assertRaisesRegex(identities.Collision,'untrusted_install_parent'):identities.audit()
+        with collision_context(entries={str(identities.DEPLOY_HOME):PermissionError('synthetic')}),self.assertRaises(PermissionError):identities.audit()
+
+    def test_commissioned_new_identity_is_required_and_legacy_uid_not_reused(self):
+        context={'SUDO_USER':m.DEPLOY_USER,'SUDO_UID':'1003','SUDO_GID':'1003'}
+        with commissioned_context() as trust:m.deployment_identity(context)
+        self.assertEqual([c.args[0] for c in trust.call_args_list],[m.DEPLOY_HOME,m.DEPLOY_HOME/'.ssh',m.DEPLOY_HOME/'.ssh/authorized_keys'])
+        for caller in [m.LEGACY_USER,'monetcore',m.USER]:
+            with commissioned_context(),self.assertRaisesRegex(m.Stop,'dedicated_deployment_identity'):m.deployment_identity({**context,'SUDO_USER':caller})
+        users,groups=commissioned_records();users[0].pw_uid=999
+        with commissioned_context(users,groups),self.assertRaisesRegex(m.Stop,'shared_or_reserved_identity'):m.deployment_identity({**context,'SUDO_UID':'999'})
+
+    def test_commissioned_identity_rejects_wrong_home_sudo_metadata_and_shared_groups(self):
+        context={'SUDO_USER':m.DEPLOY_USER,'SUDO_UID':'1003','SUDO_GID':'1003'}
+        users,groups=commissioned_records();users[0].pw_dir=m.LEGACY_HOME
+        with commissioned_context(users,groups),self.assertRaisesRegex(m.Stop,'deployment_home_mismatch'):m.deployment_identity(context)
+        with commissioned_context(),self.assertRaisesRegex(m.Stop,'sudo_identity_mismatch'):m.deployment_identity({**context,'SUDO_UID':'999'})
+        users,groups=commissioned_records();users[0].pw_gid=999;groups[0].gr_gid=999
+        with commissioned_context(users,groups),self.assertRaisesRegex(m.Stop,'shared_or_reserved_group'):m.deployment_identity({**context,'SUDO_GID':'999'})
+
+    def test_commissioned_identity_rejects_uid_gid_and_home_aliases_or_supplemental_access(self):
+        context={'SUDO_USER':m.DEPLOY_USER,'SUDO_UID':'1003','SUDO_GID':'1003'}
+        for collision in ['uid','gid','home','supplemental']:
+            users,groups=commissioned_records()
+            if collision=='uid':users.append(SimpleNamespace(pw_name='alias',pw_uid=1003,pw_dir='/nonexistent'))
+            elif collision=='home':users.append(SimpleNamespace(pw_name='alias',pw_uid=1005,pw_dir=str(m.DEPLOY_HOME)))
+            elif collision=='gid':groups.append(SimpleNamespace(gr_name='alias',gr_gid=1003,gr_mem=[]))
+            else:groups.append(SimpleNamespace(gr_name='sudo',gr_gid=27,gr_mem=[m.DEPLOY_USER]))
+            with commissioned_context(users,groups),self.assertRaises(m.Stop):m.deployment_identity(context)
+        with commissioned_context(runtime_mode=stat.S_IFLNK|0o700),self.assertRaisesRegex(m.Stop,'runtime_home_not_private'):m.deployment_identity(context)
+
+    def test_runtime_requires_legacy_home_mask_before_daemon_access(self):
+        props='\n'.join(['User='+m.USER,'NoNewPrivileges=yes','ProtectHome=yes','ProtectSystem=strict','ProtectProc=invisible','IPAddressDeny=0.0.0.0/0 ::/0','IPAddressAllow=127.0.0.0/8 ::1/128'])
+        with patch.object(m,'command',return_value=props) as cmd,self.assertRaisesRegex(m.Stop,'legacy_home_mask_required'):m.runtime(['ping'])
+        self.assertEqual(cmd.call_count,1)
+        self.assertIn('InaccessiblePaths=-'+m.LEGACY_HOME,(SOURCE/'scripts/vps/monetcore-review-pm2.service').read_text())
+        transport=(SOURCE/'scripts/vps/review-deploy-transport.sh').read_text()
+        self.assertIn('monetcore_review_actions@',transport)
+        self.assertNotIn('monetcore_review_deploy@',transport)
+        self.assertNotIn('monetcore-review-deploy@',transport)
 
     def test_workflow_gates_and_transport(self):
         workflow=(SOURCE/'.github/workflows/review-deploy.yml').read_text()

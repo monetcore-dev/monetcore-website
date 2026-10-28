@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import fcntl
 import gzip
+import grp
 import hashlib
 import http.client
 import json
@@ -27,6 +28,11 @@ import uuid
 
 ROOT = Path('/srv/monetcore-review-deploy')
 CONFIG = Path('/etc/monetcore-review-deploy.json')
+DEPLOY_USER = 'monetcore_review_actions'
+DEPLOY_HOME = Path('/var/lib/monetcore-review-actions')
+LEGACY_USER = 'monetcore-review-deploy'
+LEGACY_HOME = '/var/lib/monetcore-review-deploy'
+LEGACY_UID = 999
 USER = 'monetcore_review_runtime'
 HOME = '/var/lib/monetcore-review-runtime'
 UNIT = 'monetcore-review-pm2.service'
@@ -290,13 +296,43 @@ def public_health(sha=None):
             require(request(443,path,method,tls=True)[0]==403,'nginx_api_guard_failed')
 
 
+def deployment_identity(context):
+    """Read NSS and selected new-home metadata only; never inspect legacy files."""
+    require(context.get('SUDO_USER')==DEPLOY_USER,'dedicated_deployment_identity_required')
+    try:
+        deploy=pwd.getpwnam(DEPLOY_USER);runtime_user=pwd.getpwnam(USER)
+        deploy_group=grp.getgrnam(DEPLOY_USER);runtime_group=grp.getgrnam(USER)
+        legacy_group=grp.getgrnam(LEGACY_USER)
+    except KeyError:raise Stop('deployment_identity_not_commissioned') from None
+    require(str(deploy.pw_uid)==context.get('SUDO_UID') and str(deploy.pw_gid)==context.get('SUDO_GID'),'sudo_identity_mismatch')
+    require(deploy.pw_name==DEPLOY_USER and deploy.pw_dir==str(DEPLOY_HOME),'deployment_home_mismatch')
+    require(runtime_user.pw_name==USER and runtime_user.pw_dir==HOME,'runtime_home_mismatch')
+    require(deploy.pw_uid not in (0,LEGACY_UID,runtime_user.pw_uid) and runtime_user.pw_uid not in (0,LEGACY_UID),'shared_or_reserved_identity')
+    require(deploy.pw_gid==deploy_group.gr_gid and runtime_user.pw_gid==runtime_group.gr_gid and deploy.pw_gid not in (0,legacy_group.gr_gid,runtime_user.pw_gid) and runtime_user.pw_gid not in (0,legacy_group.gr_gid),'shared_or_reserved_group')
+    users={deploy.pw_uid:DEPLOY_USER,runtime_user.pw_uid:USER}
+    homes={str(DEPLOY_HOME):DEPLOY_USER,HOME:USER}
+    for record in pwd.getpwall():
+        require(record.pw_uid not in users or record.pw_name==users[record.pw_uid],'uid_alias_collision')
+        require(record.pw_dir not in homes or record.pw_name==homes[record.pw_dir],'home_alias_collision')
+    groups={deploy.pw_gid:DEPLOY_USER,runtime_user.pw_gid:USER}
+    for record in grp.getgrall():
+        require(record.gr_gid not in groups or record.gr_name==groups[record.gr_gid],'gid_alias_collision')
+        require(not any(name in record.gr_mem and record.gr_name!=name for name in (DEPLOY_USER,USER)),'unexpected_supplementary_group')
+    trusted(DEPLOY_HOME,directory=True)
+    trusted(DEPLOY_HOME/'.ssh',directory=True)
+    trusted(DEPLOY_HOME/'.ssh/authorized_keys')
+    info=Path(HOME).lstat()
+    require(stat.S_ISDIR(info.st_mode) and info.st_uid==runtime_user.pw_uid and info.st_gid==runtime_user.pw_gid and not info.st_mode&0o077,'runtime_home_not_private')
+
+
 def runtime(args):
     expected={'User':USER,'NoNewPrivileges':'yes','ProtectHome':'yes','ProtectSystem':'strict','ProtectProc':'invisible'}
-    properties=command(['/usr/bin/systemctl','show',UNIT,'--no-pager',*[f'--property={key}' for key in [*expected,'IPAddressDeny','IPAddressAllow']]])
+    properties=command(['/usr/bin/systemctl','show',UNIT,'--no-pager',*[f'--property={key}' for key in [*expected,'IPAddressDeny','IPAddressAllow','InaccessiblePaths']]])
     values=dict(line.split('=',1) for line in properties.splitlines() if '=' in line)
     require(all(values.get(key)==value for key,value in expected.items()),'runtime_sandbox_required')
     require(set(values.get('IPAddressDeny','').split()) in ({'any'},{'0.0.0.0/0','::/0'}),'outbound_deny_required')
     require(set(values.get('IPAddressAllow','').split()) in ({'localhost'},{'127.0.0.0/8','::1/128'}),'loopback_only_allow_required')
+    require(LEGACY_HOME in {p.lstrip('-') for p in values.get('InaccessiblePaths','').split()},'legacy_home_mask_required')
     user=pwd.getpwnam(USER)
     pidfile=Path(HOME)/'.pm2/pm2.pid'
     pid=int(pidfile.read_text().strip()); proc=Path('/proc')/str(pid)
@@ -522,6 +558,7 @@ def main():
     require((len(args)==3 and args[0]=='deploy' and re.fullmatch('[a-f0-9]{40}',args[1]) and re.fullmatch('[a-f0-9]{64}',args[2])) or (len(args)==2 and args[0]=='rollback' and re.fullmatch('[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}',args[1])),'invalid_protocol')
     for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM): signal.signal(sig,lambda *_: (_ for _ in ()).throw(Stop('interrupted')))
     signal.alarm(600)
+    deployment_identity(os.environ)
     with deployment_lock():
         if args[0]=='deploy': result=deploy(sys.stdin.buffer,args[1],args[2],cfg,site)
         else:

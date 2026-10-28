@@ -15,8 +15,8 @@ if [[ "$OPERATION" == deploy ]]; then
   [[ "$CANDIDATE_SHA" =~ ^[a-f0-9]{40}$ ]]
   checksum=$(sha256sum "$ARTIFACT_DIR/review.tar.gz"); checksum=${checksum%% *}
   [[ "$checksum" == "$(cat "$ARTIFACT_DIR/review.sha256")" ]]
-  ssh "${ssh_args[@]}" "monetcore_review_deploy@$REVIEW_DEPLOY_HOST" "review-deploy $CANDIDATE_SHA $checksum" < "$ARTIFACT_DIR/review.tar.gz"
+  ssh "${ssh_args[@]}" "monetcore_review_actions@$REVIEW_DEPLOY_HOST" "review-deploy $CANDIDATE_SHA $checksum" < "$ARTIFACT_DIR/review.tar.gz"
 else
   [[ "$ROLLBACK_RELEASE" =~ ^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$ ]]
-  ssh "${ssh_args[@]}" "monetcore_review_deploy@$REVIEW_DEPLOY_HOST" "review-rollback $ROLLBACK_RELEASE"
+  ssh "${ssh_args[@]}" "monetcore_review_actions@$REVIEW_DEPLOY_HOST" "review-rollback $ROLLBACK_RELEASE"
 fi
