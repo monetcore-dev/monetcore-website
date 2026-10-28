@@ -23,6 +23,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import { ProductShowcase, TechnologyStack } from "./components/HomepageShowcase";
 import SolutionExplorer from "./components/SolutionExplorer";
 import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
@@ -234,140 +235,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section
-          id="products"
-          className="bg-slate-950 px-5 py-20 text-white lg:px-8"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
-                  Digital products & applications
-                </p>
-                <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight">
-                  Focused solutions.
-                  <br />
-                  Part of a bigger picture.
-                </h2>
-              </div>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 text-sm font-bold text-blue-200 hover:underline"
-              >
-                Explore product information{" "}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
-              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
-                <Workflow
-                  size={30}
-                  aria-hidden="true"
-                  className="text-blue-300"
-                />
-                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
-                  External demonstration
-                </p>
-                <h3 className="mt-3 text-2xl font-bold">AI Lead Automation</h3>
-                <p className="mt-4 leading-7 text-slate-300">
-                  Explore the concept of capturing enquiries, organising leads
-                  and preparing AI-assisted follow-ups. Discuss the
-                  configuration and integrations your business would need.
-                </p>
-                <div className="mt-7 flex flex-wrap gap-4">
-                  <Link
-                    href="/products/ai-lead-automation"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Product details →
-                  </Link>
-                  <a
-                    href="https://monetcore-lead-demo.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Explore Demo ↗
-                  </a>
-                </div>
-              </article>
-              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
-                <Layers3
-                  size={30}
-                  aria-hidden="true"
-                  className="text-blue-300"
-                />
-                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
-                  Integration-dependent workflow
-                </p>
-                <h3 className="mt-3 text-2xl font-bold">Smart Booking</h3>
-                <p className="mt-4 leading-7 text-slate-300">
-                  An existing consultation flow with availability, booking
-                  records, calendar and notification integrations. Explore
-                  scheduling for your business as a separately scoped solution.
-                </p>
-                <div className="mt-7 flex flex-wrap gap-4">
-                  <Link
-                    href="/products/smart-booking"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Product details →
-                  </Link>
-                  <Link
-                    href="/book"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Book a Consultation →
-                  </Link>
-                </div>
-              </article>
-            </div>
-            <p className="mt-6 text-xs leading-6 text-slate-400">
-              Product availability, credentials and third-party services must be
-              confirmed for each engagement. Illustrative interfaces are not
-              evidence of a deployed customer system.
-            </p>
-          </div>
-        </section>
-
-        <section id="smart-websites" className="px-5 py-16 lg:px-8">
-          <div
-            id="website-packages"
-            className="mx-auto grid max-w-7xl gap-8 rounded-3xl border border-blue-200 bg-blue-50/60 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center"
-          >
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">
-                One of our solutions
-              </p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">
-                Smart Website Solutions
-              </h2>
-              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
-                Professional business websites with first-year standard domain
-                and hosting, WhatsApp click-to-chat and a basic rule-based
-                lead-gathering assistant. A digital home that works alongside
-                your social media.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-600">
-                One-time package setup
-              </p>
-              <p className="mt-2 text-4xl font-bold tracking-tight">
-                {packagePrice(starter)}
-              </p>
-              <Link href="/website-packages" className={`${primary} mt-5`}>
-                Explore Website Packages{" "}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </Link>
-              <p className="mt-3 text-xs leading-6 text-slate-600">
-                Final quotations depend on your requirements. Annual
-                renewals apply after 12 months. {renewalTerms.included} Full
-                scope and exclusions are on the packages page.
-              </p>
-            </div>
-          </div>
-        </section>
+        <ProductShowcase />
+        <TechnologyStack />
 
         <section id="live-demos" className="bg-slate-50 px-5 py-16 lg:px-8">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
