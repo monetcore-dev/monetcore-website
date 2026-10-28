@@ -11,7 +11,7 @@ Environment=PM2_HOME=/var/lib/monetcore-review-runtime/.pm2
 Environment=HOME=/var/lib/monetcore-review-runtime
 PIDFile=/var/lib/monetcore-review-runtime/.pm2/pm2.pid
 ExecStart=/usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/var/lib/monetcore-review-runtime PM2_HOME=/var/lib/monetcore-review-runtime/.pm2 /usr/local/libexec/monetcore-review-pm2-start
-ExecStop=/usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/var/lib/monetcore-review-runtime PM2_HOME=/var/lib/monetcore-review-runtime/.pm2 /usr/local/bin/pm2 kill
+ExecStop=/usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/var/lib/monetcore-review-runtime PM2_HOME=/var/lib/monetcore-review-runtime/.pm2 /usr/bin/pm2 kill
 Restart=on-failure
 NoNewPrivileges=true
 PrivateTmp=true

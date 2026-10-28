@@ -6,6 +6,9 @@ import io
 import json
 import os
 import runpy
+import socket
+import shlex
+from types import SimpleNamespace
 from pathlib import Path
 import subprocess
 import sys
@@ -272,6 +275,48 @@ class ReviewDeployTests(unittest.TestCase):
             members=m.archive_members(t)
         self.assertEqual(len(members),6)
         self.assertIn('node_modules',[name for _,name in members])
+
+    def test_verified_pm2_path_is_consistent_and_root_guard_remains(self):
+        self.assertEqual(m.PM2,'/usr/bin/pm2')
+        service=(SOURCE/'scripts/vps/monetcore-review-pm2.service').read_text()
+        launcher=(SOURCE/'scripts/vps/review-pm2-start.sh').read_text()
+        guide=(SOURCE/'docs/review-deployment-automation.md').read_text()
+        self.assertIn('/usr/bin/pm2 kill',service)
+        self.assertIn('exec /usr/bin/pm2 resurrect',launcher)
+        self.assertIn('exec /usr/bin/pm2 ping',launcher)
+        for text in [service,launcher,guide]:self.assertNotIn('/usr/local/bin/pm2',text)
+        self.assertIn('trusted(Path(PM2).resolve())',(SOURCE/'scripts/vps/review-deploy.py').read_text())
+
+    def test_runtime_uses_verified_pm2_only_after_isolation_checks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp)/'home';pm2=home/'.pm2';pm2.mkdir(parents=True)
+            (pm2/'pm2.pid').write_text('123')
+            proc=Path(tmp)/'proc';(proc/'123').mkdir(parents=True)
+            (proc/'123/cgroup').write_text('0::/system.slice/'+m.UNIT+'\n')
+            props='\n'.join(['User='+m.USER,'NoNewPrivileges=yes','ProtectHome=yes','ProtectSystem=strict','ProtectProc=invisible','IPAddressDeny=0.0.0.0/0 ::/0','IPAddressAllow=127.0.0.0/8 ::1/128'])
+            with socket.socket(socket.AF_UNIX) as rpc:
+                rpc.bind(str(pm2/'rpc.sock'))
+                def local_path(value):return proc if str(value)=='/proc' else Path(value)
+                with patch.object(m,'HOME',str(home)),patch.object(m,'Path',side_effect=local_path),patch.object(m.pwd,'getpwnam',return_value=SimpleNamespace(pw_uid=os.getuid())),patch.object(m,'command',side_effect=[props,'ok']) as cmd:
+                    self.assertEqual(m.runtime(['ping']),'ok')
+            args=cmd.call_args.args[0]
+            self.assertEqual(args[:5],['/usr/sbin/runuser','-u',m.USER,'--','/usr/bin/env'])
+            self.assertIn('-i',args)
+            self.assertIn('PM2_HOME='+str(pm2),args)
+            self.assertEqual(args[-2:],['/usr/bin/pm2','ping'])
+
+    def test_pm2_launcher_branches_using_disposable_fake_binary(self):
+        # Test the real shell flow with substituted test paths, never real PM2.
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);home=root/'runtime';(home/'.pm2').mkdir(parents=True)
+            capture=root/'args';fake=root/'fake-pm2'
+            fake.write_text('#!/bin/sh\nprintf \'%s\\n\' "$@" > '+shlex.quote(str(capture))+'\n');fake.chmod(0o700)
+            source=(SOURCE/'scripts/vps/review-pm2-start.sh').read_text().replace('/usr/bin/pm2',shlex.quote(str(fake))).replace('/var/lib/monetcore-review-runtime',str(home))
+            launcher=root/'start.sh';launcher.write_text(source)
+            for saved,expected in [(False,'ping'),(True,'resurrect')]:
+                if saved:(home/'.pm2/dump.pm2').write_text('{}')
+                subprocess.run(['/bin/sh',str(launcher)],env={'PATH':'/usr/bin:/bin','HOME':str(home),'PM2_HOME':str(home/'.pm2')},check=True,capture_output=True)
+                self.assertEqual(capture.read_text().strip(),expected)
 
     def test_workflow_gates_and_transport(self):
         workflow=(SOURCE/'.github/workflows/review-deploy.yml').read_text()

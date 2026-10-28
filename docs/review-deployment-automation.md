@@ -71,11 +71,18 @@ no unrelated Nginx edits are pending on disk: a global graceful reload can load
 them even when this tool changes only review routing.
 
 Require Ubuntu 24.04 Linux x64, root-owned Node 24.19.0 or newer 24.x at
-`/usr/bin/node`, root-owned PM2 at `/usr/local/bin/pm2`, Python 3, `ss`, systemd,
+`/usr/bin/node`, root-owned PM2 at `/usr/bin/pm2`, Python 3, `ss`, systemd,
 Nginx and a valid review TLS certificate. Do not upgrade/replace production binaries
 to satisfy this. If paths differ, stop for a reviewed path adjustment. Require at
 least 768 MiB available RAM and ~1.7 GiB disk headroom before each deployment.
 Two review releases run concurrently during a switch; assess actual resource use.
+
+The owner's 28 October 2026 commissioning follow-up reports PM2 v7.1.1 at
+`/usr/bin/pm2`. Controller, daemon launcher and service stop command use that exact
+path; do not relocate or reinstall the shared PM2 installation. The controller
+still checks root ownership/non-writable ancestry of the resolved binary before
+use, and invokes only the separate review UID/PM2_HOME. This workspace has not
+independently connected to the VPS to repeat that inventory.
 
 The supported review file is intentionally narrow: a **dedicated, root-owned
 regular file** in `/etc/nginx/sites-available` or `/etc/nginx/conf.d`, containing
@@ -112,6 +119,9 @@ admits no extra/regex locations which could override it. An exact
 `location = /api { return 403; }` is also mandatory. If inventory shows it missing
 or either URL not returning 403, commissioning stops; obtain separate approval for
 that review-only repair. The deployment does not silently add API locations.
+The latest owner inventory explicitly reports no exact `location = /api` yet;
+that remains a commissioning blocker needing a separate review-only fix/approval.
+This PM2-path update does not alter the running Nginx configuration.
 
 The homepage stays public, with HTTPS 200 and no login challenge. Non-off Basic
 Auth is rejected rather than introduced; no Basic password secret is needed.
@@ -130,8 +140,8 @@ executed here):
 ```sh
 cat /etc/os-release
 uname -m
-realpath -e /usr/bin/node /usr/local/bin/pm2
-stat -Lc '%U %G %a %F %n' /usr/bin/node /usr/local/bin/pm2
+realpath -e /usr/bin/node /usr/bin/pm2
+stat -Lc '%U %G %a %F %n' /usr/bin/node /usr/bin/pm2
 free -m
 df -h /srv /home/monetcore
 ls -l /etc/nginx/sites-enabled
