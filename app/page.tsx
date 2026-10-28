@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Code2,
-  Layers3,
   Workflow,
   Cpu,
   Globe2,
@@ -23,6 +22,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import ProductDiscovery from "./components/ProductDiscovery";
 import { ProductShowcase, TechnologyStack } from "./components/HomepageShowcase";
 import SolutionExplorer from "./components/SolutionExplorer";
 import { ProjectPlanProvider } from "./components/ProjectPlanContext";
@@ -238,58 +238,7 @@ export default function Home() {
         <ProductShowcase />
         <TechnologyStack />
 
-        <section id="live-demos" className="bg-slate-50 px-5 py-16 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Explore the possibilities
-              </p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">
-                Technology you can explore.
-              </h2>
-              <p className="mt-4 leading-7 text-slate-600">
-                Experience our existing demonstrations and workflows, with a
-                clear distinction between a prototype and a real enquiry.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Link
-                href="/demo/fintech"
-                className="rounded-2xl border border-emerald-200 bg-emerald-950 p-6 text-white"
-              >
-                <Code2
-                  size={26}
-                  aria-hidden="true"
-                  className="text-emerald-300"
-                />
-                <h3 className="mt-5 text-xl font-bold">
-                  MonePay fintech concept ↗
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-emerald-100">
-                  Interactive simulated transfers, payments and savings.
-                  Fictional prototype; no real money moves.
-                </p>
-              </Link>
-              <Link
-                href="/book"
-                className="rounded-2xl border border-slate-200 bg-white p-6"
-              >
-                <Layers3
-                  size={26}
-                  aria-hidden="true"
-                  className="text-blue-700"
-                />
-                <h3 className="mt-5 text-xl font-bold">
-                  Book a Consultation →
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Explore our existing form. This is a real request flow outside
-                  review previews. Only submit to request an appointment.
-                </p>
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ProductDiscovery />
 
         <section id="about" className="about-enhanced px-5 py-20 lg:px-8">
           <div className="about-layout mx-auto max-w-7xl">
