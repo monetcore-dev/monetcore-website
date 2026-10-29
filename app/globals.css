@@ -1053,7 +1053,8 @@ summary {
   transform: translateY(-3px);
   border-color: var(--step-accent);
 }
-.workflow-card[aria-pressed="true"] {
+.workflow-card[aria-pressed="true"],
+.workflow-card[aria-expanded="true"] {
   border-color: var(--step-accent);
   background: var(--step-tint);
   box-shadow: 0 12px 32px -26px var(--step-accent);
@@ -1764,6 +1765,9 @@ summary {
   position: relative;
   text-align: center;
 }
+.simulation-stages li::after {
+  background: #465c80;
+}
 .simulation-stages li > span {
   display: grid;
   place-items: center;
@@ -2285,7 +2289,8 @@ summary {
 .workflow-cards > li:not(:last-child)::after {
   background: #6f80ae;
 }
-.workflow-card[aria-pressed="true"] {
+.workflow-card[aria-pressed="true"],
+.workflow-card[aria-expanded="true"] {
   box-shadow:
     0 0 0 1px var(--step-accent),
     0 12px 32px -26px var(--step-accent);
@@ -2420,7 +2425,7 @@ summary {
   }
 }
 
-/* Mobile presentation: intentional light surfaces and a single page scroll. */
+/* Responsive geometry only: sections inherit their shared desktop palettes. */
 @media (max-width: 1023px) {
   .solution-experience {
     height: auto;
@@ -2431,44 +2436,8 @@ summary {
   }
 }
 @media (max-width: 767px) {
-  #corporate-hero {
-    background:
-      radial-gradient(ellipse at 100% 0%, #dce6ff, transparent 60%),
-      linear-gradient(145deg, #f7f9ff, #fff) !important;
-    color: var(--ink);
-  }
   #corporate-hero h1 {
-    color: var(--navy);
     font-size: clamp(2.25rem, 9.5vw, 3.5rem);
-  }
-  #corporate-hero h1 span {
-    color: #345be0;
-  }
-  #corporate-hero > .relative > div:first-child > p:first-child {
-    color: #2949bf;
-  }
-  #corporate-hero > .relative > div:first-child > p,
-  #corporate-hero > .relative > div:first-child > div.border-t {
-    color: #4c5c76;
-    border-color: #d5dff0;
-  }
-  #corporate-hero > .relative > div:first-child > div.border-t svg {
-    color: #345be0;
-  }
-  #corporate-hero .company-snapshot > div {
-    background: #fff;
-    border-color: #dce4f3;
-  }
-  #corporate-hero .company-snapshot p:first-child {
-    color: var(--ink);
-  }
-  #corporate-hero .company-snapshot p:last-child,
-  .showcase-note {
-    color: #4c5c76;
-  }
-  .showcase-frame {
-    border-color: #d2ddef;
-    box-shadow: 0 18px 45px -28px #274d9270;
   }
   .showcase-canvas {
     height: 610px;
@@ -2477,30 +2446,6 @@ summary {
   .showcase-controls button {
     min-height: 44px;
     min-width: 30px;
-  }
-  #products {
-    background: #f0f4fb;
-    color: var(--ink);
-  }
-  #products [class*="text-blue-"] {
-    color: #2949bf;
-  }
-  #products .text-slate-300 {
-    color: #4c5c76;
-  }
-  .corporate-product-card {
-    background: #fff;
-    border-color: #d8e2f1;
-  }
-  #explore-solutions {
-    background: linear-gradient(145deg, #f0f5ff, #faf8ff);
-    color: var(--ink);
-  }
-  .solution-explorer-heading .eyebrow {
-    color: #2949bf;
-  }
-  .solution-explorer-heading > p {
-    color: #4c5c76;
   }
   .solution-selector {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2514,9 +2459,6 @@ summary {
     gap: 10px;
     padding: 14px;
     min-height: 130px;
-    background: #fff;
-    color: #263751;
-    border-color: #cdd9ed;
   }
   .solution-selector button strong {
     font-size: 0.8rem;
@@ -2525,39 +2467,18 @@ summary {
   .solution-selector button > span {
     width: 36px;
     height: 36px;
-    background: #edf2ff;
-    border-color: #d7e2fa;
-    color: #345be0;
   }
   .solution-selector button > svg {
     display: none;
   }
-  .solution-selector button:hover,
-  .solution-selector button[aria-pressed="true"] {
-    background: #eaf0ff;
-    border-color: #345be0;
-    box-shadow: inset 0 0 0 1px #345be0;
-  }
   .solution-experience {
     padding: 18px;
-    border-color: #d3dff0;
   }
   .solution-description h3 {
     font-size: 1.55rem;
   }
   .automation-simulation {
     padding: 16px;
-    background: #f0f5ff;
-    border-color: #c6d6f0;
-    color: var(--ink);
-    box-shadow: none;
-  }
-  .simulation-heading {
-    border-color: #cbd8ed;
-  }
-  .simulation-heading > span,
-  .simulation-disclosure {
-    color: #4c5c76;
   }
   .simulation-stages {
     grid-template-columns: 1fr;
@@ -2574,27 +2495,11 @@ summary {
   .simulation-stages li > span {
     margin: 0;
     flex-shrink: 0;
-    background: #fff;
-    color: #4c5c76;
-    border-color: #8fa5c8;
   }
   .simulation-stages strong {
     max-width: none;
     margin: 0;
     font-size: 0.75rem;
-    color: #4c5c76;
-  }
-  .simulation-stages li.is-active strong {
-    color: #2446b9;
-  }
-  .simulation-stages li.is-active > span {
-    color: #fff;
-    border-color: #345be0;
-  }
-  .simulation-stages li.is-complete > span {
-    background: #dce8ff;
-    color: #2949bf;
-    border-color: #7899da;
   }
   .simulation-stages li::after,
   .simulation-stages li:nth-child(odd)::after,
@@ -2604,7 +2509,6 @@ summary {
     top: 40px;
     width: 2px;
     height: 16px;
-    background: #a7bce0;
   }
   .simulation-stages li:last-child::after {
     display: none;
@@ -2612,15 +2516,6 @@ summary {
   .simulation-output {
     min-height: 220px;
     padding: 14px;
-    background: #fff;
-    border-color: #c6d6f0;
-  }
-  .simulation-output .eyebrow,
-  .simulation-output > span {
-    color: #415c9c;
-  }
-  .simulation-output > p:not(.eyebrow) {
-    color: #263751;
   }
   .simulation-controls {
     display: grid;
@@ -2630,13 +2525,6 @@ summary {
   .simulation-controls button + button {
     justify-content: center;
     min-height: 48px;
-    background: #fff;
-    color: #2949bf;
-    border-color: #7899da;
-  }
-  .simulation-controls button:first-child {
-    background: #2949bf;
-    color: #fff;
   }
   .smart-project-planner {
     padding: 18px;
@@ -2651,50 +2539,13 @@ summary {
   }
   .corporate-conversion {
     padding: 28px 20px;
-    background: linear-gradient(135deg, #eaf1ff, #f4efff);
-    border-color: #ccd9f0;
-    color: var(--ink);
-  }
-  .conversion-copy .eyebrow {
-    color: #2949bf;
   }
   .conversion-copy h2 {
-    color: var(--navy);
     font-size: 1.9rem;
-  }
-  .conversion-copy > p:not(.eyebrow) {
-    color: #4c5c76;
-  }
-  .conversion-secondary,
-  .conversion-whatsapp {
-    color: #2949bf;
-    background: #fff;
-    border-color: #a4b8dd;
-  }
-  .site-footer {
-    background: #f0f4fb;
-    color: #4c5c76;
-  }
-  .site-footer .text-white,
-  .site-footer h2 {
-    color: var(--ink);
-  }
-  .site-footer .text-slate-300,
-  .site-footer .text-slate-400 {
-    color: #4c5c76;
-  }
-  .site-footer .text-blue-400 {
-    color: #345be0;
-  }
-  .site-footer .footer-intro {
-    border-color: #d0dced;
   }
   .site-footer li a,
   .site-footer address a {
     min-height: 44px;
-  }
-  .site-footer a:hover {
-    color: #2949bf;
   }
   input,
   textarea,
@@ -3007,19 +2858,6 @@ summary {
     font-size: 0.65rem;
     line-height: 1.5;
   }
-  .technology-showcase .showcase-dashboard .text-slate-400,
-  .technology-showcase .showcase-saas .bg-slate-950 .text-slate-400 {
-    color: #c4cee2;
-  }
-  .showcase-canvas .text-emerald-600,
-  .showcase-canvas .text-emerald-500 {
-    color: #047857;
-  }
-}
-@media (max-width: 767px) {
-  .showcase-website .showcase-toolbar > span {
-    color: #fff;
-  }
 }
 /* Selected carousel slides need contrast checks as well as the default slide. */
 .technology-showcase .showcase-dashboard .text-slate-400,
@@ -3043,4 +2881,69 @@ summary {
   .review-preview:has(> .preview-notice) .primary-navigation.is-mobile-open {
     max-height: calc(100dvh - 152px);
   }
+}
+
+/* How We Work: inline single-open accordion below the tablet breakpoint. */
+.workflow-card-mobile,
+.workflow-detail-mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .workflow-card-desktop,
+  .workflow-detail-desktop,
+  .workflow-navigation {
+    display: none;
+  }
+  .workflow-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-card-mobile {
+    display: flex;
+    height: auto;
+    min-height: 0;
+  }
+  .workflow-card-mobile .workflow-prompt {
+    padding-top: 16px;
+  }
+  .workflow-chevron {
+    transition: transform 0.2s ease;
+  }
+  .workflow-card-mobile[aria-expanded="true"] .workflow-chevron {
+    transform: rotate(180deg);
+  }
+  .workflow-detail-mobile:not([hidden]) {
+    display: block;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+    margin-top: 10px;
+    padding: 24px 20px;
+  }
+  .workflow-detail-mobile[hidden] {
+    display: none;
+  }
+  .workflow-detail-mobile .workflow-detail-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workflow-chevron {
+    transition: none;
+  }
+  .workflow-detail-mobile .workflow-detail-content {
+    animation: none;
+  }
+}
+
+/* Selective warm service accents; identical on desktop and mobile. */
+.corporate-page .solution-card:nth-child(2) .solution-icon {
+  color: #b63c14;
+  background: #fff2e8;
+  border-color: #F97316;
+}
+.corporate-page .solution-card:nth-child(5) .solution-icon {
+  color: #a82d4b;
+  background: #fff0f3;
+  border-color: #FB7185;
 }

@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  Check,
   Code2,
-  Layers3,
   Workflow,
   Cpu,
   Globe2,
@@ -24,12 +22,14 @@ import {
   Smartphone,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import ProductDiscovery from "./components/ProductDiscovery";
+import { ProductShowcase, TechnologyStack } from "./components/HomepageShowcase";
 import SolutionExplorer from "./components/SolutionExplorer";
 import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
-import AICore from "./components/AICore";
+import HeroBanner, { HeroServiceElectron } from "./components/HeroBanner";
 import { corporateSolutions } from "./config/corporateSolutions";
 import {
   packagePrice,
@@ -110,15 +110,8 @@ export default function Home() {
         id="main-content"
         className="corporate-page bg-white text-slate-950"
       >
-        <section
-          id="corporate-hero"
-          className="relative overflow-hidden bg-[#f3f6fc] px-5 pb-20 pt-36 lg:px-8 lg:pb-24 lg:pt-44"
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-52 top-0 h-[800px] w-[800px] rounded-full border-[110px] border-blue-100/60"
-          />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1fr_1fr]">
+        <HeroBanner>
+          <div className="relative mx-auto grid max-w-7xl items-center gap-8">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
                 Monetcore System Solutions · Business technology
@@ -130,23 +123,23 @@ export default function Home() {
                 <br />
                 Grow further.
               </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-slate-600">
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
                 We develop technology solutions for businesses. Custom software,
                 AI automation, websites and digital applications — connected to
                 the way your business works.
               </p>
-              <p className="mt-4 max-w-xl leading-7 text-slate-600">
+              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
                 From a professional online presence to a connected business
                 workflow, Monetcore brings software engineering and practical
                 technology thinking to your next step.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="#contact" className={primary}>
-                  Start Your Project{" "}
+                <Link href="/services" className={primary}>
+                  Explore Solutions{" "}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
-                <Link href="#services" className={secondary}>
-                  Explore Our Solutions
+                <Link href="/book" className={secondary}>
+                  Book Consultation
                 </Link>
               </div>
               <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-700">
@@ -155,20 +148,13 @@ export default function Home() {
                   "AI & automation",
                   "Web & mobile",
                   "Business integrations",
-                ].map((item) => (
+                ].map((item, index) => (
                   <span key={item} className="flex items-center gap-2">
-                    <Check
-                      size={14}
-                      aria-hidden="true"
-                      className="text-blue-700"
-                    />
+                    <HeroServiceElectron index={index} />
                     {item}
                   </span>
                 ))}
               </div>
-            </div>
-            <div className="min-w-0">
-              <AICore />
             </div>
           </div>
           <div className="company-snapshot relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
@@ -195,7 +181,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </HeroBanner>
 
         <section id="services" className="px-5 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
@@ -249,193 +235,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section
-          id="products"
-          className="bg-slate-950 px-5 py-20 text-white lg:px-8"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
-                  Digital products & applications
-                </p>
-                <h2 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight">
-                  Focused solutions.
-                  <br />
-                  Part of a bigger picture.
-                </h2>
-              </div>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 text-sm font-bold text-blue-200 hover:underline"
-              >
-                Explore product information{" "}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
-              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
-                <Workflow
-                  size={30}
-                  aria-hidden="true"
-                  className="text-blue-300"
-                />
-                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
-                  External demonstration
-                </p>
-                <h3 className="mt-3 text-2xl font-bold">AI Lead Automation</h3>
-                <p className="mt-4 leading-7 text-slate-300">
-                  Explore the concept of capturing enquiries, organising leads
-                  and preparing AI-assisted follow-ups. Discuss the
-                  configuration and integrations your business would need.
-                </p>
-                <div className="mt-7 flex flex-wrap gap-4">
-                  <Link
-                    href="/products/ai-lead-automation"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Product details →
-                  </Link>
-                  <a
-                    href="https://monetcore-lead-demo.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Explore Demo ↗
-                  </a>
-                </div>
-              </article>
-              <article className="corporate-product-card rounded-2xl border border-white/20 bg-white/5 p-7 sm:p-9">
-                <Layers3
-                  size={30}
-                  aria-hidden="true"
-                  className="text-blue-300"
-                />
-                <p className="mt-6 text-xs font-bold uppercase tracking-widest text-blue-200">
-                  Integration-dependent workflow
-                </p>
-                <h3 className="mt-3 text-2xl font-bold">Smart Booking</h3>
-                <p className="mt-4 leading-7 text-slate-300">
-                  An existing consultation flow with availability, booking
-                  records, calendar and notification integrations. Explore
-                  scheduling for your business as a separately scoped solution.
-                </p>
-                <div className="mt-7 flex flex-wrap gap-4">
-                  <Link
-                    href="/products/smart-booking"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Product details →
-                  </Link>
-                  <Link
-                    href="/book"
-                    className="font-bold text-blue-200 hover:underline"
-                  >
-                    Book a Consultation →
-                  </Link>
-                </div>
-              </article>
-            </div>
-            <p className="mt-6 text-xs leading-6 text-slate-400">
-              Product availability, credentials and third-party services must be
-              confirmed for each engagement. Illustrative interfaces are not
-              evidence of a deployed customer system.
-            </p>
-          </div>
-        </section>
+        <ProductShowcase />
+        <TechnologyStack />
 
-        <section id="smart-websites" className="px-5 py-16 lg:px-8">
-          <div
-            id="website-packages"
-            className="mx-auto grid max-w-7xl gap-8 rounded-3xl border border-blue-200 bg-blue-50/60 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center"
-          >
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-800">
-                One of our solutions
-              </p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">
-                Smart Website Solutions
-              </h2>
-              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
-                Professional business websites with first-year standard domain
-                and hosting, WhatsApp click-to-chat and a basic rule-based
-                lead-gathering assistant. A digital home that works alongside
-                your social media.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-600">
-                One-time package setup
-              </p>
-              <p className="mt-2 text-4xl font-bold tracking-tight">
-                {packagePrice(starter)}
-              </p>
-              <Link href="/website-packages" className={`${primary} mt-5`}>
-                Explore Website Packages{" "}
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </Link>
-              <p className="mt-3 text-xs leading-6 text-slate-600">
-                Final quotations depend on your requirements. Annual
-                renewals apply after 12 months. {renewalTerms.included} Full
-                scope and exclusions are on the packages page.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="live-demos" className="bg-slate-50 px-5 py-16 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-                Explore the possibilities
-              </p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">
-                Technology you can explore.
-              </h2>
-              <p className="mt-4 leading-7 text-slate-600">
-                Experience our existing demonstrations and workflows, with a
-                clear distinction between a prototype and a real enquiry.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Link
-                href="/demo/fintech"
-                className="rounded-2xl border border-emerald-200 bg-emerald-950 p-6 text-white"
-              >
-                <Code2
-                  size={26}
-                  aria-hidden="true"
-                  className="text-emerald-300"
-                />
-                <h3 className="mt-5 text-xl font-bold">
-                  MonePay fintech concept ↗
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-emerald-100">
-                  Interactive simulated transfers, payments and savings.
-                  Fictional prototype; no real money moves.
-                </p>
-              </Link>
-              <Link
-                href="/book"
-                className="rounded-2xl border border-slate-200 bg-white p-6"
-              >
-                <Layers3
-                  size={26}
-                  aria-hidden="true"
-                  className="text-blue-700"
-                />
-                <h3 className="mt-5 text-xl font-bold">
-                  Book a Consultation →
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Explore our existing form. This is a real request flow outside
-                  review previews. Only submit to request an appointment.
-                </p>
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ProductDiscovery />
 
         <section id="about" className="about-enhanced px-5 py-20 lg:px-8">
           <div className="about-layout mx-auto max-w-7xl">

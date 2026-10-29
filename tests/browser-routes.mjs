@@ -151,22 +151,8 @@ import fs from "node:fs";
     path: "/tmp/monetcore-premium-desktop.png",
     fullPage: true,
   });
-  const core = p.getByRole("region", {
-    name: "Monetcore AI Core",
-    exact: true,
-  });
-  assert.equal(await core.locator(".ai-core-node").count(), 5);
-  const initialHeight = (await core.boundingBox()).height;
-  for (const node of await core.locator(".ai-core-node").all()) {
-    await node.focus();
-    assert.equal(
-      (
-        await p.request.get(new URL(await node.getAttribute("href"), base).href)
-      ).status(),
-      200,
-    );
-    assert.equal((await core.boundingBox()).height, initialHeight);
-  }
+  assert.equal(await p.locator('#corporate-hero svg[viewBox="0 0 1440 1000"]').count(), 1);
+  assert.equal(await p.getByRole("region", { name: "Monetcore AI Core", exact: true }).count(), 0);
   for (const width of [375, 768, 1024]) {
     await p.setViewportSize({ width, height: 900 });
     await p.goto(base);
@@ -221,7 +207,7 @@ import fs from "node:fs";
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS eight pages, all internal links, nine responsive widths, local fonts, desktop/mobile mega-menu keys/focus/outside click/navigation, stable AI Core node panel and package preselection.",
+    "PASS eight pages, all internal links, nine responsive widths, local fonts, desktop/mobile mega-menu keys/focus/outside click/navigation, continuous hero background and package preselection.",
   );
   await b.close();
 })().catch((e) => {

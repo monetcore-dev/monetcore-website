@@ -27,32 +27,15 @@ import assert from "node:assert/strict";
   await p.goto(base);
   await p.evaluate(() => document.fonts.ready);
   await p.clock.runFor(100);
-  const region = p.getByRole("region", {
-    name: "Monetcore AI Core",
-    exact: true,
-  });
+  const region = p.locator("#corporate-hero");
   const initialBox = await region.boundingBox();
-  await region
-    .getByRole("button", { name: "Pause AI Core animation", exact: true })
-    .click();
-  assert.equal(await region.getAttribute("data-paused"), "true");
+  assert.equal(await region.getByRole("button", { name: /background animation/i }).count(), 0);
+  assert.equal(await region.locator("[data-electron]").count(), 4);
   await p.clock.fastForward(14000);
   assert.equal((await region.boundingBox()).height, initialBox.height);
-  await region
-    .getByRole("button", { name: "Resume AI Core animation", exact: true })
-    .click();
-  await p.locator("h1").click();
-  await p.mouse.move(0, 0);
-  assert.equal(await region.getAttribute("data-paused"), "false");
   await p.emulateMedia({ reducedMotion: "reduce" });
-  assert.equal(
-    await region
-      .locator(".ai-core-orbit-track")
-      .first()
-      .evaluate((el) => getComputedStyle(el).animationName),
-    "none",
-  );
-  assert.ok(await region.getByText("Static view", { exact: true }).isVisible());
+  await p.clock.runFor(50);
+  assert.equal(await region.evaluate(el => el.getAnimations({ subtree: true }).length), 0);
   assert.ok(fonts.length >= 2);
   assert.ok(fonts.every((url) => new URL(url).hostname === "127.0.0.1"));
   const previousStep = p.getByRole("button", {
@@ -87,7 +70,7 @@ import assert from "node:assert/strict";
   const cls = await p.evaluate(() => window.__layoutShift);
   assert.ok(cls < 0.01, "layout shift " + cls);
   console.log(
-    "PASS AI Core pause/resume, reduced motion, stable height, local fonts and existing workflow/FAQ keys; observed layout shift:",
+    "PASS continuous orbital hero, reduced motion, stable height, local fonts and existing workflow/FAQ keys; observed layout shift:",
     cls,
   );
   await b.close();
