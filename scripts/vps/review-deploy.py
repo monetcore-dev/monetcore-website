@@ -254,7 +254,7 @@ def process_at(port):
     require(len(rows)==1,'review_listener_missing_or_ambiguous')
     pids=set(re.findall(r'pid=([0-9]+)',rows[0]));require(len(pids)==1,'listener_pid_unavailable')
     pid=int(pids.pop()); p=Path('/proc')/str(pid)
-    return {'pid':pid,'start':p.joinpath('stat').read_text().split(') ',1)[1].split()[19], 'cwd':str(p.joinpath('cwd').resolve()), 'uid':p.stat().st_uid}
+    return {'pid':pid,'start':p.joinpath('stat').read_text().rsplit(') ',1)[1].split()[19], 'cwd':str(p.joinpath('cwd').resolve()), 'uid':p.stat().st_uid}
 
 def request(port, path, method='GET', tls=False):
     try:
@@ -335,8 +335,10 @@ def runtime(args):
     require(LEGACY_HOME in {p.lstrip('-') for p in values.get('InaccessiblePaths','').split()},'legacy_home_mask_required')
     user=pwd.getpwnam(USER)
     pidfile=Path(HOME)/'.pm2/pm2.pid'
+    metadata=pidfile.lstat()
+    require(stat.S_ISREG(metadata.st_mode) and metadata.st_uid==user.pw_uid and not metadata.st_mode & 0o022,'invalid_pm2_pidfile')
     pid=int(pidfile.read_text().strip()); proc=Path('/proc')/str(pid)
-    require(proc.stat().st_uid==user.pw_uid and '/'+UNIT in proc.joinpath('cgroup').read_text(),'isolated_pm2_unit_required')
+    require(proc.stat().st_uid==user.pw_uid and any(UNIT in line.split(':',2)[-1].split('/') for line in proc.joinpath('cgroup').read_text().splitlines()),'isolated_pm2_unit_required')
     rpc=Path(HOME)/'.pm2/rpc.sock'
     require(stat.S_ISSOCK(rpc.lstat().st_mode) and rpc.stat().st_uid==user.pw_uid,'existing_review_daemon_required')
     return command(['/usr/sbin/runuser','-u',USER,'--','/usr/bin/env','-i',f'HOME={HOME}',f'PM2_HOME={HOME}/.pm2','PATH=/usr/local/bin:/usr/bin:/bin',PM2,*args])
@@ -479,62 +481,576 @@ def switch(state, site, new_text):
         raise Stop('deployment_failed_rollback_verified') from None
 
 
-def deploy(stream, sha, checksum, cfg, site):
-    before=site.read_text();oldport,_=vhost(before)
-    snapshot=nginx_snapshot(site,inventory=True);other=snapshot['sha256'];require(other==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
-    previous=process_at(oldport);direct_health(oldport);public_health()
-    available=next((int(x.split()[1]) for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:')),0)
-    require(available>=768*1024,'insufficient_memory_headroom')
-    require(shutil.disk_usage(ROOT).free>=2*MAX_EXPANDED+MAX_UPLOAD,'insufficient_disk_headroom')
-    require(len(list((ROOT/'releases').iterdir()))<12,'release_retention_limit')
-    # Validate Node/PM2 tools before executing them as the isolated runtime user.
+# Lifecycle V2: root-authored intent/index, independent of historical active flags.
+ID_PATTERN = r'[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}'
+CGROUP_ROOT = Path('/sys/fs/cgroup')
+PROC_ROOT = Path('/proc')
+TERMINAL = {'active', 'rolled-back', 'committed', 'aborted'}
+
+
+def identifier(value):
+    require(isinstance(value,str) and re.fullmatch(ID_PATTERN,value),'invalid_release_identity')
+    return value
+
+
+def private_json(path):
+    trusted(path)
+    require(not path.stat().st_mode & 0o077,'private_state_required')
+    return json.loads(path.read_text())
+
+
+def release_tree(directory):
+    """Root-immutable files only. Never follow links or read the writable cache."""
+    trusted(directory,directory=True)
+    files=[]
+    for parent,dirs,names in os.walk(directory,followlinks=False):
+        parent=Path(parent)
+        for name in list(dirs):
+            p=parent/name
+            if p.relative_to(directory).as_posix()=='.next/cache':
+                dirs.remove(name);continue
+            trusted(p,directory=True)
+        for name in names:
+            p=parent/name;trusted(p)
+            if p.relative_to(directory).as_posix()=='review-ecosystem.json':continue
+            with p.open('rb') as f: checksum=hashlib.file_digest(f,'sha256').hexdigest()
+            files.append((p.relative_to(directory).as_posix(),checksum,bool(p.stat().st_mode & 0o111)))
+    return digest(json.dumps(sorted(files),separators=(',',':')).encode())
+
+
+def seal_record(record,seal=None):
+    ident=identifier(record['id'])
+    if seal is None:seal=private_json(ROOT/'state'/f'{ident}.seal.json')
+    require(set(seal)=={'id','commit','checksum','tree'} and seal['id']==ident and seal['commit']==record['commit'] and seal['checksum']==record.get('checksum'),'release_seal_mismatch')
+    require(all(isinstance(seal[k],str) and re.fullmatch('[a-f0-9]{64}',seal[k]) for k in ('checksum','tree')),'invalid_release_seal')
+    require(release_tree(ROOT/'releases'/ident)==seal['tree'],'release_tree_changed')
+    return seal
+
+
+def daemon_identity():
+    # runtime() independently verifies the unit sandbox, UID, RPC socket and cgroup.
     trusted(Path(NODE).resolve());trusted(Path(PM2).resolve())
     runtime(['ping'])
-    progress('preflight_passed')
-    port=None
-    for candidate in PORTS:
-        try:
-            with socket.socket() as probe: probe.bind(('127.0.0.1',candidate))
-            port=candidate;break
-        except OSError: pass
-    require(port is not None,'no_free_review_port')
-    release_id=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ-')+uuid.uuid4().hex[:8]
-    release=ROOT/'releases'/release_id
-    unpack(stream,sha,checksum,release)
-    progress('artifact_verified')
-    name='monetcore-review-'+release_id
-    started=False
-    state=None
+    pidfile=Path(HOME)/'.pm2/pm2.pid';metadata=pidfile.lstat()
+    require(stat.S_ISREG(metadata.st_mode) and metadata.st_uid==pwd.getpwnam(USER).pw_uid and not metadata.st_mode&0o022,'invalid_pm2_pidfile')
+    pid=int(pidfile.read_text().strip())
+    p=PROC_ROOT/str(pid)
+    require(p.stat().st_uid==pwd.getpwnam(USER).pw_uid and any(UNIT in line.split(':',2)[-1].split('/') for line in (p/'cgroup').read_text().splitlines()),'pm2_daemon_identity_mismatch')
+    boot=(PROC_ROOT/'sys/kernel/random/boot_id').read_text().strip()
+    require(re.fullmatch('[a-f0-9-]{36}',boot),'invalid_boot_identity')
+    return {'pid':pid,'start':p.joinpath('stat').read_text().rsplit(') ',1)[1].split()[19],'uid':p.stat().st_uid,'boot_id':boot}
+
+
+def pm2_inventory():
+    rows=json.loads(runtime(['jlist']));require(isinstance(rows,list),'invalid_pm2_inventory')
+    result={}
+    for row in rows:
+        env=row.get('pm2_env',{});name=row.get('name')
+        require(isinstance(name,str) and name not in result,'ambiguous_pm2_inventory')
+        result[name]={'pm_id':row.get('pm_id'),'pid':row.get('pid'),'cwd':env.get('pm_cwd'),
+                      'script':env.get('pm_exec_path'),'interpreter':env.get('exec_interpreter'),
+                      'status':env.get('status'),'restarts':env.get('restart_time')}
+    return result  # Never print raw PM2 JSON (it can contain environments).
+
+
+def app_name(record):return 'monetcore-review-'+identifier(record['id'])
+
+
+def inventory_only(records,inventory):
+    expected={app_name(r) for r in records if r is not None}
+    require(set(inventory)<=expected,'foreign_or_resurrected_pm2_application')
+
+
+def verify_record(record,inventory,health=True,capture=False,seal=None):
+    ident=identifier(record['id'])
+    require(isinstance(record.get('commit'),str) and re.fullmatch('[a-f0-9]{40}',record['commit']),'invalid_record_commit')
+    port=record.get('port');require(type(port) is int and port in PORTS,'invalid_record_port')
+    seal_record(record,seal)
+    entry=inventory.get(app_name(record));require(entry is not None,'registered_application_missing')
+    require(entry['cwd']==str(ROOT/'releases'/ident) and entry['script']==str(ROOT/'releases'/ident/'review-start.cjs') and entry['interpreter']==NODE,'pm2_release_binding_mismatch')
+    require(type(entry['pm_id']) is int and entry['pm_id']>=0 and type(entry['restarts']) is int and entry['restarts']>=0,'invalid_pm2_identity')
+    if entry['status']!='online':
+        require(not health and entry['status'] in ('stopped','errored') and entry['pid']==0,'application_not_online')
+        require(record.get('process') is None,'inactive_application_identity_requires_reconciliation')
+        if capture:
+            require(entry['restarts']==0,'candidate_restart_requires_reconciliation')
+            record.update(pm_id=entry['pm_id'],restarts=entry['restarts'])
+        require(record.get('pm_id')==entry['pm_id'] and record.get('restarts')==entry['restarts'],'inactive_pm2_identity_changed')
+        port_unbound(port)
+        return None
+    if capture:require(entry['restarts']==0,'candidate_restart_requires_reconciliation')
+    actual=process_at(port)
+    require(actual['pid']==entry['pid'] and actual['uid']==pwd.getpwnam(USER).pw_uid and actual['cwd']==entry['cwd'],'release_process_mismatch')
+    group=(PROC_ROOT/str(actual['pid'])/'cgroup').read_text()
+    require(any(UNIT in line.split(':',2)[-1].split('/') for line in group.splitlines()),'release_cgroup_mismatch')
+    if capture:
+        record.update(process=actual,pm_id=entry['pm_id'],restarts=entry['restarts'])
+    else:
+        require(actual==record.get('process') and entry['pm_id']==record.get('pm_id') and entry['restarts']==record.get('restarts'),'release_process_restarted_or_changed')
+    if health:direct_health(port,record['commit'])
+    require(process_at(port)==actual,'process_changed_during_health')
+    return actual
+
+
+def history():
+    result={}
+    for p in (ROOT/'state').glob('*.json'):
+        if re.fullmatch(ID_PATTERN+r'\.json',p.name):
+            value=private_json(p);result[p.stem]=(value,digest(p.read_bytes()))
+    return result
+
+
+def unresolved(ack):
+    for ident,(record,checksum) in history().items():
+        if record.get('status') not in TERMINAL:
+            require(ack.get(ident)==checksum,'critical_or_incomplete_history_requires_reconciliation')
+
+
+def load_lifecycle(site):
+    path=ROOT/'state/lifecycle.json'
+    require(path.exists(),'lifecycle_v2_migration_required')
+    index=private_json(path)
+    require(index.get('version')==2 and index.get('status')=='ready' and index.get('pending') is None,'lifecycle_blocked_or_incomplete')
+    require(index.get('current') and index.get('rollback'),'verified_current_and_rollback_required')
+    require(index['current']['id']!=index['rollback']['id'],'duplicate_retained_release')
+    unresolved(index.get('acknowledged',{}))
+    require(daemon_identity()==index['daemon'],'pm2_daemon_changed_requires_reconciliation')
+    require(digest(site.read_bytes())==index['routing_hash'] and vhost(site.read_text())[0]==index['current']['port'],'lifecycle_routing_mismatch')
+    inventory=pm2_inventory();inventory_only([index['current'],index['rollback']],inventory)
+    verify_record(index['current'],inventory);verify_record(index['rollback'],inventory)
+    unit_process_snapshot([index['current'],index['rollback']])
+    public_health(index['current']['commit'])
+    return index
+
+
+def memory_snapshot():
+    output=command(['/usr/bin/systemctl','show',UNIT,'--property=ControlGroup','--property=ActiveState','--property=SubState'])
+    props=dict(line.split('=',1) for line in output.splitlines() if '=' in line)
+    require(props.get('ActiveState')=='active' and props.get('SubState')=='running','runtime_service_not_running')
+    group=props.get('ControlGroup','')
+    require(group.startswith('/') and UNIT in group.split('/') and all(p not in ('.','..') for p in group.split('/')),'invalid_service_cgroup')
+    require((CGROUP_ROOT/'cgroup.controllers').is_file(),'cgroup_v2_required')
+    leaf=CGROUP_ROOT/group.lstrip('/')
+    require(leaf.resolve().is_relative_to(CGROUP_ROOT.resolve()),'cgroup_path_escape')
+    rows=[]
+    for p in [leaf,*leaf.parents]:
+        if not p.is_relative_to(CGROUP_ROOT):break
+        if p==CGROUP_ROOT and not (p/'memory.max').exists():break
+        current=int((p/'memory.current').read_text().strip());raw=(p/'memory.max').read_text().strip()
+        limit=None if raw=='max' else int(raw)
+        events=dict((k,int(v)) for k,v in (line.split() for line in (p/'memory.events').read_text().splitlines()))
+        high_raw=(p/'memory.high').read_text().strip() if (p/'memory.high').exists() else 'max'
+        high=None if high_raw=='max' else int(high_raw)
+        require(high is None or high>=0,'invalid_cgroup_high_limit')
+        require(current>=0 and (limit is None or limit>0),'invalid_cgroup_memory')
+        rows.append({'path':str(p),'inode':p.stat().st_ino,'current':current,'limit':limit,'high':high,'events':events})
+        if p==CGROUP_ROOT:break
+    require(any(r['limit'] is not None for r in rows),'finite_service_memory_limit_required')
+    return rows
+
+
+def memory_policy(policy):
+    require(isinstance(policy,dict) and set(policy)=={'startup_bytes','reserve_bytes','basis'},'invalid_memory_policy')
+    require(type(policy['startup_bytes']) is int and 512*1024**2<=policy['startup_bytes']<=64*1024**3,'invalid_candidate_memory_budget')
+    require(type(policy['reserve_bytes']) is int and 128*1024**2<=policy['reserve_bytes']<=64*1024**3,'invalid_memory_reserve')
+    require(isinstance(policy['basis'],str) and 10<=len(policy['basis'])<=500,'memory_budget_evidence_required')
+
+
+def admit_memory(policy):
+    memory_policy(policy)
+    available=next((int(x.split()[1]) for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:')),0)
+    require(available>=768*1024,'insufficient_memory_headroom')
+    rows=memory_snapshot();required=policy['startup_bytes']+policy['reserve_bytes']
+    require(all(limit-r['current']>=required for r in rows for limit in (r['limit'],r['high']) if limit is not None),'insufficient_cgroup_memory_headroom')
+    return rows
+
+
+def memory_checkpoint(before,policy):
+    after=memory_snapshot()
+    require([(r['path'],r['inode'],r['limit'],r['high']) for r in after]==[(r['path'],r['inode'],r['limit'],r['high']) for r in before],'cgroup_changed_during_transaction')
+    for a,b in zip(after,before):
+        require(all(a['events'].get(k,0)==b['events'].get(k,0) for k in ('high','max','oom','oom_kill','oom_group_kill')),'cgroup_pressure_or_oom_during_transaction')
+        require(all(limit-a['current']>=policy['reserve_bytes'] for limit in (a['limit'],a['high']) if limit is not None),'cgroup_reserve_exhausted')
+    return after
+
+
+def journal(index,transaction,phase):
+    transaction['status']=phase
+    save(ROOT/'state'/f"{transaction['id']}.json",transaction)
+    index['status']='transaction';index['pending']=transaction
+    save(ROOT/'state/lifecycle.json',index)
+
+
+def block_lifecycle(index,transaction,category):
+    transaction['failure_category']=category
+    journal(index,transaction,'blocked')
+    index['status']='blocked';save(ROOT/'state/lifecycle.json',index)
+
+
+def complete_lifecycle(index,transaction,current,rollback,site,phase='committed'):
+    expected=transaction.get('before_hash') if phase=='rolled-back' else transaction.get('after_hash',transaction.get('approved_plan',{}).get('nginx_hash'))
+    require(digest(site.read_bytes())==expected and vhost(site.read_text())[0]==current['port'],'final_lifecycle_routing_mismatch')
+    public_health(current['commit'])
+    transaction['status']=phase;save(ROOT/'state'/f"{transaction['id']}.json",transaction)
+    index.update(current=current,rollback=rollback,pending=None,status='ready',routing_hash=digest(site.read_bytes()))
+    save(ROOT/'state/lifecycle.json',index)
+
+
+def port_unbound(port):
+    rows=command(['/usr/bin/ss','-ltnpH']).splitlines()
+    require(not any(len(r.split())>3 and r.split()[3].rsplit(':',1)[-1]==str(port) for r in rows),'retired_or_pending_listener_still_present')
+
+
+def retirement_guard(site,expected_hash,other_hash,protected):
+    def check():
+        require(digest(site.read_bytes())==expected_hash and nginx_snapshot(site)==other_hash,'configuration_changed_at_retirement')
+        require(vhost(site.read_text())[0]==protected[0]['port'],'retirement_current_routing_mismatch')
+    return check
+
+
+def unit_process_snapshot(records):
+    """Inspect only PIDs in the dedicated service; never traverse foreign parents."""
+    leaf=Path(memory_snapshot()[0]['path'])
+    pids={int(value) for value in (leaf/'cgroup.procs').read_text().split()}
+    daemon=daemon_identity();roots={daemon['pid']:'daemon'}
+    roots.update({r['process']['pid']:r['id'] for r in records if r.get('process')})
+    require(set(roots)<=pids,'registered_process_missing_from_unit')
+    graph={}
+    for pid in pids:
+        proc=PROC_ROOT/str(pid)
+        require(proc.stat().st_uid==pwd.getpwnam(USER).pw_uid,'foreign_uid_in_review_unit')
+        fields=(proc/'stat').read_text().rsplit(') ',1)[1].split()
+        graph[pid]={'start':fields[19],'parent':int(fields[1])}
+    for pid in pids:
+        cursor=pid;seen=set()
+        while cursor not in roots:
+            require(cursor in graph and cursor not in seen,'unregistered_or_orphan_review_process')
+            seen.add(cursor);cursor=graph[cursor]['parent']
+        require(cursor!=daemon['pid'] or pid==daemon['pid'],'unregistered_daemon_child')
+        graph[pid]['release']=roots[cursor]
+    return graph
+
+
+def retire_record(record,allowed,guard,protected):
+    require(all(record['id']!=r['id'] and record['port']!=r['port'] for r in protected),'retained_release_cannot_be_retired')
+    inventory=pm2_inventory();inventory_only(allowed,inventory)
+    verify_record(record,inventory,health=False)
+    # Recheck at the destructive boundary. Never delete by prefix/age/port.
+    require(pm2_inventory().get(app_name(record))==inventory[app_name(record)],'pm2_identity_changed_before_retirement')
+    graph=unit_process_snapshot(allowed)
+    guard()
+    runtime(['delete',str(record['pm_id'])])
+    guard()
+    require(app_name(record) not in pm2_inventory(),'retirement_unconfirmed')
+    for pid,observed in graph.items():
+        if observed['release']!=record['id']:continue
+        proc=PROC_ROOT/str(pid)
+        try:start=(proc/'stat').read_text().rsplit(') ',1)[1].split()[19]
+        except FileNotFoundError:start=None
+        require(start!=observed['start'],'retired_process_or_worker_still_running')
+    port_unbound(record['port'])
+
+
+def persist_pair(current,rollback):
+    inventory=pm2_inventory();inventory_only([current,rollback],inventory)
+    verify_record(current,inventory);verify_record(rollback,inventory)
+    unit_process_snapshot([current,rollback])
+    runtime(['save','--force'])
+    require(pm2_inventory()==inventory,'pm2_changed_during_persistence')
+    unit_process_snapshot([current,rollback])
+    dump=Path(HOME)/'.pm2/dump.pm2';info=dump.lstat()
+    require(stat.S_ISREG(info.st_mode) and info.st_uid==pwd.getpwnam(USER).pw_uid and info.st_size<=1024*1024,'invalid_saved_pm2_dump')
+    saved=json.loads(dump.read_text());require(isinstance(saved,list) and len(saved)==2,'unbounded_saved_pm2_dump')
+    expected={app_name(r):str(ROOT/'releases'/r['id']) for r in (current,rollback)}
+    require({row.get('name') for row in saved}==set(expected),'saved_pm2_pair_mismatch')
+    for row in saved:
+        require(row.get('pm_cwd')==expected[row['name']] and row.get('pm_exec_path')==expected[row['name']]+'/review-start.cjs' and row.get('exec_interpreter')==NODE,'saved_pm2_binding_mismatch')
+
+
+def prepare_transaction(index,site,candidate,kind):
+    text=site.read_text();snap=nginx_snapshot(site,inventory=True)
+    transaction={'id':candidate['id'] if kind=='deploy' else datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ-')+uuid.uuid4().hex[:8],
+                 'version':2,'kind':kind,'candidate':candidate,'prior_current':index['current'],'prior_rollback':index['rollback'],
+                 'before_hash':digest(text.encode()),'after_hash':digest(rewrite(text,candidate['port']).encode()),
+                 'previous_port':index['current']['port'],'previous_process':index['current']['process'],
+                 'port':candidate['port'],'commit':candidate['commit'],'other_hash':snap['sha256'],
+                 'other_files':snap['files'],'other_directories':snap['directories']}
+    require(not (ROOT/'state'/f"{transaction['id']}.json").exists() and not (ROOT/'state'/f"{transaction['id']}.nginx").exists(),'transaction_identity_exists')
+    if kind=='deploy':require(not (ROOT/'releases'/candidate['id']).exists() and not (ROOT/'state'/f"{candidate['id']}.seal.json").exists(),'release_identity_exists')
+    journal(index,transaction,'intent')
+    backup=ROOT/'state'/f"{transaction['id']}.nginx"
+    require(not backup.exists(),'transaction_backup_exists')
+    with backup.open('xb') as f:f.write(text.encode());f.flush();os.fsync(f.fileno())
+    backup.chmod(0o600)
+    return transaction
+
+
+def recover_pair(index,transaction,site):
+    require(daemon_identity()==index['daemon'],'pm2_daemon_changed_during_recovery')
+    # Existing strict PID/start/config/backup checks are preserved, not bypassed.
+    recover(transaction,site)
+    inventory=pm2_inventory()
+    verify_record(transaction['prior_current'],inventory)
+    verify_record(transaction['prior_rollback'],inventory)
+    public_health(transaction['prior_current']['commit'])
+
+
+def finish_switch(index,transaction,site,obsolete=None):
+    require(daemon_identity()==index['daemon'],'pm2_daemon_changed_during_retirement')
+    candidate=transaction['candidate'];current=transaction['prior_current']
+    inventory=pm2_inventory();inventory_only([candidate,current,transaction['prior_rollback']],inventory)
+    verify_record(candidate,inventory);verify_record(current,inventory)
+    require(digest(site.read_bytes())==transaction['after_hash'] and vhost(site.read_text())[0]==candidate['port'],'post_switch_routing_mismatch')
+    public_health(candidate['commit'])
+    transaction['retirement_started']=obsolete is not None
+    journal(index,transaction,'retiring')
+    if obsolete is not None:retire_record(obsolete,[candidate,current,obsolete],retirement_guard(site,transaction['after_hash'],transaction['other_hash'],[candidate,current]),[candidate,current])
+    require(daemon_identity()==index['daemon'],'pm2_daemon_changed_during_persistence')
+    persist_pair(candidate,current)
+    complete_lifecycle(index,transaction,candidate,current,site)
+
+
+def restore_failed_candidate(index,transaction,site,switched):
+    if switched:recover_pair(index,transaction,site)
+    else:
+        require(digest(site.read_bytes())==transaction['before_hash'],'routing_changed_during_start_failure')
+        inventory=pm2_inventory();verify_record(transaction['prior_current'],inventory);verify_record(transaction['prior_rollback'],inventory)
+        public_health(transaction['prior_current']['commit'])
+    candidate=transaction['candidate'];inventory=pm2_inventory()
+    inventory_only([candidate,transaction['prior_current'],transaction['prior_rollback']],inventory)
+    entry=inventory.get(app_name(candidate))
+    if entry and transaction['kind']=='deploy':
+        # If start acceptance was uncertain, bind the *new* admitted entry once.
+        # A previously captured/restarted identity can only be reconciled by admin.
+        verify_record(candidate,inventory,health=False,capture=candidate.get('process') is None)
+        journal(index,transaction,'cleaning_failed_candidate')
+        pair=[transaction['prior_current'],transaction['prior_rollback']]
+        retire_record(candidate,[candidate,*pair],retirement_guard(site,transaction['before_hash'],transaction['other_hash'],pair),pair)
+    if transaction['kind']=='deploy':port_unbound(candidate['port'])
+    persist_pair(transaction['prior_current'],transaction['prior_rollback'])
+    complete_lifecycle(index,transaction,transaction['prior_current'],transaction['prior_rollback'],site,'rolled-back')
+
+
+def verify_history_for_reconciliation(plan):
+    entries=history()
+    require(plan['acknowledge']=={k:v[1] for k,v in entries.items()},'all_history_must_be_explicitly_acknowledged')
+    pending=[]
+    for ident,(record,_) in entries.items():
+        if record.get('kind')=='administrator-reconciliation':
+            if record.get('status') not in TERMINAL:
+                pending.append((ident,{record.get('approved_plan',{}).get('nginx_hash')}))
+            continue
+        if 'before_hash' in record:
+            backup=ROOT/'state'/f'{ident}.nginx'
+            require(backup.exists(),'preserved_nginx_backup_missing')
+            require(digest(private_read(backup))==record['before_hash'],'preserved_nginx_backup_changed')
+        if record.get('status') not in TERMINAL:
+            require(all(isinstance(record.get(k),str) and re.fullmatch('[a-f0-9]{64}',record[k]) for k in ('before_hash','after_hash')),'incomplete_history_requires_forensic_review')
+            pending.append((ident,{record['before_hash'],record['after_hash']}))
+    if pending:
+        require(plan['nginx_hash'] in max(pending,key=lambda x:x[0])[1],'critical_routing_not_reconciled_to_preserved_hash')
+
+
+def migration_seal(record):
+    """Require the original approved Actions artifact for legacy adoption."""
+    packed=ROOT/'incoming'/f"{identifier(record['id'])}.migration.tar.gz"
+    trusted(packed)
+    with packed.open('rb') as f:require(hashlib.file_digest(f,'sha256').hexdigest()==record['checksum'],'migration_artifact_checksum_mismatch')
+    require(packed.stat().st_size<=MAX_UPLOAD,'migration_artifact_too_large')
+    with tempfile.TemporaryDirectory(dir=ROOT/'incoming') as tmp:
+        raw=Path(tmp)/'artifact.tar';size=0
+        with gzip.open(packed,'rb') as src,raw.open('xb') as dst:
+            while block:=src.read(1024*1024):
+                size+=len(block);require(size<=MAX_EXPANDED+32*1024*1024,'decompressed_archive_too_large');dst.write(block)
+        validate_tar_headers(raw);files=[];manifest=None
+        with tarfile.open(raw,'r:') as archive:
+            for member,name in archive_members(archive):
+                if not member.isreg() or name.startswith('.next/cache/') or name=='review-ecosystem.json':continue
+                with archive.extractfile(member) as src:
+                    if name=='release.json':
+                        require(member.size<=8192,'oversized_release_manifest');value=src.read();manifest=json.loads(value);checksum=digest(value)
+                    else:checksum=hashlib.file_digest(src,'sha256').hexdigest()
+                files.append((name,checksum,bool(member.mode & 0o111)))
+        require(manifest and manifest.get('commit')==record['commit'] and manifest.get('platform')=='linux' and manifest.get('arch')=='x64','migration_manifest_mismatch')
+    build=tuple(map(int,manifest['node'].split('.')))
+    current=tuple(map(int,command([NODE,'--version']).strip().lstrip('v').split('.')))
+    require(build[0]==24 and current[0]==24 and current>=build,'node_runtime_incompatible')
+    require(tuple(map(int,manifest['glibc'].split('.')))<=tuple(map(int,os.confstr('CS_GNU_LIBC_VERSION').split()[1].split('.'))),'libc_incompatible')
+    return {'id':record['id'],'commit':record['commit'],'checksum':record['checksum'],
+            'tree':digest(json.dumps(sorted(files),separators=(',',':')).encode())}
+
+
+def admin_only():
+    require(os.geteuid()==0 and os.environ.get('SUDO_USER')!=DEPLOY_USER,'administrator_console_required')
+
+
+def reconciliation(checksum,cfg,site,apply=False):
+    admin_only();path=ROOT/'state/lifecycle-reconcile.json';raw_plan=private_read(path)
+    require(digest(raw_plan)==checksum,'reconciliation_plan_changed')
+    plan=json.loads(raw_plan)
+    require(set(plan)=={'version','index_hash','nginx_hash','other_nginx_sha256','daemon','current_id','rollback_id','records','acknowledge','memory_policy','reason'},'invalid_reconciliation_plan')
+    require(plan['version']==2 and isinstance(plan['reason'],str) and 20<=len(plan['reason'])<=1000,'explicit_reconciliation_reason_required')
+    index_path=ROOT/'state/lifecycle.json'
+    require((digest(private_read(index_path)) if index_path.exists() else None)==plan['index_hash'],'lifecycle_changed_since_review')
+    require(digest(site.read_bytes())==plan['nginx_hash'],'review_config_changed_since_review')
+    require(nginx_snapshot(site)==plan['other_nginx_sha256']==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
+    require(daemon_identity()==plan['daemon'],'pm2_daemon_changed_since_review')
+    memory_policy(plan['memory_policy'])
+    verify_history_for_reconciliation(plan)
+    records=plan['records'];require(isinstance(records,list) and 2<=len(records)<=12,'invalid_reconciliation_records')
+    require(len({r['id'] for r in records})==len(records) and len({r['port'] for r in records})==len(records),'duplicate_reconciliation_identity')
+    byid={r['id']:r for r in records}
+    require(plan['current_id']!=plan['rollback_id'] and plan['current_id'] in byid and plan['rollback_id'] in byid,'invalid_retained_pair')
+    current=byid[plan['current_id']];rollback=byid[plan['rollback_id']]
+    require(vhost(site.read_text())[0]==current['port'],'reconciliation_current_not_routed')
+    inventory=pm2_inventory();inventory_only(records,inventory)
+    require(set(inventory)=={app_name(r) for r in records},'reconciliation_inventory_incomplete')
+    seals={}
+    for record in records:
+        seal_path=ROOT/'state'/f"{identifier(record['id'])}.seal.json"
+        seals[record['id']]=private_json(seal_path) if seal_path.exists() else migration_seal(record)
+        verify_record(record,inventory,health=record['id'] in (current['id'],rollback['id']),seal=seals[record['id']])
+    public_health(current['commit'])
+    unit_process_snapshot(records)
+    if not apply:return {'status':'reconciliation_checks_passed','retire_count':len(records)-2,'changes_made':False}
+    # Persist the approved plan and blocked intent before any process retirement.
+    ident=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ-')+uuid.uuid4().hex[:8]
+    tx={'id':ident,'version':2,'kind':'administrator-reconciliation','status':'reconciling','plan_hash':checksum,'approved_plan':plan}
+    require(not (ROOT/'state'/f'{ident}.json').exists(),'transaction_identity_exists')
+    save(ROOT/'state'/f'{ident}.json',tx)
+    index={'version':2,'status':'blocked','current':current,'rollback':rollback,'pending':tx,'daemon':plan['daemon'],
+           'routing_hash':plan['nginx_hash'],'memory_policy':plan['memory_policy'],'acknowledged':plan['acknowledge']}
+    for record in records:save(ROOT/'state'/f"{record['id']}.seal.json",seals[record['id']])
+    save(index_path,index)
     try:
-        ecosystem={'apps':[{'name':name,'script':str(release/'review-start.cjs'),'cwd':str(release),'interpreter':NODE,'instances':1,'exec_mode':'fork','max_memory_restart':'512M','restart_delay':3000,'env':{'PORT':str(port)}}]}
-        ecosystem_path=release/'review-ecosystem.json'
-        with ecosystem_path.open('x') as f: json.dump(ecosystem,f)
-        ecosystem_path.chmod(0o644)
-        runtime(['start',str(ecosystem_path),'--only',name])
-        started=True
+        remaining=list(records)
+        for record in records:
+            if record['id'] in (current['id'],rollback['id']):continue
+            require(digest(site.read_bytes())==plan['nginx_hash'] and nginx_snapshot(site)==plan['other_nginx_sha256'],'reconciliation_configuration_changed')
+            verify_record(current,pm2_inventory());verify_record(rollback,pm2_inventory());public_health(current['commit'])
+            pair=[current,rollback]
+            retire_record(record,remaining,retirement_guard(site,plan['nginx_hash'],plan['other_nginx_sha256'],pair),pair);remaining.remove(record)
+            tx['retired_ids']=[r['id'] for r in records if r not in remaining];save(ROOT/'state'/f'{ident}.json',tx)
+        persist_pair(current,rollback)
+        complete_lifecycle(index,tx,current,rollback,site)
+        return {'status':'reconciled','current':current['id'],'rollback':rollback['id'],'retired_count':len(records)-2}
+    except BaseException:
+        block_lifecycle(index,tx,'administrator_reconciliation_incomplete');raise Stop('reconciliation_blocked') from None
+
+
+def private_read(path):
+    trusted(path);require(not path.stat().st_mode & 0o077,'private_state_required')
+    return path.read_bytes()
+
+
+def lifecycle_inventory(site):
+    admin_only();daemon=daemon_identity();rows=pm2_inventory();records=[]
+    for name,row in rows.items():
+        ident=name.removeprefix('monetcore-review-')
+        require(name=='monetcore-review-'+identifier(ident),'foreign_application_requires_manual_inventory')
+        directory=ROOT/'releases'/ident;trusted(directory,directory=True)
+        manifest=json.loads((trusted(directory/'release.json')).read_text())
+        ecosystem=json.loads((trusted(directory/'review-ecosystem.json')).read_text())
+        apps=ecosystem.get('apps',[]);require(len(apps)==1 and apps[0].get('name')==name,'invalid_legacy_ecosystem')
+        port=int(apps[0]['env']['PORT']);require(port in PORTS,'unmanaged_legacy_port')
+        record={'id':ident,'commit':manifest['commit'],'port':port,'process':process_at(port) if row['status']=='online' else None,
+                'pm_id':row['pm_id'],'restarts':row['restarts']}
+        # Output only reviewed public metadata, never PM2 environments.
+        require(record['process'] is None or (record['process']['uid']==pwd.getpwnam(USER).pw_uid and record['process']['cwd']==str(directory)),'inventory_process_mismatch')
+        records.append(record)
+    path=ROOT/'state/lifecycle.json'
+    return {'daemon':daemon,'nginx_hash':digest(site.read_bytes()),'review_port':vhost(site.read_text())[0],
+            'other_nginx_sha256':nginx_snapshot(site),'index_hash':digest(private_read(path)) if path.exists() else None,
+            'records':records,'acknowledge':{k:v[1] for k,v in history().items()},'memory':memory_snapshot()}
+
+def deploy(stream, sha, checksum, cfg, site):
+    index=load_lifecycle(site)
+    require(nginx_snapshot(site)==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
+    before_memory=admit_memory(index['memory_policy'])
+    require(shutil.disk_usage(ROOT).free>=2*MAX_EXPANDED+MAX_UPLOAD,'insufficient_disk_headroom')
+    require(len(list((ROOT/'releases').iterdir()))<12,'release_retention_limit')
+    trusted(Path(NODE).resolve());trusted(Path(PM2).resolve())
+    port=None
+    for candidate_port in PORTS:
+        if candidate_port in (index['current']['port'],index['rollback']['port']):continue
+        try:
+            with socket.socket() as probe:probe.bind(('127.0.0.1',candidate_port))
+            port=candidate_port;break
+        except OSError:pass
+    require(port is not None,'no_free_review_port')
+    ident=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ-')+uuid.uuid4().hex[:8]
+    candidate={'id':ident,'commit':sha,'checksum':checksum,'port':port,'process':None,'pm_id':None,'restarts':None}
+    tx=prepare_transaction(index,site,candidate,'deploy')
+    tx['memory_admission']=before_memory;tx['memory_policy']=index['memory_policy'];journal(index,tx,'intent')
+    progress('preflight_passed')
+    switched=False
+    try:
+        release=ROOT/'releases'/ident
+        unpack(stream,sha,checksum,release)
+        save(ROOT/'state'/f'{ident}.seal.json',{'id':ident,'commit':sha,'checksum':checksum,'tree':release_tree(release)})
+        progress('artifact_verified')
+        admit_memory(index['memory_policy']);tx['last_memory']=memory_checkpoint(before_memory,index['memory_policy'])
+        ecosystem={'apps':[{'name':app_name(candidate),'script':str(release/'review-start.cjs'),'cwd':str(release),'interpreter':NODE,'instances':1,'exec_mode':'fork','max_memory_restart':'512M','restart_delay':3000,'env':{'PORT':str(port)}}]}
+        path=release/'review-ecosystem.json'
+        with path.open('x') as f:json.dump(ecosystem,f);f.flush();os.fsync(f.fileno())
+        path.chmod(0o644)
+        journal(index,tx,'starting')
+        runtime(['start',str(path),'--only',app_name(candidate)])
         progress('candidate_started')
         for attempt in range(30):
-            try: direct_health(port,sha);break
+            try:direct_health(port,sha);break
             except (Stop,ValueError):
                 require(attempt<29,'candidate_health_failed');time.sleep(1)
-        progress('candidate_health_passed')
-        candidate=process_at(port)
-        require(candidate['uid']==pwd.getpwnam(USER).pw_uid and Path(candidate['cwd'])==release,'candidate_process_mismatch')
-        require(digest(site.read_bytes())==digest(before.encode()),'review_config_changed_stop')
-        new_text=rewrite(before,port)
-        state={'id':release_id,'commit':sha,'port':port,'previous_port':oldport,'previous_process':previous,'before_hash':digest(before.encode()),'after_hash':digest(new_text.encode()),'other_hash':other,'other_files':snapshot['files'],'other_directories':snapshot['directories'],'status':'pending'}
-        backup=ROOT/'state'/f'{release_id}.nginx'
-        with backup.open('xb') as f: f.write(before.encode());f.flush();os.fsync(f.fileno())
-        backup.chmod(0o600)
-        switch(state,site,new_text)
-        return {'status':'active','release':release_id,'commit':sha,'previous_port':oldport,'port':port}
+        inventory=pm2_inventory();inventory_only([candidate,index['current'],index['rollback']],inventory)
+        verify_record(candidate,inventory,capture=True)
+        journal(index,tx,'candidate_verified')
+        # A second stable pass catches early restarts; it cannot guarantee future uptime.
+        time.sleep(2);verify_record(candidate,pm2_inventory())
+        tx['last_memory']=memory_checkpoint(before_memory,index['memory_policy'])
+        require(daemon_identity()==index['daemon'],'pm2_daemon_changed_during_transaction')
+        verify_record(index['current'],pm2_inventory());verify_record(index['rollback'],pm2_inventory())
+        require(digest(site.read_bytes())==tx['before_hash'] and nginx_snapshot(site)==tx['other_hash'],'configuration_changed_before_switch')
+        journal(index,tx,'switching');switched=True
+        write_site(site,rewrite(site.read_text(),port))
+        command([NGINX,'-t']);command(['/usr/bin/systemctl','reload','nginx'])
+        tx['last_memory']=memory_checkpoint(before_memory,index['memory_policy'])
+        finish_switch(index,tx,site,obsolete=tx['prior_rollback'])
+        progress('post_switch_health_passed')
+        return {'status':'active','release':ident,'commit':sha,'previous_port':tx['previous_port'],'port':port,'lifecycle_version':2}
+    except BaseException as error:
+        category=str(error) if isinstance(error,Stop) and re.fullmatch('[a-zA-Z0-9_-]{1,100}',str(error)) else 'controller_error'
+        tx['failure_category']=category
+        if tx.get('retirement_started') or tx['status']=='retiring':
+            block_lifecycle(index,tx,'retirement_or_persistence_unconfirmed')
+            raise Stop('lifecycle_retirement_blocked') from None
+        try:restore_failed_candidate(index,tx,site,switched)
+        except BaseException:
+            block_lifecycle(index,tx,'rollback_or_cleanup_unconfirmed')
+            raise Stop('CRITICAL_rollback_or_cleanup_unconfirmed') from None
+        if category.startswith(('cgroup_','pm2_daemon_')):
+            block_lifecycle(index,tx,category)
+            raise Stop('resource_or_daemon_reconciliation_required') from None
+        raise Stop('deployment_failed_rollback_verified') from None
+
+
+def rollback_v2(release_id,cfg,site):
+    index=load_lifecycle(site)
+    require(index['current']['id']==release_id,'release_not_current')
+    require(nginx_snapshot(site)==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
+    tx=prepare_transaction(index,site,index['rollback'],'rollback')
+    try:
+        journal(index,tx,'switching')
+        require(nginx_snapshot(site)==tx['other_hash'] and digest(site.read_bytes())==tx['before_hash'],'configuration_changed_before_switch')
+        verify_record(index['current'],pm2_inventory());verify_record(index['rollback'],pm2_inventory())
+        write_site(site,rewrite(site.read_text(),index['rollback']['port']))
+        command([NGINX,'-t']);command(['/usr/bin/systemctl','reload','nginx'])
+        finish_switch(index,tx,site)
+        return {'status':'rolled-back','release':release_id,'previous_port':tx['candidate']['port'],'lifecycle_version':2}
     except BaseException:
-        # Never remove the previous process. Keep candidate on unconfirmed recovery.
-        if started and (state is None or state.get('status')!='CRITICAL-rollback-unconfirmed'):
-            try:
-                runtime(['delete',name]);runtime(['save','--force'])
-            except Stop: pass
-        raise
+        try:recover_pair(index,tx,site);persist_pair(tx['prior_current'],tx['prior_rollback']);complete_lifecycle(index,tx,tx['prior_current'],tx['prior_rollback'],site,'rolled-back')
+        except BaseException:
+            block_lifecycle(index,tx,'manual_rollback_unconfirmed');raise Stop('CRITICAL_rollback_unconfirmed') from None
+        raise Stop('rollback_failed_original_pair_restored') from None
 
 
 @contextmanager
@@ -555,18 +1071,19 @@ def main():
     args=sys.argv[1:]
     if args==['inspect']:
         print(json.dumps({'domain':HOST,'review_port':vhost(site.read_text())[0],'other_nginx_sha256':nginx_snapshot(site)}));return
+    if args==['inventory']:
+        print(json.dumps(lifecycle_inventory(site)));return
+    if len(args)==2 and args[0] in ('reconcile-check','reconcile-apply') and re.fullmatch('[a-f0-9]{64}',args[1]):
+        admin_only()
+        with deployment_lock():print(json.dumps(reconciliation(args[1],cfg,site,apply=args[0]=='reconcile-apply')))
+        return
     require((len(args)==3 and args[0]=='deploy' and re.fullmatch('[a-f0-9]{40}',args[1]) and re.fullmatch('[a-f0-9]{64}',args[2])) or (len(args)==2 and args[0]=='rollback' and re.fullmatch('[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}',args[1])),'invalid_protocol')
     for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM): signal.signal(sig,lambda *_: (_ for _ in ()).throw(Stop('interrupted')))
     signal.alarm(600)
     deployment_identity(os.environ)
     with deployment_lock():
         if args[0]=='deploy': result=deploy(sys.stdin.buffer,args[1],args[2],cfg,site)
-        else:
-            statepath=ROOT/'state'/f'{args[1]}.json';trusted(statepath)
-            state=json.loads(statepath.read_text());require(state['status']=='active','release_not_active')
-            require(digest(site.read_bytes())==state['after_hash'],'not_current_release')
-            recover(state,site);state['status']='rolled-back';save(statepath,state)
-            result={'status':'rolled-back','release':args[1],'previous_port':state['previous_port']}
+        else: result=rollback_v2(args[1],cfg,site)
         print(json.dumps(result))
 
 if __name__=='__main__':

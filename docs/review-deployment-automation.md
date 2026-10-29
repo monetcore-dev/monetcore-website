@@ -1,3 +1,5 @@
+> **Lifecycle V2:** Read [review-deployment-lifecycle-v2.md](review-deployment-lifecycle-v2.md) before commissioning, migration or recovery. A root-verified index and explicit migration are now mandatory.
+
 # Manual-only isolated review deployment proposal
 
 Target: **https://review.monetcore.dev only**, source branch
@@ -388,7 +390,7 @@ checks disabled backend behavior, stores a private config backup/transaction,
 changes only the literal review upstream in that same regular file (atomic replace,
 mode/group preserved), tests Nginx, gracefully reloads, then
 rechecks public HTTPS pages (200), the exact new release marker and API 403. Clear sanitized JSON phases and
-final release ID appear in Actions. It preserves all earlier processes/files.
+final release ID appear in Actions. V2 retains a verified live/rollback pair, temporarily admits one candidate, and retires only proven obsolete applications after successful checks. All release files remain preserved.
 Only the chosen review file is excluded from the other-configuration fingerprint,
 not its directory: production/other sites in sites-enabled remain included.
 The enabled review file must appear directly and exactly once in Nginx's loaded
@@ -410,30 +412,31 @@ rendering/navigation after separately approved live commissioning.
 
 For ordinary switch/test/reload/post-health failure, automatic recovery verifies
 backup checksum, unchanged other config files/directories and the same old process
-identity before restoring, testing, reloading and rechecking. No old process is
-stopped. A failed candidate is removed only from the isolated review PM2 daemon;
-its release files remain. An unconfirmed rollback emits **CRITICAL** and keeps both
-processes for operator recovery; it never reports success.
+identity before restoring, testing, reloading and rechecking. The retained pair is
+not stopped during failure recovery. A failed candidate is removed only after
+verified identity checks in the isolated review daemon; files remain preserved.
+Unconfirmed recovery leaves a blocked lifecycle and involved processes for
+operator review. Obsolete applications retire only after successful V2 checks.
 
 Manual rollback uses the **same workflow**, operation `rollback`, empty candidate
-SHA, the deployment ID to undo (from its successful log), and
+SHA, the exact current release ID in the V2 index, and
 `ROLLBACK <release-id> REVIEW ONLY`. Approve its Environment. It only permits the
-currently active deployment and verified prior live process; stale IDs, config
-edits, missing backup or restarted/replaced prior process stop it. Do not guess
-ports or point at another app. The first rollback to an original pre-automation
-process depends on that process still running.
+current indexed release and verified rollback pair; stale IDs, config edits,
+missing backups or restarted/replaced processes stop it. Legacy applications
+require explicit artifact-backed migration; no production or legacy account is adopted.
 
 Host power loss, SIGKILL, OOM, certificate expiry, disk failure and simultaneous
 administrator changes cannot guarantee automatic recovery. Root-only transaction
 and `.nginx` backup survive for reviewed console recovery. Keep the original PM2
 release and source intact. After any daemon restart, process identities change and
-manual inspection may be required. PM2 dump persistence is review-only; the first
-pre-automation process remains managed by its original unchanged mechanism.
+explicit administrator reconciliation is required. The V2 launcher starts only
+the daemon and never blindly executes a saved dump. Missing applications require
+separately authorized verified restoration; legacy processes/accounts remain untouched.
 
-No automatic retention cleanup: 12 releases/11 ports cause a safe stop. Owner may
-separately approve pruning **only** obsolete review processes/releases after
-checking active and rollback targets. Do not delete directories or processes just
-to make a failed check pass.
+V2 bounds running applications to the verified pair plus one admitted candidate.
+The existing 12-directory disk-retention stop remains; release files are never
+automatically removed. See the V2 migration and recovery procedures before any
+process retirement or manual cleanup. Never bypass checks to make deployment pass.
 
 ## Verification boundary
 

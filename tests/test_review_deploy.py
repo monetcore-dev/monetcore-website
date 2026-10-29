@@ -407,7 +407,7 @@ class ReviewDeployTests(unittest.TestCase):
         launcher=(SOURCE/'scripts/vps/review-pm2-start.sh').read_text()
         guide=(SOURCE/'docs/review-deployment-automation.md').read_text()
         self.assertIn('/usr/bin/pm2 kill',service)
-        self.assertIn('exec /usr/bin/pm2 resurrect',launcher)
+        self.assertNotIn('exec /usr/bin/pm2 resurrect',launcher)
         self.assertIn('exec /usr/bin/pm2 ping',launcher)
         for text in [service,launcher,guide]:self.assertNotIn('/usr/local/bin/pm2',text)
         self.assertIn('trusted(Path(PM2).resolve())',(SOURCE/'scripts/vps/review-deploy.py').read_text())
@@ -438,7 +438,7 @@ class ReviewDeployTests(unittest.TestCase):
             fake.write_text('#!/bin/sh\nprintf \'%s\\n\' "$@" > '+shlex.quote(str(capture))+'\n');fake.chmod(0o700)
             source=(SOURCE/'scripts/vps/review-pm2-start.sh').read_text().replace('/usr/bin/pm2',shlex.quote(str(fake))).replace('/var/lib/monetcore-review-runtime',str(home))
             launcher=root/'start.sh';launcher.write_text(source)
-            for saved,expected in [(False,'ping'),(True,'resurrect')]:
+            for saved,expected in [(False,'ping'),(True,'ping')]:
                 if saved:(home/'.pm2/dump.pm2').write_text('{}')
                 subprocess.run(['/bin/sh',str(launcher)],env={'PATH':'/usr/bin:/bin','HOME':str(home),'PM2_HOME':str(home/'.pm2')},check=True,capture_output=True)
                 self.assertEqual(capture.read_text().strip(),expected)

@@ -1,7 +1,7 @@
 #!/bin/sh
-# Root-owned service entrypoint, executed as the isolated runtime UID.
+# Root-owned entrypoint, executed as the isolated runtime UID.
+# V2 intentionally never executes a mutable or stale PM2 dump at service boot.
+# Start only the daemon. A separately authorized root reconciliation restores
+# verified releases; daemon/PID changes must not be silently adopted.
 set -eu
-if [ -f /var/lib/monetcore-review-runtime/.pm2/dump.pm2 ]; then
-  exec /usr/bin/pm2 resurrect
-fi
 exec /usr/bin/pm2 ping
