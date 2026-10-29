@@ -304,7 +304,7 @@ class ReviewDeployTests(unittest.TestCase):
             self.assertIn(b'unsupported review protocol',result.stderr)
 
     def test_valid_forced_commands_have_fixed_sudo_target_and_clean_environment(self):
-        for text,expected in [('review-deploy '+SHA+' '+('0'*64),['deploy',SHA,'0'*64]),('review-rollback 20261028T120000Z-aaaaaaaa',['rollback','20261028T120000Z-aaaaaaaa'])]:
+        for text,expected in [('review-deploy '+SHA+' '+('0'*64)+' monetcore-review-v2-1',['deploy',SHA,'0'*64,'monetcore-review-v2-1']),('review-rollback 20261028T120000Z-aaaaaaaa monetcore-review-v2-1',['rollback','20261028T120000Z-aaaaaaaa','monetcore-review-v2-1']),('review-status monetcore-review-v2-1',['status','monetcore-review-v2-1'])]:
             with patch.dict(os.environ,{'SSH_ORIGINAL_COMMAND':text,'SYNTHETIC_SECRET':'not-a-secret'},clear=True),patch.object(os,'execve') as execute:
                 runpy.run_path(str(SOURCE/'scripts/vps/review-deploy-ssh.py'))
             args=execute.call_args.args

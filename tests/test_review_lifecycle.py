@@ -51,11 +51,11 @@ class Model:
         daemon_proc=self.proc/'5';daemon_proc.mkdir();(daemon_proc/'stat').write_text('5 (synthetic-daemon) '+' '.join(['0','1']+['0']*17+['1']))
         self.a=self.make('20261029T100000Z-aaaaaaaa',4300)
         self.b=self.make('20261029T100001Z-bbbbbbbb',4301)
-        self.daemon={'pid':5,'start':'1','uid':os.getuid()}
-        self.index={'version':2,'status':'ready','current':self.a,'rollback':self.b,'pending':None,'routing_hash':m.digest(self.site.read_bytes()),'daemon':self.daemon,'memory_policy':POLICY,'acknowledged':{}}
+        self.daemon={'pid':5,'start':'1','uid':os.getuid(),'boot_id':'11111111-1111-4111-8111-111111111111'}
+        self.index={'version':2,'status':'ready','current':self.a,'rollback':self.b,'pending':None,'routing_hash':m.digest(self.site.read_bytes()),'daemon':self.daemon,'memory_policy':POLICY,'restore_policy':m.RESTORE_POLICY,'acknowledged':{}}
         m.save(root/'state/lifecycle.json',self.index)
     def sync(self):
-        (self.leaf/'cgroup.procs').write_text('5\n'+'\n'.join(str(v['record']['process']['pid']) for v in self.apps.values() if v['record'].get('process')))
+        (self.leaf/'cgroup.procs').write_text(str(getattr(self,'daemon',{'pid':5})['pid'])+'\n'+'\n'.join(str(v['record']['process']['pid']) for v in self.apps.values() if v['record'].get('process')))
     def files(self,release,sha):
         release.mkdir(exist_ok=True)
         (release/'server.js').write_text('synthetic server')
@@ -96,10 +96,10 @@ class Model:
         if args[0]=='start':
             # Real persisted intent must precede even a rejected/uncertain start.
             pending=m.private_json(self.root/'state/lifecycle.json')['pending']
-            assert pending['status']=='starting'
+            assert pending['status'] in ('starting','boot-starting')
             if self.mode=='reject_start':raise m.Stop('command_failed_pm2')
             ecosystem=json.loads(Path(args[1]).read_text())['apps'][0];ident=Path(ecosystem['cwd']).name
-            record=copy.deepcopy(pending['candidate']);record.update(pm_id=self.next_id,restarts=0);record['process']=self.process(record)
+            record=copy.deepcopy(pending['candidate'] if pending['status']=='starting' else next(r for r in m.private_json(self.root/'state'/f"{pending['id']}.index.json").values() if isinstance(r,dict) and r.get('id')==ident));record.update(pm_id=self.next_id,restarts=0);record['process']=self.process(record)
             self.apps[ecosystem['name']]={'record':record,'status':'online'}
             self.sync()
             if self.mode=='pressure':(self.leaf/'memory.events').write_text('max 1\noom 1\noom_kill 1\n')
@@ -258,7 +258,7 @@ class LifecycleTests(unittest.TestCase):
         records=[copy.deepcopy(v['record']) for v in self.model.apps.values()]
         plan={'version':2,'index_hash':m.digest((self.root/'state/lifecycle.json').read_bytes()),'nginx_hash':m.digest(self.model.site.read_bytes()),'other_nginx_sha256':'other',
               'daemon':self.model.daemon,'current_id':self.model.a['id'],'rollback_id':self.model.b['id'],'records':records,
-              'acknowledge':{k:v[1] for k,v in m.history().items()},'memory_policy':POLICY,'reason':'Administrator explicitly reviewed the critical history and approved this synthetic reconciliation.'}
+              'acknowledge':{k:v[1] for k,v in m.history().items()},'memory_policy':POLICY,'restore_policy':m.RESTORE_POLICY,'reason':'Administrator explicitly reviewed the critical history and approved this synthetic reconciliation.'}
         path=self.root/'state/lifecycle-reconcile.json';m.save(path,plan);return m.digest(path.read_bytes())
     def test_admin_reconciliation_explicitly_acknowledges_critical_without_editing_it(self):
         self.model.make('20261029T000002Z-deadbeef',4308)

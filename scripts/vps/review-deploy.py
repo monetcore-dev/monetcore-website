@@ -611,6 +611,7 @@ def load_lifecycle(site):
     require(path.exists(),'lifecycle_v2_migration_required')
     index=private_json(path)
     require(index.get('version')==2 and index.get('status')=='ready' and index.get('pending') is None,'lifecycle_blocked_or_incomplete')
+    require(index.get('restore_policy')==RESTORE_POLICY,'automatic_restore_policy_not_approved')
     require(index.get('current') and index.get('rollback'),'verified_current_and_rollback_required')
     require(index['current']['id']!=index['rollback']['id'],'duplicate_retained_release')
     unresolved(index.get('acknowledged',{}))
@@ -888,14 +889,14 @@ def reconciliation(checksum,cfg,site,apply=False):
     admin_only();path=ROOT/'state/lifecycle-reconcile.json';raw_plan=private_read(path)
     require(digest(raw_plan)==checksum,'reconciliation_plan_changed')
     plan=json.loads(raw_plan)
-    require(set(plan)=={'version','index_hash','nginx_hash','other_nginx_sha256','daemon','current_id','rollback_id','records','acknowledge','memory_policy','reason'},'invalid_reconciliation_plan')
+    require(set(plan)=={'version','index_hash','nginx_hash','other_nginx_sha256','daemon','current_id','rollback_id','records','acknowledge','memory_policy','restore_policy','reason'},'invalid_reconciliation_plan')
     require(plan['version']==2 and isinstance(plan['reason'],str) and 20<=len(plan['reason'])<=1000,'explicit_reconciliation_reason_required')
     index_path=ROOT/'state/lifecycle.json'
     require((digest(private_read(index_path)) if index_path.exists() else None)==plan['index_hash'],'lifecycle_changed_since_review')
     require(digest(site.read_bytes())==plan['nginx_hash'],'review_config_changed_since_review')
     require(nginx_snapshot(site)==plan['other_nginx_sha256']==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
     require(daemon_identity()==plan['daemon'],'pm2_daemon_changed_since_review')
-    memory_policy(plan['memory_policy'])
+    memory_policy(plan['memory_policy']);require(plan['restore_policy']==RESTORE_POLICY,'automatic_restore_policy_not_approved')
     verify_history_for_reconciliation(plan)
     records=plan['records'];require(isinstance(records,list) and 2<=len(records)<=12,'invalid_reconciliation_records')
     require(len({r['id'] for r in records})==len(records) and len({r['port'] for r in records})==len(records),'duplicate_reconciliation_identity')
@@ -919,7 +920,7 @@ def reconciliation(checksum,cfg,site,apply=False):
     require(not (ROOT/'state'/f'{ident}.json').exists(),'transaction_identity_exists')
     save(ROOT/'state'/f'{ident}.json',tx)
     index={'version':2,'status':'blocked','current':current,'rollback':rollback,'pending':tx,'daemon':plan['daemon'],
-           'routing_hash':plan['nginx_hash'],'memory_policy':plan['memory_policy'],'acknowledged':plan['acknowledge']}
+           'routing_hash':plan['nginx_hash'],'memory_policy':plan['memory_policy'],'restore_policy':plan['restore_policy'],'acknowledged':plan['acknowledge']}
     for record in records:save(ROOT/'state'/f"{record['id']}.seal.json",seals[record['id']])
     save(index_path,index)
     try:
@@ -1062,6 +1063,167 @@ def deployment_lock():
         yield
 
 
+# Versioned commissioning contract; no legacy remote deployment fallback.
+CONTROLLER_PROTOCOL = 'monetcore-review-v2-1'
+RESTORE_POLICY = 'verified-pair-v1'
+RESTORE_UNIT = 'monetcore-review-restore.service'
+RESTORE_UNIT_FILE = Path('/etc/systemd/system')/RESTORE_UNIT
+RESTORE_LAUNCHER = Path('/usr/local/libexec/monetcore-review-pm2-start')
+RESTORE_UNIT_SHA256 = 'fd48298096ba81b83ead2c56521b06f8c1a7160dbe04f3d4bbc6dd5c78037fc3'
+RESTORE_LAUNCHER_SHA256 = 'a5f78f3331ff8f216befdf09628213074c341013f3c8c19d0416439ef7bd3537'
+
+
+def system_properties(unit,properties):
+    raw=command(['/usr/bin/systemctl','show',unit,'--no-pager',*[f'--property={p}' for p in properties]])
+    return dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+
+
+def restore_service_contract(ready=False):
+    trusted(RESTORE_UNIT_FILE);trusted(RESTORE_LAUNCHER)
+    require(digest(RESTORE_UNIT_FILE.read_bytes())==RESTORE_UNIT_SHA256,'restore_unit_version_mismatch')
+    require(digest(RESTORE_LAUNCHER.read_bytes())==RESTORE_LAUNCHER_SHA256,'restore_launcher_version_mismatch')
+    main=system_properties(UNIT,['Wants','NeedDaemonReload','MemoryMax','Restart','RestartUSec','UnitFileState'])
+    require(RESTORE_UNIT in main.get('Wants','').split() and main.get('NeedDaemonReload')=='no','restore_dependency_not_commissioned')
+    require(main.get('MemoryMax')==str(1024**3),'review_memory_cap_mismatch')
+    require(main.get('UnitFileState')=='enabled','runtime_boot_enablement_required')
+    require(main.get('Restart')=='always' and main.get('RestartUSec')=='3s','runtime_restart_policy_not_commissioned')
+    expected={'User':'root','Group':'root','Type':'oneshot','RemainAfterExit':'yes','NoNewPrivileges':'yes',
+              'ProtectHome':'yes','ProtectSystem':'full','ProtectControlGroups':'yes','NeedDaemonReload':'no',
+              'DropInPaths':'','FragmentPath':str(RESTORE_UNIT_FILE)}
+    props=system_properties(RESTORE_UNIT,[*expected,'BindsTo','PartOf','After','IPAddressDeny','IPAddressAllow','ActiveState','SubState'])
+    require(all(props.get(k)==v for k,v in expected.items()),'restore_service_contract_mismatch')
+    require(all(UNIT in props.get(k,'').split() for k in ('BindsTo','PartOf','After')),'restore_restart_binding_missing')
+    require(set(props.get('IPAddressDeny','').split()) in ({'any'},{'0.0.0.0/0','::/0'}) and set(props.get('IPAddressAllow','').split()) in ({'localhost'},{'127.0.0.0/8','::1/128'}),'restore_loopback_sandbox_required')
+    if ready:require(props.get('ActiveState')=='active' and props.get('SubState')=='exited','automatic_restore_not_ready')
+
+
+def boot_service_context():
+    admin_only();restore_service_contract()
+    require(any(RESTORE_UNIT in line.split(':',2)[-1].split('/') for line in (PROC_ROOT/'self/cgroup').read_text().splitlines()),'verified_restore_service_required')
+
+
+def validate_boot_index(index,cfg,site):
+    require(index.get('version')==2 and index.get('status')=='ready' and index.get('pending') is None,'boot_index_incomplete_or_blocked')
+    require(index.get('restore_policy')==RESTORE_POLICY,'automatic_restore_policy_not_approved')
+    unresolved(index.get('acknowledged',{}));memory_policy(index['memory_policy'])
+    pair=[index.get('current'),index.get('rollback')]
+    require(all(isinstance(r,dict) for r in pair),'verified_current_and_rollback_required')
+    require(pair[0]['id']!=pair[1]['id'] and pair[0]['port']!=pair[1]['port'],'duplicate_retained_release')
+    uid=pwd.getpwnam(USER).pw_uid
+    for record in pair:
+        identifier(record['id'])
+        require(re.fullmatch('[a-f0-9]{40}',record.get('commit','')) and type(record.get('port')) is int and record['port'] in PORTS,'invalid_boot_release')
+        prior=record.get('process',{})
+        require(prior.get('uid')==uid and prior.get('cwd')==str(ROOT/'releases'/record['id']) and type(prior.get('pid')) is int and prior['pid']>0 and re.fullmatch('[0-9]+',prior.get('start','')),'invalid_recorded_process_identity')
+        require(type(record.get('pm_id')) is int and record['pm_id']>=0 and type(record.get('restarts')) is int and record['restarts']>=0,'invalid_recorded_pm2_identity')
+        seal_record(record)
+    recorded=index.get('daemon',{})
+    require(recorded.get('uid')==uid and type(recorded.get('pid')) is int and recorded['pid']>0 and isinstance(recorded.get('start'),str) and re.fullmatch('[a-f0-9-]{36}',recorded.get('boot_id','')),'invalid_recorded_daemon_identity')
+    require(digest(site.read_bytes())==index['routing_hash'] and vhost(site.read_text())[0]==pair[0]['port'],'boot_recorded_routing_mismatch')
+    require(nginx_snapshot(site)==cfg['other_nginx_sha256'],'unrelated_nginx_change_stop')
+    return pair
+
+
+def boot_pair(index,cfg,site,source_hash,recovery=None):
+    """Only called from the verified root unit or checksum-authorized admin retry."""
+    prior_pair=validate_boot_index(index,cfg,site)
+    actual_daemon=daemon_identity();inventory=pm2_inventory();inventory_only(prior_pair,inventory)
+    if recovery is None and actual_daemon==index['daemon']:
+        load_lifecycle(site)
+        return {'status':'already-restored','protocol':CONTROLLER_PROTOCOL,'applications_started':0}
+    # Validate both artifacts first; an invalid rollback cannot authorize partial boot.
+    pair=json.loads(json.dumps(prior_pair))
+    for record in pair:
+        record.update(process=None,pm_id=None,restarts=None)
+        if app_name(record) in inventory:verify_record(record,inventory,capture=True)
+        else:port_unbound(record['port'])
+    unit_process_snapshot([r for r in pair if r['process'] is not None])
+    require(digest(private_read(ROOT/'state/lifecycle.json'))==source_hash,'boot_index_changed_before_intent')
+    ident=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ-')+uuid.uuid4().hex[:8]
+    require(not any((ROOT/'state'/f'{ident}{suffix}').exists() for suffix in ('.json','.nginx','.index.json')),'transaction_identity_exists')
+    approved=json.dumps(index,sort_keys=True)+'\n'
+    save(ROOT/'state'/f'{ident}.index.json',index)
+    save_bytes=ROOT/'state'/f'{ident}.nginx';atomic(save_bytes,site.read_bytes(),0o600)
+    tx={'id':ident,'version':2,'kind':'boot-restore','status':'boot-intent',
+        'before_hash':index['routing_hash'],'after_hash':index['routing_hash'],'other_hash':cfg['other_nginx_sha256'],
+        'approved_index_hash':digest(approved.encode()),'daemon_before':index['daemon'],'daemon_after':actual_daemon,
+        'started_ids':[],'recovery':recovery}
+    journal(index,tx,'boot-intent')
+    started=0
+    try:
+        for record in pair:  # Live first, rollback second; never two simultaneous starts.
+            require(daemon_identity()==actual_daemon,'pm2_daemon_changed_during_boot')
+            require(digest(site.read_bytes())==tx['before_hash'] and nginx_snapshot(site)==tx['other_hash'],'boot_configuration_changed')
+            inventory=pm2_inventory();inventory_only(pair,inventory)
+            if app_name(record) not in inventory:
+                port_unbound(record['port']);before=admit_memory(index['memory_policy'])
+                tx['memory_admission']=before;tx['starting_id']=record['id'];journal(index,tx,'boot-starting')
+                ecosystem={'apps':[{'name':app_name(record),'script':str(ROOT/'releases'/record['id']/'review-start.cjs'),
+                                   'cwd':str(ROOT/'releases'/record['id']),'interpreter':NODE,'instances':1,'exec_mode':'fork',
+                                   'max_memory_restart':'512M','restart_delay':3000,'env':{'PORT':str(record['port'])}}]}
+                path=ROOT/'releases'/record['id']/'review-ecosystem.json'
+                if path.exists():trusted(path)
+                atomic(path,json.dumps(ecosystem).encode(),0o644)
+                runtime(['start',str(path),'--only',app_name(record)])
+                started+=1;tx['started_ids'].append(record['id'])
+                for attempt in range(30):
+                    try:direct_health(record['port'],record['commit']);break
+                    except (Stop,ValueError):
+                        require(attempt<29,'boot_application_health_failed');time.sleep(1)
+                verify_record(record,pm2_inventory(),capture=True)
+                tx['last_memory']=memory_checkpoint(before,index['memory_policy'])
+            else:verify_record(record,inventory,capture=record['process'] is None)
+            tx['observed_pair']=pair;journal(index,tx,'boot-verified')
+        require(daemon_identity()==actual_daemon,'pm2_daemon_changed_during_boot')
+        verify_record(pair[0],pm2_inventory());verify_record(pair[1],pm2_inventory())
+        unit_process_snapshot(pair);persist_pair(*pair)
+        require(nginx_snapshot(site)==tx['other_hash'],'unrelated_nginx_change_stop')
+        public_health(pair[0]['commit'])
+        index['daemon']=actual_daemon
+        complete_lifecycle(index,tx,pair[0],pair[1],site)
+        return {'status':'restored','protocol':CONTROLLER_PROTOCOL,'applications_started':started,
+                'current':pair[0]['id'],'rollback':pair[1]['id']}
+    except BaseException as error:
+        category=str(error) if isinstance(error,Stop) and re.fullmatch('[a-zA-Z0-9_-]{1,100}',str(error)) else 'boot_restore_interrupted'
+        block_lifecycle(index,tx,category)
+        print(json.dumps({'phase':'boot_restore_blocked','category':category}),file=sys.stderr,flush=True)
+        # Approved processes already restored stay running. No speculative stop,
+        # Nginx edit, general critical-state adoption or dump resurrection.
+        raise Stop('boot_restore_blocked') from None
+
+
+def boot_restore(cfg,site):
+    boot_service_context()
+    path=ROOT/'state/lifecycle.json';require(path.exists(),'lifecycle_v2_migration_required')
+    raw=private_read(path);index=json.loads(raw)
+    return boot_pair(index,cfg,site,digest(raw))
+
+
+def boot_retry(index_hash,cfg,site):
+    admin_only();restore_service_contract()
+    path=ROOT/'state/lifecycle.json';raw=private_read(path)
+    require(digest(raw)==index_hash,'boot_recovery_index_changed')
+    blocked=json.loads(raw);tx=blocked.get('pending',{})
+    require(blocked.get('status') in ('blocked','transaction') and tx.get('kind')=='boot-restore','boot_retry_requires_boot_transaction')
+    ident=identifier(tx['id']);record=private_json(ROOT/'state'/f'{ident}.json')
+    require(record==tx,'boot_recovery_journal_requires_forensic_reconciliation')
+    original_raw=private_read(ROOT/'state'/f'{ident}.index.json')
+    require(digest(original_raw)==tx['approved_index_hash'],'boot_approved_index_backup_changed')
+    original=json.loads(original_raw)
+    require(original['routing_hash']==tx['before_hash']==tx['after_hash'] and original['daemon']==tx['daemon_before'],'boot_recovery_evidence_mismatch')
+    # Administrator authorizes acknowledgement of this boot attempt only.
+    # Unrelated critical records still fail validate_boot_index/unresolved().
+    original.setdefault('acknowledged',{})[ident]=digest(private_read(ROOT/'state'/f'{ident}.json'))
+    evidence={'administrator_approved_index':index_hash,'boot_record':ident,'boot_record_hash':original['acknowledged'][ident]}
+    return boot_pair(original,cfg,site,index_hash,recovery=evidence)
+
+
+def controller_status(cfg,site):
+    load_lifecycle(site);restore_service_contract(ready=True)
+    return {'status':'ready','protocol':CONTROLLER_PROTOCOL,'index_version':2,
+            'migration_complete':True,'automatic_restore':RESTORE_POLICY}
+
+
 def main():
     os.umask(0o077)
     require(os.geteuid()==0,'root_owned_controller_required')
@@ -1071,17 +1233,34 @@ def main():
     args=sys.argv[1:]
     if args==['inspect']:
         print(json.dumps({'domain':HOST,'review_port':vhost(site.read_text())[0],'other_nginx_sha256':nginx_snapshot(site)}));return
+    if args==['boot-restore']:
+        admin_only()
+        for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM):signal.signal(sig,lambda *_: (_ for _ in ()).throw(Stop('interrupted')))
+        signal.alarm(300)
+        with deployment_lock():print(json.dumps(boot_restore(cfg,site)))
+        return
+    if len(args)==2 and args[0]=='boot-retry' and re.fullmatch('[a-f0-9]{64}',args[1]):
+        admin_only()
+        for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM):signal.signal(sig,lambda *_: (_ for _ in ()).throw(Stop('interrupted')))
+        signal.alarm(300)
+        with deployment_lock():print(json.dumps(boot_retry(args[1],cfg,site)))
+        return
     if args==['inventory']:
         print(json.dumps(lifecycle_inventory(site)));return
     if len(args)==2 and args[0] in ('reconcile-check','reconcile-apply') and re.fullmatch('[a-f0-9]{64}',args[1]):
         admin_only()
         with deployment_lock():print(json.dumps(reconciliation(args[1],cfg,site,apply=args[0]=='reconcile-apply')))
         return
-    require((len(args)==3 and args[0]=='deploy' and re.fullmatch('[a-f0-9]{40}',args[1]) and re.fullmatch('[a-f0-9]{64}',args[2])) or (len(args)==2 and args[0]=='rollback' and re.fullmatch('[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}',args[1])),'invalid_protocol')
+    require(args and args[-1]==CONTROLLER_PROTOCOL,'controller_protocol_mismatch')
+    args=args[:-1]
+    require((args==['status']) or (len(args)==3 and args[0]=='deploy' and re.fullmatch('[a-f0-9]{40}',args[1]) and re.fullmatch('[a-f0-9]{64}',args[2])) or (len(args)==2 and args[0]=='rollback' and re.fullmatch('[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}',args[1])),'invalid_protocol')
     for sig in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP,signal.SIGALRM): signal.signal(sig,lambda *_: (_ for _ in ()).throw(Stop('interrupted')))
     signal.alarm(600)
     deployment_identity(os.environ)
     with deployment_lock():
+        if args==['status']:
+            print(json.dumps(controller_status(cfg,site)));return
+        controller_status(cfg,site)  # Recheck readiness under lock; never trust only the runner handshake.
         if args[0]=='deploy': result=deploy(sys.stdin.buffer,args[1],args[2],cfg,site)
         else: result=rollback_v2(args[1],cfg,site)
         print(json.dumps(result))

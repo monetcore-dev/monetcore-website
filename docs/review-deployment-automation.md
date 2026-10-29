@@ -248,7 +248,7 @@ world-readable secrets elsewhere. No production permission changes are automated
 Use `sudo visudo -f /etc/sudoers.d/monetcore-review-actions` to install **only**:
 
 ```sudoers
-monetcore_review_actions ALL=(root) NOPASSWD: /usr/local/libexec/monetcore-review-deploy ^deploy [a-f0-9]{40} [a-f0-9]{64}$, /usr/local/libexec/monetcore-review-deploy ^rollback [0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$
+monetcore_review_actions ALL=(root) NOPASSWD: /usr/local/libexec/monetcore-review-deploy ^status monetcore-review-v2-1$, /usr/local/libexec/monetcore-review-deploy ^deploy [a-f0-9]{40} [a-f0-9]{64} monetcore-review-v2-1$, /usr/local/libexec/monetcore-review-deploy ^rollback [0-9]{8}T[0-9]{6}Z-[a-f0-9]{8} monetcore-review-v2-1$
 ```
 
 Ubuntu 24.04 sudo supports anchored argument regexes; validate with
@@ -428,10 +428,13 @@ require explicit artifact-backed migration; no production or legacy account is a
 Host power loss, SIGKILL, OOM, certificate expiry, disk failure and simultaneous
 administrator changes cannot guarantee automatic recovery. Root-only transaction
 and `.nginx` backup survive for reviewed console recovery. Keep the original PM2
-release and source intact. After any daemon restart, process identities change and
-explicit administrator reconciliation is required. The V2 launcher starts only
-the daemon and never blindly executes a saved dump. Missing applications require
-separately authorized verified restoration; legacy processes/accounts remain untouched.
+release and source intact. V2.1's separately commissioned root restorer automatically
+validates and restores only the indexed current/rollback pair on normal daemon,
+service or host restarts. It never executes a saved dump. Incomplete/critical state,
+changed identities, failed artifact verification or insufficient memory blocks
+restoration and requires the explicit recovery procedure; it never guesses.
+Legacy processes/accounts remain untouched. See the V2.1 installation ordering:
+do not replace the daemon launcher before its verified restore dependency is loaded.
 
 V2 bounds running applications to the verified pair plus one admitted candidate.
 The existing 12-directory disk-retention stop remains; release files are never
@@ -446,3 +449,14 @@ No actual SSH, privileged installation, Nginx reload, PM2 switch, provider call,
 Actions deployment or rollback has been executed on the VPS. Live host layout,
 resource capacity, sandbox enforcement, public HTTPS/API blocking, certificates, rollback and
 GitHub Environment/default-branch availability require commissioning evidence.
+
+### V2.1 commissioning prerequisite
+
+Before installing/replacing a runtime launcher, follow the separately authorized
+installation, six-record reconciliation and verified root-restorer sequence in
+[review-deployment-lifecycle-v2.md](review-deployment-lifecycle-v2.md). Do not restart
+the live 4304 service to install tooling. The workflow now requires
+`review-status monetcore-review-v2-1` before artifact upload and versioned
+deploy/rollback commands. Old clients stop; no legacy compatibility bypass exists.
+The deployment key cannot call inventory, reconciliation, boot-restore or boot-retry.
+The existing 1G MemoryMax is unchanged. No unit or workflow is activated by this source.

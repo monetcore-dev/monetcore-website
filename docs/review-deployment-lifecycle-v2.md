@@ -19,7 +19,7 @@ directory, immutable file-tree seal and exact release markers. Public HTTPS page
 must return 200 and all existing `/api` and `/api/…` method checks must return 403.
 It preserves the Nginx parser, other-file/directory fingerprints, certificate
 verification, exact artifact SHA-256, tar validation and atomic Nginx replacement.
-The restricted SSH protocol still accepts only deploy/rollback; no admin command
+The versioned restricted SSH protocol accepts only status/deploy/rollback; no admin command
 or arbitrary path is exposed through the deployment key.
 
 Phases are durable: intent -> starting -> candidate_verified -> switching ->
@@ -90,12 +90,16 @@ increase MemoryMax or borrow production's resource allocation.
 Do not restart the unit or delete any process to prepare for migration. Keep the
 restored review upstream (reported port 4304) and all release files intact.
 
-1. After separate VPS authorization, back up the installed controller/launcher,
-   root state directory and isolated PM2 dump privately. Install only the reviewed
-   controller and daemon-only launcher at their already commissioned root-owned
-   paths, preserving ownership/modes. The unit settings, `/usr/bin/pm2`, SSH wrapper,
-   sudo policy, Nginx files and application services are unchanged. Installation
-   is not a deployment and does not require a service restart.
+1. Freeze manual dispatches. After separate **controller installation** authorization,
+   privately back up the installed controller, SSH wrapper, sudo policy, launcher,
+   runtime unit, root state, PM2 dump and review Nginx configuration. Record exact
+   hashes and the live 4304 identity/health. Install the reviewed controller and
+   versioned SSH wrapper at their existing root-owned paths and the narrowly scoped
+   sudo rules documented in `review-deployment-automation.md`. Do **not** replace
+   the running service/launcher yet; do not stop/restart PM2 or edit Nginx.
+   Installation does not perform reconciliation or retirement. Old clients are
+   intentionally incompatible. The status handshake fails closed until all steps
+   below are complete. Preserve the current root configuration and source work.
 2. From an existing privileged administrator console (never the deployment key),
    run `/usr/local/libexec/monetcore-review-deploy inventory`. It reports only
    sanitized review identities, hashes, memory counters and history checksums;
@@ -137,7 +141,8 @@ restored review upstream (reported port 4304) and all release files intact.
    modify Nginx, release directories, the original critical record or backups.
    Any partial failure leaves a blocked index and durable evidence. Generate and
    review a fresh plan after investigating; never edit status flags to bypass it.
-9. Verify public pages 200, `/api` and `/api/` 403, both release markers/identities,
+9. After separate **startup commissioning** authorization, follow the installation
+   sequence below without restarting the runtime. Verify public pages 200, `/api` and `/api/` 403, both release markers/identities,
    the final PM2 pair and cgroup headroom. Only then separately approve deployment.
 
 Plan shape (values below are placeholders, never paste them as real metadata):
@@ -159,6 +164,7 @@ Plan shape (values below are placeholders, never paste them as real metadata):
                 "cwd": "/srv/monetcore-review-deploy/releases/<release ID>"}
   }],
   "acknowledge": {"<each historical record ID>": "<exact JSON file SHA-256>"},
+  "restore_policy": "verified-pair-v1",
   "memory_policy": {
     "startup_bytes": 536870912,
     "reserve_bytes": 134217728,
@@ -184,28 +190,128 @@ A changed PID is a reconciliation requirement, not a reason to discard identity
 checks. Retirement failures leave the new route untouched and blocked if undoing
 cleanup would require guessing whether an old process is still available.
 
-The V2 launcher starts **only the daemon** (`pm2 ping`). It never resurrects a
-mutable/stale dump automatically. On unit/daemon/host restart the old index cannot
-be silently adopted. This intentionally prioritizes isolation and verified recovery
-over unattended reboot availability. Restoring missing applications requires a
-separately authorized administrator to start only the reviewed current/rollback
-release using its original root-owned ecosystem and isolated sandbox, after memory
-admission is independently checked. Then inventory/check/apply a new explicit
-reconciliation plan using the new PID/start/daemon/boot identities. The controller
-will not repair a missing or unhealthy pair by restarting arbitrary services.
-A fully automatic verified cold-boot restorer is not implemented in V2.
+### Verified automatic restoration
+
+The daemon launcher runs **only `pm2 ping`**. It never executes `dump.pm2`.
+The separate root-owned `monetcore-review-restore.service` restores the pair using
+`boot-restore`. Its dependency on the runtime unit is ordered, restart-bound and
+requested by the runtime unit. A normal service/host restart or unexpected daemon
+exit followed by systemd restart therefore requests verification/restoration.
+The runtime remains the isolated UID, loopback-only, CPU-limited and **MemoryMax=1G**.
+The root oneshot has its own loopback-only sandbox; it does not inherit production
+credentials and cannot enable external integrations. HTTPS verification connects
+locally to Nginx with the public hostname/SNI and certificate verification.
+It does not start, reload or change Nginx.
+
+Before any start, restoration requires a ready root-private index, explicit
+`restore_policy: verified-pair-v1`, resolved/acknowledged historical evidence, exact
+recorded routing and other-config fingerprint, and valid trusted paths, artifact
+seals and both release identities. Only an actual new verified daemon generation
+permits recapturing process identities. Repeating restoration in the same daemon
+generation verifies the exact existing pair and starts nothing. Ordinary PM2 app
+restarts or inconsistent state are not silently adopted. Unknown entries, port
+conflicts and unexpected cgroup processes block; no application is deleted.
+
+The controller durably saves the approved index backup and boot intent before
+starting live first, rollback second. Each start has host/ancestor cgroup memory
+admission, health, PID/start/UID/cwd/PM2/cgroup checks and pressure checkpoints.
+Only fixed generated ecosystems for the two sealed releases are used, never saved
+environments. It persists/checks exactly the pair and verifies public routing/API
+403s before committing fresh daemon/process metadata. The root service remains
+active/exited after success. Status refuses deployment otherwise.
+
+### Startup installation sequence (separate authorization)
+
+After successful approved reconciliation has bounded PM2 to the verified pair:
+
+1. Install `scripts/vps/monetcore-review-restore.service` as root:root 0644 at
+   `/etc/systemd/system/monetcore-review-restore.service`. Install the reviewed
+   runtime unit at its existing `/etc/systemd/system/monetcore-review-pm2.service`
+   path, retaining **all** existing reviewed security/resource settings. Compare
+   the file; the runtime-unit changes are the restore `Wants=` edge and `Restart=always`
+   with `RestartSec=3` (intentional `systemctl stop` still remains stopped).
+   If other existing unit settings differ, stop and review them rather than overwrite.
+2. Run `systemd-analyze verify` on both files, then separately authorized
+   `systemctl daemon-reload`. This does not restart applications. Verify loaded
+   dependencies and no unreviewed drop-ins. Confirm `systemctl is-enabled
+   monetcore-review-pm2.service` returns `enabled` (persistent boot enablement).
+   If not, stop for separate authorization to enable **only this review unit**;
+   the handshake rejects disabled/runtime-only enablement. The restore unit is
+   pulled in by the runtime and needs no independent enable. Do not enable a
+   second runtime service.
+3. Only once the restore unit and dependencies are loaded, install the reviewed
+   daemon-only launcher root:root 0755 at
+   `/usr/local/libexec/monetcore-review-pm2-start`. The controller pins the exact
+   restore-unit and launcher hashes. Never install this launcher first on a service
+   which lacks the verified restorer. The existing already-running daemon remains.
+4. Under separate startup-verification approval, run
+   `systemctl start monetcore-review-restore.service` (not a runtime restart).
+   With the same verified daemon/pair this is idempotent verification, zero app
+   starts. Confirm active/exited; review sanitized journal status. No service is
+   automatically restarted during controller installation or reconciliation.
+5. From the restricted SSH client run `review-status monetcore-review-v2-1`.
+   Required response is status=ready, protocol=monetcore-review-v2-1,
+   index_version=2, migration_complete=true, automatic_restore=verified-pair-v1.
+   Legacy unversioned deploy/rollback is rejected by wrapper and controller.
+6. Measure actual two-app memory usage against the approved startup+reserve budget.
+   A 1G service may still have insufficient room for a third application. That is
+   a genuine admission blocker, not permission to lower budgets or raise MemoryMax.
+   Later, separately authorize a **review-service-only** restart test to confirm
+   actual PM2/systemd behavior. Do not reboot the shared VPS just to test this.
+
+The workflow performs this handshake **before streaming an artifact** and rechecks
+state inside the deployment lock. Missing migration, invalid/blocked index,
+failed root restorer, incompatible controller or stale client stops deployment.
+No push-triggered deployment is introduced; manual dispatch, environment approval
+and existing enable gates remain required. Keep gates off during commissioning.
+
+### Interrupted boot and administrator recovery
+
+Invalid/incomplete indexes and unresolved critical history never start apps.
+If startup fails after intent (including accepted-but-timed-out PM2 starts), the
+controller blocks the index and preserves already-restored approved processes.
+It makes no speculative deletion, Nginx change or automatic retry. The service
+reports sanitized failure categories in its journal; the root-private transaction
+records retain exact evidence. This is exceptional recovery, not routine reboot
+operation. A failed rollback start may leave live 4304 working but deployment blocked.
+
+Administrator procedure after diagnosing the failure:
+
+1. Keep manual deployment disabled. Preserve the root index/journal/approved-index
+   backup and original critical history. Verify actual route, current health,
+   PM2/proc identities, memory events, seals and other Nginx fingerprints.
+2. For **this controller's boot transaction only**, obtain the current lifecycle
+   file SHA-256 and separately approve root-console
+   `/usr/local/libexec/monetcore-review-deploy boot-retry <index-sha256>`.
+   It requires the exact blocked index/journal and approved-index backup hashes,
+   acknowledges only the failed boot transaction, revalidates all original
+   approvals, and starts only missing approved apps. It never refunds evidence or
+   rewrites old records. Existing approved processes must have zero PM2 restarts
+   and exact verified identities. Unrelated critical history still blocks.
+3. A torn/mismatched journal, changed artifacts/identities, unknown process,
+   unresolved original critical record or changed routing requires the full
+   explicit inventory/reconciliation procedure, not boot-retry or manual JSON edits.
+4. After successful recovery, separately start the root restore oneshot to obtain
+   active/exited readiness, then recheck status and public API restrictions.
+
+A failed install/check leaves existing processes and Nginx unchanged. A failed
+reconciliation may already have retired explicitly approved obsolete processes,
+so retain the blocked evidence and reconcile afresh; do not imply every operation
+is side-effect-free. Restore backed-up controller/wrapper/sudo/unit/launcher only
+as a reviewed, coordinated set with compatible state. Never restore an old PM2 dump
+or revert a migrated index to resurrect obsolete apps. Do not restart a healthy
+runtime merely to roll back tooling. Preserve current/rollback release directories.
 
 Never use `pm2 delete all`, `pm2 resurrect`, a production PM2 home, generic PID/port
 kill commands, memory-limit increases or forced index edits as recovery shortcuts.
-The daemon-only behavior must be understood before installing this launcher.
 
 ## Local verification scope
 
 Run `python3 -B -m unittest discover -s tests -p 'test_review_*.py' -v`.
-The new test model exercises real controller transactions with disposable state,
+The test models exercise real controller transactions with disposable state,
 synthetic PM2/process/cgroup/HTTP boundaries and archive-backed legacy validation.
 No real PM2, SSH, systemd, Nginx, VPS, database or provider call is made. Real PM2
-7.1.1 JSON normalization, kernel OOM behavior, service boot recovery and available
+7.1.1 JSON normalization, kernel OOM behavior, actual systemd/PM2 boot and restart propagation, loaded unit sandbox behavior and available
 VPS headroom still require separately approved commissioning. No live migration,
 process retirement, service restart or memory-limit change is authorized by this
 local commit.
