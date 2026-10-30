@@ -2992,3 +2992,17 @@ summary {
     outline-color: #fff;
   }
 }
+
+/* Navigation-only integration: contain long desktop disclosures on short screens. */
+@media (min-width: 1200px) {
+  .mega-panel {
+    max-height: calc(100dvh - 112px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mega-panel:not([hidden]) { animation: none; }
+  .nav-trigger svg { transition: none; }
+}

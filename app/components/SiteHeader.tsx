@@ -109,6 +109,34 @@ export default function SiteHeader() {
   const mobileTrigger = useRef<HTMLButtonElement>(null);
   const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  // A breakpoint change must not resurrect an old mobile or desktop disclosure.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1200px)");
+    const reset = () => {
+      const focused = document.activeElement;
+      const panel = focused instanceof HTMLElement
+        ? focused.closest<HTMLElement>(".mega-panel")
+        : null;
+      const needsFocus = focused instanceof HTMLElement &&
+        header.current?.contains(focused) &&
+        (focused.getClientRects().length === 0 || panel !== null);
+      const trigger = panel?.getAttribute("aria-labelledby");
+      setMobileOpen(false);
+      setOpenMenu(null);
+      if (needsFocus) {
+        requestAnimationFrame(() => {
+          const target = desktop.matches
+            ? (trigger ? header.current?.querySelector<HTMLElement>(`#${trigger}`) : null)
+              ?? header.current?.querySelector<HTMLElement>(".nav-home")
+            : mobileTrigger.current;
+          if (target?.getClientRects().length) target.focus({ preventScroll: true });
+        });
+      }
+    };
+    desktop.addEventListener("change", reset);
+    return () => desktop.removeEventListener("change", reset);
+  }, []);
+
   function closeNavigation() {
     setOpenMenu(null);
     setMobileOpen(false);
@@ -264,16 +292,19 @@ export default function SiteHeader() {
                   className={`nav-trigger ${current ? "is-current" : ""}`}
                   onClick={() => setOpenMenu(active ? null : menu.id)}
                   onKeyDown={(event) => {
-                    if (event.key === "ArrowDown") {
+                    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                       event.preventDefault();
+                      const last = event.key === "ArrowUp";
                       setOpenMenu(menu.id);
-                      requestAnimationFrame(() =>
-                        document
-                          .querySelector<HTMLAnchorElement>(
-                            `#panel-${menu.id} a`,
-                          )
-                          ?.focus(),
-                      );
+                      requestAnimationFrame(() => {
+                        const links = Array.from(
+                          header.current?.querySelectorAll<HTMLAnchorElement>(
+                            `#panel-${menu.id} a[href]`,
+                          ) ?? [],
+                        ).filter(link => link.getClientRects().length > 0 &&
+                          link.tabIndex >= 0 && link.getAttribute("aria-disabled") !== "true");
+                        (last ? links.at(-1) : links[0])?.focus();
+                      });
                     }
                   }}
                 >
