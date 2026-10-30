@@ -31,12 +31,17 @@ for (const path of [
   "/demo/fintech",
 ]) {
   const response = await page.goto(base + path);
+  assert.equal(response.status(), 200, path);
+  if (path === "/demo/fintech") {
+    assert.equal(new URL(page.url()).pathname, "/products/fintech-products");
+    assert.equal((await page.request.get(base + path, { maxRedirects: 0 })).status(), 308);
+  }
   const title = await page.title();
   assert.ok(!titles.has(title), path + " duplicate title");
   titles.add(title);
   assert.equal(
     await page.locator('link[rel="canonical"]').getAttribute("href"),
-    "https://monetcore.dev" + (path === "/" ? "" : path),
+    "https://monetcore.dev" + (path === "/" ? "" : path === "/demo/fintech" ? "/products/fintech-products" : path),
   );
   assert.ok(
     (await page.locator('meta[name="description"]').getAttribute("content"))

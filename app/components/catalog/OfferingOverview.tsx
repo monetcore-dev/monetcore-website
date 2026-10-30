@@ -1,3 +1,4 @@
+import PageHero from "../PageHero";
 import { hybridPricing } from "../../config/websitePackages";
 import Link from "next/link";
 import {
@@ -24,38 +25,37 @@ export default function OfferingOverview({
     <>
       <SiteHeader />
       <main id="main-content" className="offering-page">
-        <section className="offering-hero">
-          <div className="offering-wrap">
-            <p className="offering-eyebrow">
-              Monetcore System Solutions · {kind}
-            </p>
-            <h1>
-              {isService
-                ? "Technology expertise, built around your business."
-                : "Explore ideas. Understand what is ready."}
-            </h1>
-            <p>
-              {isService
-                ? "Custom software, AI, integrations, websites, mobile experiences, marketing and consulting. Start with the challenge; we will define the right scope."
-                : "Product concepts, local interactive demonstrations and existing prototypes. Clear status labels help distinguish what you can explore from what is commercially available."}
-            </p>
-            <p>{hybridPricing.customDescription}</p>
-            <div className="offering-actions">
-              <Link className="offering-primary" href="/contact#consultation">
-                {hybridPricing.customLabel}
-              </Link>
-              <Link
-                className="offering-secondary"
-                href={isService ? "/products" : "/services"}
-              >
-                {isService
-                  ? "Explore products & demos"
-                  : "Explore our services"}
-              </Link>
-            </div>
+        <PageHero
+          title={
+            isService
+              ? "Technology expertise, built around your business."
+              : "Product ideas. A conversation before a commitment."
+          }
+          description={
+            isService
+              ? "Custom software, AI, integrations, websites, mobile experiences, marketing and consulting. Start with the challenge; we will define the right scope."
+              : "Explore product categories and clearly labelled concepts. Contact our team about a scoped implementation; these are not ready-to-activate applications."
+          }
+          eyebrow={`Monetcore System Solutions · ${kind}`}
+          backgroundVisual={isService ? "network" : "portfolio"}
+        >
+          <p>{hybridPricing.customDescription}</p>
+          <div className="offering-actions">
+            <Link className="offering-primary" href="/contact#consultation">
+              {hybridPricing.customLabel}
+            </Link>
+            <Link
+              className="offering-secondary"
+              href={isService ? "/products" : "/services"}
+            >
+              {isService ? "Explore product ideas" : "Explore our services"}
+            </Link>
           </div>
-        </section>
-        <section className="offering-section">
+        </PageHero>
+        <section
+          className="offering-section"
+          id={isService ? "service-demonstrations" : "product-ideas"}
+        >
           <div className="offering-wrap">
             <p className="offering-eyebrow">
               {isService ? "Our expertise" : "Product portfolio"}
@@ -63,7 +63,7 @@ export default function OfferingOverview({
             <h2>
               {isService
                 ? "Seven connected service areas."
-                : "Six product experiences. Honest status."}
+                : "Product ideas, with clear expectations."}
             </h2>
             <div className="offering-grid two">
               {isService
@@ -175,44 +175,61 @@ export default function OfferingOverview({
           >
             <div className="offering-wrap">
               <p className="offering-eyebrow">
-                Existing digital applications & prototypes
+                Software categories & scoped services
               </p>
-              <h2>Explore existing demonstrations.</h2>
+              <h2>Discuss the right solution for your business.</h2>
               <div className="offering-grid three">
                 <article className="offering-card">
-                  <h3>MonePay</h3>
+                  <h3>Fintech Products</h3>
                   <p>
-                    Existing fictional fintech prototype with interactive
-                    payment, savings and loan experiences. No money moves.
+                    A financial technology software category, not a launched
+                    payment application. Discuss your requirements and an
+                    appropriate scope.
                   </p>
-                  <Link className="offering-text-link" href="/demo/fintech">
-                    Explore Demo ↗
+                  <Link
+                    className="offering-text-link"
+                    href="/products/fintech-products"
+                  >
+                    Explore Fintech Products{" "}
+                    <ArrowUpRight
+                      className="ml-2 shrink-0"
+                      size={16}
+                      aria-hidden="true"
+                    />
                   </Link>
                 </article>
                 <article className="offering-card">
-                  <h3>External lead prototype</h3>
+                  <h3>Custom business software</h3>
                   <p>
-                    Existing independently hosted demo. External data handling
-                    and production readiness are unverified; use fictional
-                    details only.
+                    Work with Monetcore to define and develop software around
+                    your processes, users and integrations.
                   </p>
-                  <a
+                  <Link
                     className="offering-text-link"
-                    href="https://monetcore-lead-demo.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/services/software-development"
                   >
-                    Explore Demo ↗
-                  </a>
+                    Explore software development{" "}
+                    <ArrowUpRight
+                      className="ml-2 shrink-0"
+                      size={16}
+                      aria-hidden="true"
+                    />
+                  </Link>
                 </article>
                 <article className="offering-card">
                   <h3>Smart Website Solutions</h3>
                   <p>
                     Compare website packages, first-year inclusions and annual
-                    renewal terms, then request a quotation for your requirements.
+                    renewal terms, then request a quotation for your
+                    requirements.
                   </p>
                   <Link className="offering-text-link" href="/website-packages">
-                    Compare website packages ↗
+                    Compare website packages{" "}
+                    <ArrowUpRight
+                      className="ml-2 shrink-0"
+                      size={16}
+                      aria-hidden="true"
+                    />
                   </Link>
                 </article>
               </div>

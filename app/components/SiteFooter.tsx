@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import styles from "./site-footer.module.css";
 import { serviceNavigation } from "../config/offeringNavigation";
 
 const columns = [
@@ -8,7 +10,7 @@ const columns = [
       ["Home", "/"],
       ["Solutions", "/services"],
       ["Products", "/products"],
-      ["Live demos", "/#live-demos"],
+      ["Service demonstrations", "/services#service-demonstrations"],
       ["How it works", "/#process"],
     ],
   },
@@ -33,15 +35,25 @@ const columns = [
 
 export default function SiteFooter() {
   return (
-    <footer className="site-footer border-t border-slate-200 bg-slate-950 text-slate-300">
-      <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-        <div className="footer-intro mb-12 flex flex-col justify-between gap-6 border-b border-white/15 pb-10 sm:flex-row sm:items-center">
+    <footer
+      className={`${styles.footer} site-footer border-t border-slate-200 bg-slate-950 text-slate-300`}
+    >
+      <div className={`${styles.shell} mx-auto max-w-7xl px-5 py-16 lg:px-8`}>
+        <div
+          className={`${styles.intro} footer-intro mb-12 flex flex-col justify-between gap-6 border-b border-white/15 pb-10 sm:flex-row sm:items-center`}
+        >
           <div>
             <Link
               href="/"
-              className="text-xl font-black tracking-tight text-white"
+              className={`${styles.brand} brand-lockup`}
+              title="Monetcore System Solutions home"
             >
-              Monetcore<span className="text-blue-400">.</span>
+              <span className="brand-mark">
+                M<span />
+              </span>
+              <span>
+                <strong>MONETCORE</strong> <small>SYSTEM SOLUTIONS</small>
+              </span>
             </Link>
             <p
               className="mt-4 max-w-xl text-2xl font-medium tracking-tight text-white sm:text-3xl"
@@ -58,9 +70,10 @@ export default function SiteFooter() {
             href="https://wa.me/2347065880558?text=Hello%20Monetcore%2C%20I%27d%20like%20to%20discuss%20a%20business%20technology%20project."
             target="_blank"
             rel="noopener noreferrer"
-            className="w-fit rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-blue-100"
+            className={`${styles.action} w-fit rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-950 hover:bg-blue-100`}
           >
-            Let&apos;s talk on WhatsApp ↗
+            Let&apos;s talk on WhatsApp{" "}
+            <ArrowUpRight size={18} aria-hidden="true" />
           </a>
         </div>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">

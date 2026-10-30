@@ -39,7 +39,10 @@ try {
       await p.evaluate(() => document.fonts.ready);
       assert.equal(await p.locator("h1").count(), 1);
       assert.equal(await p.locator("footer").count(), 1);
-      assert.equal(await p.locator(".experience").count(), 1);
+      assert.equal(
+        await p.locator(".experience").count(),
+        kind === "services" ? 1 : 0,
+      );
       assert.equal(
         await p.locator("link[rel=canonical]").getAttribute("href"),
         "https://monetcore.dev" + path,
@@ -165,9 +168,9 @@ try {
   await p.getByRole("button", { name: "Products", exact: true }).click();
   await p
     .locator("#panel-products")
-    .getByRole("link", { name: /AI Marketing Manager/ })
+    .getByRole("link", { name: /Fintech Products/ })
     .click();
-  await p.waitForURL("**/products/ai-marketing-manager");
+  await p.waitForURL("**/products/fintech-products");
   console.log("PASS expanded mobile service/product menus navigate and close");
   for (const [name, path, width] of [
     ["marketing-mobile", "/services/digital-marketing", 390],

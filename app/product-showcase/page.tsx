@@ -1,7 +1,8 @@
+import PageHero from "../components/PageHero";
 import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Check } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
-import DiscoveryPreview from "../components/DiscoveryPreview";
+import DiscoveryIllustration from "../components/DiscoveryIllustration";
 import {
   discoveryProducts,
   discoveryContent,
@@ -11,50 +12,50 @@ import styles from "../components/product-discovery.module.css";
 export const metadata = pageMetadata(
   "/product-showcase",
   "Product Showcase",
-  "Explore Monetcore’s software concepts, local product demonstrations and business technology possibilities. Review product status and discuss a tailored solution.",
+  "Explore Monetcore product categories, illustrative concepts and scoped business technology possibilities. Contact our team to discuss your requirements.",
 );
 export default function ProductShowcasePage() {
   return (
     <>
       <SiteHeader />
       <main id="main-content" className={styles.showcasePage}>
-        <section className={styles.pageHero}>
-          <div className={styles.wrap}>
+        <PageHero
+          eyebrow="The Monetcore product showcase"
+          backgroundVisual="portfolio"
+          title={
+            <>
+              Explore the possibilities.
+              <br />
+              Shape what comes next.
+            </>
+          }
+          description="Practical digital products and intelligent software, built around the way businesses work. Explore our ideas and talk to us about your requirements."
+          breadcrumb={
             <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
               <Link href="/">Home</Link>
               <span aria-hidden="true">/</span>
               <span>Product showcase</span>
             </nav>
-            <p className={styles.eyebrow}>The Monetcore product showcase</p>
-            <h1>
-              Explore the possibilities.
-              <br />
-              <span>Shape what comes next.</span>
-            </h1>
-            <p className={styles.heroIntro}>
-              Practical digital products and intelligent software, built around
-              the way businesses work. Explore our ideas, try local
-              illustrations and talk to us about your requirements.
+          }
+        >
+          <div className="page-hero-note">
+            <strong>Clarity before commitment.</strong>
+            <p>
+              These previews show concepts and prototypes, not a catalogue of
+              ready-to-activate software. Product demonstrations are temporarily
+              unavailable. Scope, availability and integrations are confirmed
+              for each engagement.
             </p>
-            <div className={styles.heroNote}>
-              <strong>Clarity before commitment.</strong>
-              <p>
-                These previews show concepts and prototypes, not a catalogue of
-                ready-to-activate software. Local demonstrations use synthetic
-                data. Scope, availability and integrations are confirmed for
-                each engagement.
-              </p>
-            </div>
-            <nav aria-label="Product categories" className={styles.categoryNav}>
-              {discoveryProducts.map((item) => (
-                <a key={item.id} href={`#showcase-${item.id}`}>
-                  {item.title}
-                  <ArrowDownRight size={16} aria-hidden="true" />
-                </a>
-              ))}
-            </nav>
           </div>
-        </section>
+          <nav aria-label="Product categories" className={styles.categoryNav}>
+            {discoveryProducts.map((item) => (
+              <a key={item.id} href={`#showcase-${item.id}`}>
+                {item.title}
+                <ArrowDownRight size={16} aria-hidden="true" />
+              </a>
+            ))}
+          </nav>
+        </PageHero>
         {discoveryProducts.map((item, index) => {
           const content = discoveryContent(item);
           return (
@@ -97,26 +98,40 @@ export default function ProductShowcasePage() {
                         href={content.enquiryHref}
                         className={styles.primary}
                       >
-                        Get a Quote
+                        Request a Quotation
                         <ArrowUpRight size={17} aria-hidden="true" />
                       </Link>
                       <Link
-                        href={content.enquiryHref}
+                        href={content.consultationHref}
                         className={styles.secondary}
                       >
-                        Request a Demo
+                        Book a Consultation
                       </Link>
-                      <Link href={content.demoHref} className={styles.textLink}>
-                        View Demonstration
-                        <ArrowUpRight size={16} aria-hidden="true" />
-                      </Link>
+                      {content.demoHref && (
+                        <Link
+                          href={content.demoHref}
+                          className={styles.textLink}
+                        >
+                          View Service Demonstration
+                          <ArrowUpRight size={16} aria-hidden="true" />
+                        </Link>
+                      )}
                     </div>
                   </div>
-                  <DiscoveryPreview
-                    id={item.id}
-                    title={item.title}
-                    scenarios={item.scenarios}
-                  />
+                  <div className={styles.largePreview}>
+                    <div className={styles.previewToolbar}>
+                      <span>
+                        {item.kind === "service"
+                          ? "Website service · illustrative design preview"
+                          : "Product concept · demonstration unavailable"}
+                      </span>
+                    </div>
+                    <DiscoveryIllustration id={item.id} />
+                    <p className={styles.previewNotice}>
+                      Static illustration only. Discuss your requirements with
+                      our team.
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
@@ -134,7 +149,7 @@ export default function ProductShowcasePage() {
             </p>
             <div className={styles.actions}>
               <Link href="/contact" className={styles.primary}>
-                Get a Quote
+                Request a Quotation
                 <ArrowUpRight size={17} aria-hidden="true" />
               </Link>
               <Link href="/products" className={styles.secondary}>

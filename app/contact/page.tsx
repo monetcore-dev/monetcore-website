@@ -1,3 +1,6 @@
+import PageHero from "../components/PageHero";
+import { Mail, Phone, MessageCircle, MapPin } from "lucide-react";
+import styles from "./contact.module.css";
 import { resolveInterest } from "../config/offeringCatalog";
 import { pageMetadata } from "../lib/metadata";
 export const metadata = pageMetadata(
@@ -22,33 +25,22 @@ export default async function ContactPage({
     >
       <SiteHeader />
 
-      <section className="relative overflow-hidden px-6 pb-20 pt-36 lg:px-8 lg:pt-44">
-        <div className="absolute inset-x-0 top-0 -z-10 h-[520px] bg-gradient-to-b from-blue-100/70 via-cyan-50/40 to-transparent" />
-        <div className="absolute -left-20 top-36 -z-10 h-72 w-72 rounded-full bg-blue-300/30 blur-3xl" />
-        <div className="absolute right-0 top-28 -z-10 h-80 w-80 rounded-full bg-cyan-300/25 blur-3xl" />
-
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Contact Monetcore
-            </div>
-
-            <h1 className="mt-7 text-5xl font-bold tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-              Let&apos;s build
-              <span className="block bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                something useful.
-              </span>
-            </h1>
-
-            <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">
-              Tell us about the business problem, workflow, software product, or
-              automation you want to improve. We&apos;ll help you explore the
-              right technology approach.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Contact Monetcore"
+        backgroundVisual="contact"
+        title={
+          <>
+            Let&apos;s build
+            <br />
+            something useful.
+          </>
+        }
+        description="Tell us about the business problem, workflow, software product, or automation you want to improve. We'll help you explore the right technology approach."
+        cta={[
+          { href: "#consultation", label: "Tell us about your project" },
+          { href: "/book", label: "Book a Consultation", secondary: true },
+        ]}
+      />
 
       <section
         id="consultation"
@@ -79,7 +71,9 @@ export default async function ContactPage({
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-blue-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10 lg:p-12">
+            <div
+              className={`${styles.formPanel} rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/50`}
+            >
               <ContactForm initialInterest={initialInterest} />
             </div>
           </div>
@@ -106,7 +100,7 @@ export default async function ContactPage({
           <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-lg font-bold text-blue-700">
-                @
+                <Mail size={20} aria-hidden="true" />
               </div>
 
               <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -123,7 +117,7 @@ export default async function ContactPage({
 
             <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-lg font-bold text-blue-700">
-                ☎
+                <Phone size={20} aria-hidden="true" />
               </div>
 
               <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -140,7 +134,7 @@ export default async function ContactPage({
 
             <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-lg font-bold text-emerald-700">
-                W
+                <MessageCircle size={20} aria-hidden="true" />
               </div>
 
               <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -159,7 +153,7 @@ export default async function ContactPage({
 
             <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-lg font-bold text-blue-700">
-                ↗
+                <MapPin size={20} aria-hidden="true" />
               </div>
 
               <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">

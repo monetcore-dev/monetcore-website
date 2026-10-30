@@ -1,3 +1,4 @@
+import PageHero from "../components/PageHero";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 import { pageMetadata } from "../lib/metadata";
@@ -34,7 +35,7 @@ const sections = [
     paragraphs: [
       "Contact and quotation submissions are emailed to our configured business mailbox using Namecheap Private Email. The website contact handler does not itself insert these enquiries into the booking database. Your email address is used so we can reply.",
       "The consultation booking implementation stores reservation information in a PostgreSQL database and uses Google Calendar for appointment information. Calendar entries can contain contact and project details. Booking acknowledgements and administrator notifications are sent by email. A reservation can remain stored when a Calendar or notification operation fails.",
-      "The homepage AI Core is a visual representation of our capabilities. Local interactive demonstrations use simulations; they do not themselves send real messages, create bookings, move money or submit your form information to a live AI model. The separately linked external demonstration has its own data-handling context; use fictional details there.",
+      "The homepage technology visuals illustrate our capabilities. Working service demonstrations use local simulations; they do not themselves send real messages, create bookings, move money or submit your form information to a live AI model. Product illustrations describe concepts rather than launched applications.",
       "Data processing for a separately agreed software or AI automation engagement may require additional project-specific notices and contractual terms. This website policy does not replace those arrangements.",
     ],
   },
@@ -53,7 +54,7 @@ const sections = [
     title: "Service providers and external services",
     paragraphs: [
       "This VPS website implementation uses Namecheap hosting, Namecheap Private Email for email delivery, PostgreSQL for booking records, Google Calendar for appointments and Upstash Redis where shared rate limiting is configured. Providers receive information relevant to the features involved and may process associated technical metadata.",
-      "Google Maps is provided as an external link rather than an embedded map. Opening it, using WhatsApp or following social and external demonstration links takes you to another service whose privacy practices also apply.",
+      "Google Maps is provided as an external link rather than an embedded map. Opening it, using WhatsApp or following social links takes you to another service whose privacy practices also apply.",
       "Information may also need to be disclosed where required by applicable law or for establishing, exercising or defending legal claims.",
     ],
   },
@@ -115,20 +116,22 @@ export default function PrivacyPage() {
       <SiteHeader />
       <main
         id="main-content"
-        className="corporate-page min-h-screen bg-slate-50 px-5 pb-20 pt-32 text-slate-950 sm:px-8"
+        className="corporate-page min-h-screen bg-slate-50 pb-20 text-slate-950"
       >
-        <article className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
-          <p className="text-sm font-semibold text-blue-800">
-            Monetcore System Solutions
-          </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Privacy Policy
-          </h1>
-          <p className="mt-6 leading-8 text-slate-700">
-            This policy explains how Monetcore System Solutions handles personal
-            information through monetcore.dev, business enquiries and
-            consultation arrangements.
-          </p>
+        <PageHero
+          eyebrow="Monetcore System Solutions"
+          backgroundVisual="privacy"
+          animation={{ enabled: false }}
+          title="Privacy Policy"
+          description="This policy explains how Monetcore System Solutions handles personal information through monetcore.dev, business enquiries and consultation arrangements."
+          cta={[
+            {
+              href: "mailto:hello@monetcore.dev?subject=Privacy%20Request",
+              label: "Contact us about privacy",
+            },
+          ]}
+        />
+        <article className="mx-auto mt-12 w-[calc(100%-2.5rem)] max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
           <address className="mt-5 space-y-2 not-italic leading-7 text-slate-700">
             <p>Ventures Park, 5 Kwaji Close, Maitama, Abuja, Nigeria.</p>
             <p>

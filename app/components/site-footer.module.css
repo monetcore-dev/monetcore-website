@@ -1,0 +1,65 @@
+/* Shared footer polish; reuse the header's existing M mark and brand geometry. */
+.footer .shell {
+  padding-block: 3.5rem 2.5rem;
+}
+.footer:global(.site-footer) .intro {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+}
+.footer .brand {
+  min-height: 48px;
+  color: #f5f8ff;
+  width: fit-content;
+}
+.footer .brand strong {
+  color: #f5f8ff;
+}
+.footer .brand small {
+  color: #c4cedf;
+  font-size: 0.625rem;
+  letter-spacing: 0.17em;
+}
+.footer:global(.site-footer) h2 {
+  font-size: 0.75rem;
+}
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 48px;
+}
+.action svg {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+.action:hover svg {
+  transform: translate(2px, -2px);
+}
+.footer a {
+  text-underline-offset: 4px;
+}
+.footer a:focus-visible {
+  outline: 3px solid #9be8ff;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (max-width: 767px) {
+  .footer .shell {
+    padding-block: 2rem 1.5rem;
+  }
+  .footer:global(.site-footer) .intro {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    gap: 1.25rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer a,
+  .action svg {
+    transition: none;
+  }
+  .action:hover svg {
+    transform: none;
+  }
+}

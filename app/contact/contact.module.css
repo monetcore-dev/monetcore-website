@@ -1,0 +1,12 @@
+/* The shared form owns its fields and behavior; this page provides one surface. */
+.formPanel {
+  min-width: 0;
+}
+.formPanel > form {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  border: 0;
+  border-radius: inherit;
+}

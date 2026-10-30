@@ -1,6 +1,6 @@
 .discovery {
   background:
-    radial-gradient(ellipse at 100% 0%, #F9731608, transparent 45%),
+    radial-gradient(ellipse at 100% 0%, #f9731608, transparent 45%),
     radial-gradient(ellipse at 5% 0%, #dce9ff, transparent 60%), #f1f5fc;
   color: #132344;
   padding: 5rem 1.25rem;
@@ -911,9 +911,158 @@
 
 /* A small warm activity highlight, not a live status or performance claim. */
 .signal i:last-child {
-  background: linear-gradient(#F97316, #EF4444);
+  background: linear-gradient(#f97316, #ef4444);
 }
 .primary:hover {
-  border-color: #FB7185;
-  box-shadow: 0 10px 24px -18px #F97316;
+  border-color: #fb7185;
+  box-shadow: 0 10px 24px -18px #f97316;
+}
+
+/* Homepage discovery only: the dedicated showcase keeps its approved styles. */
+.discovery .discoveryGrid {
+  gap: 1rem;
+}
+.discovery .discoveryCard {
+  display: flex;
+  flex-direction: column;
+  border-color: #d1dcef;
+  box-shadow: none;
+}
+.discovery .cardVisual {
+  padding: 0;
+  background: transparent;
+}
+.discovery .interface {
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 1.15rem;
+  box-shadow: none;
+}
+.discovery .discoveryContent {
+  padding: 1.25rem;
+}
+.discovery .category {
+  font-size: 0.6875rem;
+}
+.discovery .concept {
+  font-size: 0.8125rem;
+  margin: 0.75rem 0;
+}
+.discovery .chrome,
+.discovery .chrome > span:last-child,
+.discovery .chrome > span:first-child {
+  font-size: 0.5625rem;
+}
+.discovery .chrome {
+  flex-wrap: wrap;
+  row-gap: 0.35rem;
+}
+.discovery .boardHeading {
+  flex-wrap: wrap;
+}
+.discovery .boardHeading strong {
+  font-size: 0.875rem;
+}
+.discovery .boardHeading > span,
+.discovery .siteNav > span:last-child,
+.discovery .websiteHero > span:first-child {
+  font-size: 0.625rem;
+}
+.discovery .pipeline strong,
+.discovery .siteNav,
+.discovery .websiteHero > p,
+.discovery .fakeButton,
+.discovery .websiteTiles > span,
+.discovery .sampleRow,
+.discovery .interfaceNote {
+  font-size: 0.6875rem;
+}
+.discovery .pipeline small,
+.discovery .status {
+  font-size: 0.625rem;
+}
+.discovery .interfaceNote {
+  margin-top: 0.6rem;
+}
+.discovery .websiteHero {
+  padding: 0.75rem 0 0.6rem;
+}
+.discovery .pipeline > div {
+  border: 0;
+}
+.discovery .sampleRow {
+  flex-wrap: wrap;
+}
+.discovery .calendarStrip {
+  margin: 0.75rem 0;
+}
+.discovery .exploreRow {
+  margin-top: 1.5rem;
+}
+@media (min-width: 1200px) {
+  .discovery .discoveryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .discovery .cardVisual {
+    min-height: 340px;
+    align-items: stretch;
+  }
+  .discovery .discoveryContent {
+    flex: 1;
+    padding: 1.1rem;
+  }
+  .discovery .discoveryContent h3 {
+    font-size: 1.25rem;
+  }
+}
+@media (max-width: 767px) {
+  .discovery .sectionHeading {
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .discovery .discoveryGrid {
+    gap: 1rem;
+  }
+  .discovery .discoveryContent {
+    padding: 1.15rem;
+  }
+  .discovery .discoveryContent h3 {
+    font-size: 1.35rem;
+  }
+  .discovery .exploreRow {
+    gap: 0.8rem;
+  }
+}
+
+/* Readable homepage dashboard captions; no changes to the dedicated product page. */
+.discovery .calendarStrip span,
+.discovery .metrics span,
+.discovery .appointment div > span,
+.discovery .pipeline small,
+.discovery .status,
+.discovery .boardHeading > span {
+  font-size: 0.6875rem;
+}
+.discovery .slots span,
+.discovery .appointment strong {
+  font-size: 0.75rem;
+}
+
+/* Align desktop interface and copy rows without fixed heights or clipped text. */
+@media (min-width: 1200px) {
+  @supports (grid-template-rows: subgrid) {
+    .discovery .discoveryCard {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: subgrid;
+      grid-row: span 2;
+      row-gap: 0;
+    }
+    .discovery .cardVisual {
+      min-height: 0;
+    }
+  }
 }

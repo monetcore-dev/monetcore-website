@@ -31,17 +31,19 @@ test("discovery preserves catalog status and features rather than declaring conc
     } else assert.match(content.disclosure, /local illustration/);
   }
 });
-test("every discovery demo route has an implemented local experience and quote prefill", () => {
+test("only service discovery links advertise demonstrations; every enquiry is prefilled", () => {
   for (const item of discoveryProducts) {
     const content = discoveryContent(item);
-    assert.ok(publicRoutes.includes(content.demoHref.split("#")[0]));
-    assert.ok(content.demoHref.endsWith("#experience"));
+    if (item.kind === "service") {
+      assert.ok(publicRoutes.includes(content.demoHref.split("#")[0]));
+      assert.ok(content.demoHref.endsWith("#experience"));
+    } else assert.equal(content.demoHref, undefined);
     const url = new URL(content.enquiryHref, "https://monetcore.dev");
     assert.equal(url.pathname, "/contact");
     assert.ok(resolveInterest(url.searchParams.get("interest")));
   }
 });
-test("homepage removes fintech promotion while dedicated MonePay demo is preserved", () => {
+test("retired fintech demo redirects to the category while prototype code stays unserved", () => {
   const home = readFileSync(
     new URL("../app/page.tsx", import.meta.url),
     "utf8",
@@ -54,5 +56,12 @@ test("homepage removes fintech promotion while dedicated MonePay demo is preserv
       "utf8",
     ),
   );
+  const retired = readFileSync(
+    new URL("../app/demo/fintech/page.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(retired, /permanentRedirect\("\/products\/fintech-products"\)/);
+  assert.ok(!publicRoutes.includes("/demo/fintech"));
+  assert.ok(publicRoutes.includes("/products/fintech-products"));
   assert.ok(publicRoutes.includes("/product-showcase"));
 });

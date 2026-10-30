@@ -71,7 +71,9 @@ export function discoveryContent(item: DiscoveryProduct) {
     disclosure:
       product?.disclosure ??
       "The website preview is a local illustration using fictional content. Website development is a service; final scope, integrations and delivery are agreed in a quotation.",
-    demoHref: `/${item.kind === "service" ? "services" : "products"}/${item.slug}#experience`,
+    demoHref:
+      item.kind === "service" ? `/services/${item.slug}#experience` : undefined,
+    consultationHref: enquiryHref(item.kind, item.slug, true),
     enquiryHref: enquiryHref(item.kind, item.slug),
   };
 }

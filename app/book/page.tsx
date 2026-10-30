@@ -1,3 +1,4 @@
+import PageHero from "../components/PageHero";
 import { resolveInterest } from "../config/offeringCatalog";
 import { pageMetadata } from "../lib/metadata";
 export const metadata = pageMetadata(
@@ -21,24 +22,17 @@ export default async function BookPage({
     <main id="main-content" className="corporate-page min-h-screen bg-slate-50">
       <SiteHeader />
 
-      <section className="px-6 pb-24 pt-32 lg:px-8">
+      <PageHero
+        eyebrow="Book a Consultation"
+        backgroundVisual="calendar"
+        title="Talk through your next technology project."
+        description="Schedule a focused consultation with Monetcore to discuss AI automation, software development, sales systems, or business integrations."
+        cta={[{ href: "#booking-form", label: "Choose a consultation" }]}
+      />
+      <section className="px-6 pb-24 pt-12 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
             <div className="lg:sticky lg:top-32">
-              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
-                Book a Consultation
-              </span>
-
-              <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-                Talk through your next technology project.
-              </h1>
-
-              <p className="mt-6 text-lg leading-8 text-slate-600">
-                Schedule a focused consultation with Monetcore to discuss AI
-                automation, software development, sales systems, or business
-                integrations.
-              </p>
-
               <div className="mt-8 rounded-2xl bg-blue-600 p-6 text-white">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">
                   What to expect
@@ -53,7 +47,7 @@ export default async function BookPage({
               </div>
             </div>
 
-            <div className="min-w-0">
+            <div id="booking-form" className="min-w-0 scroll-mt-32">
               <BookingForm
                 initialInterest={initialInterest}
                 stagingTesting={isStagingBookingEnabled()}

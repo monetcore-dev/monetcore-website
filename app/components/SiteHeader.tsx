@@ -47,7 +47,7 @@ const menus = [
     title: "Products",
     eyebrow: "Ideas made useful",
     description:
-      "Explore our product information, digital applications and clearly labelled demonstrations.",
+      "Explore product categories and clearly labelled concepts, then discuss a solution with our team.",
     links: [
       {
         title: "Products Overview",
@@ -57,7 +57,7 @@ const menus = [
       },
       ...productNavigation.map((item, index) => ({
         ...item,
-        icon: [Cpu, CalendarDays, Mail, Layers3, Workflow, Compass][index],
+        icon: [Layers3, Code2][index],
       })),
       {
         title: "Smart Website Packages",
@@ -65,15 +65,9 @@ const menus = [
         href: "/website-packages",
         icon: Globe2,
       },
-      {
-        title: "Existing Digital Applications",
-        description: "MonePay · fictional interactive prototype.",
-        href: "/products#digital-applications",
-        icon: MonitorPlay,
-      },
     ],
-    overview: "/#live-demos",
-    overviewLabel: "Explore demonstrations",
+    overview: "/product-showcase",
+    overviewLabel: "Explore product categories",
   },
   {
     id: "company",
@@ -235,7 +229,7 @@ export default function SiteHeader() {
                   ? [
                       "/products",
                       "/website-packages",
-                      "/demo/fintech",
+                      "/product-showcase",
                     ].includes(pathname) || pathname.startsWith("/products/")
                   : ["/about", "/contact", "/book"].includes(pathname);
             return (
@@ -243,12 +237,19 @@ export default function SiteHeader() {
                 key={menu.id}
                 className="nav-disclosure"
                 onPointerEnter={(event) => {
-                  if (openMenu && event.pointerType === "mouse" && window.matchMedia("(min-width: 1200px)").matches)
+                  if (
+                    openMenu &&
+                    event.pointerType === "mouse" &&
+                    window.matchMedia("(min-width: 1200px)").matches
+                  )
                     setOpenMenu(menu.id);
                 }}
                 onPointerLeave={(event) => {
-                  if (event.pointerType === "mouse" && window.matchMedia("(min-width: 1200px)").matches &&
-                      !event.currentTarget.contains(document.activeElement))
+                  if (
+                    event.pointerType === "mouse" &&
+                    window.matchMedia("(min-width: 1200px)").matches &&
+                    !event.currentTarget.contains(document.activeElement)
+                  )
                     setOpenMenu(null);
                 }}
               >

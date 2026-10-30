@@ -16,7 +16,9 @@ const footer = [
   ".site-footer li a",
   ".site-footer address a",
   ".site-footer .text-white",
-  ".site-footer .text-blue-400",
+  ".site-footer .brand-mark",
+  ".site-footer .brand-lockup strong",
+  ".site-footer .brand-lockup small",
   ".site-footer > div > p",
 ];
 const conversion = [

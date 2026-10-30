@@ -94,9 +94,9 @@ try {
       );
     }
     const demos = await scope
-      .getByRole("link", { name: "View Demonstration", exact: true })
+      .getByRole("link", { name: "View Service Demonstration", exact: true })
       .evaluateAll((items) => items.map((a) => a.getAttribute("href")));
-    assert.equal(demos.length, 4);
+    assert.equal(demos.length, 1);
     for (const href of demos) {
       await page.goto(new URL(href, base).href);
       assert.equal(new URL(page.url()).hash, "#experience");
@@ -124,23 +124,20 @@ try {
     assert.equal(new URL(page.url()).hash, href);
     assert.equal(await page.locator(href).count(), 1);
   }
-  for (const group of await page
-    .getByRole("group", { name: /example views/ })
-    .all()) {
-    const buttons = group.getByRole("button");
-    await buttons.nth(1).focus();
-    await page.keyboard.press("Enter");
-    assert.equal(await buttons.nth(1).getAttribute("aria-pressed"), "true");
-    assert.equal(await buttons.nth(0).getAttribute("aria-pressed"), "false");
-    await buttons.nth(0).click();
-    assert.equal(await buttons.nth(0).getAttribute("aria-pressed"), "true");
-  }
+  assert.equal(
+    await page.getByRole("group", { name: /example views/ }).count(),
+    0,
+  );
+  assert.equal(
+    await page.getByText("Static illustration only.", { exact: false }).count(),
+    4,
+  );
   checks++;
   const quoteLinks = await page
     .locator("main a")
-    .filter({ hasText: /^(Get a Quote|Request a Demo)/ })
+    .filter({ hasText: /^Request a Quotation/ })
     .evaluateAll((items) => items.map((a) => a.getAttribute("href")));
-  assert.equal(quoteLinks.length, 9);
+  assert.equal(quoteLinks.length, 5);
   for (const href of new Set(quoteLinks)) {
     await page.goto(new URL(href, base).href);
     assert.equal(new URL(page.url()).pathname, "/contact");
@@ -172,7 +169,7 @@ try {
   assert.deepEqual(external, []);
   assert.deepEqual(api, []);
   console.log(
-    `PASS ${checks} browser groups: responsive, accessibility, category navigation, local interactions, demos, enquiries, canonical, preserved fintech, reduced motion; no API or external requests.`,
+    `PASS ${checks} browser groups: responsive, accessibility, category navigation, static concept previews, service demonstration, enquiries, canonical, fintech redirect, reduced motion; no API or external requests.`,
   );
 } finally {
   await browser.close();

@@ -1,3 +1,5 @@
+import PageHero from "../components/PageHero";
+import { Check } from "lucide-react";
 import { pageMetadata } from "../lib/metadata";
 export const metadata = pageMetadata(
   "/about",
@@ -29,37 +31,31 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <main id="main-content" className="corporate-page min-h-screen bg-slate-50 text-slate-950">
+    <main
+      id="main-content"
+      className="corporate-page min-h-screen bg-slate-50 text-slate-950"
+    >
       <SiteHeader />
 
-      <section className="relative overflow-hidden px-6 pb-20 pt-36 lg:px-8 lg:pt-44">
-        <div className="absolute inset-x-0 top-0 -z-10 h-[520px] bg-gradient-to-b from-blue-100/70 via-cyan-50/40 to-transparent" />
-        <div className="absolute -left-20 top-36 -z-10 h-72 w-72 rounded-full bg-blue-300/30 blur-3xl" />
-        <div className="absolute right-0 top-28 -z-10 h-80 w-80 rounded-full bg-cyan-300/25 blur-3xl" />
-
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              About Monetcore
-            </div>
-
-            <h1 className="mt-7 text-5xl font-bold tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-              Experience behind us.
-              <span className="block bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                A smarter future ahead.
-              </span>
-            </h1>
-
-            <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">
-              Monetcore System Solutions is building a new generation of
-              software, AI automation, and intelligent business systems around
-              one simple idea: technology should solve real problems and create
-              lasting value.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="About Monetcore"
+        backgroundVisual="company"
+        title={
+          <>
+            Experience behind us.
+            <br />A smarter future ahead.
+          </>
+        }
+        description="Monetcore System Solutions is building a new generation of software, AI automation, and intelligent business systems around one simple idea: technology should solve real problems and create lasting value."
+        cta={[
+          { href: "#our-story", label: "Our story" },
+          {
+            href: "/contact#consultation",
+            label: "Contact Monetcore",
+            secondary: true,
+          },
+        ]}
+      />
 
       <section
         id="our-story"
@@ -81,8 +77,8 @@ export default function AboutPage() {
 
           <div className="space-y-6 text-lg leading-8 text-slate-600">
             <p>
-              Monetcore System Solutions was established in 2016 with a focus
-              on delivering useful technology solutions to businesses.
+              Monetcore System Solutions was established in 2016 with a focus on
+              delivering useful technology solutions to businesses.
             </p>
 
             <p>
@@ -168,16 +164,14 @@ export default function AboutPage() {
                 className="rounded-3xl border border-slate-200 bg-slate-50 p-8 transition hover:-translate-y-1 hover:border-blue-200 hover:bg-white hover:shadow-xl"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 font-bold text-blue-700">
-                  ✓
+                  <Check size={20} aria-hidden="true" />
                 </div>
 
                 <h3 className="mt-6 text-2xl font-bold text-slate-950">
                   {value.title}
                 </h3>
 
-                <p className="mt-3 leading-7 text-slate-600">
-                  {value.text}
-                </p>
+                <p className="mt-3 leading-7 text-slate-600">{value.text}</p>
               </div>
             ))}
           </div>
@@ -245,7 +239,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
     </main>
   );
 }

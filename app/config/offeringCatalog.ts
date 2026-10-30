@@ -190,7 +190,7 @@ export const services: Service[] = [
     title: "Digital Marketing & Growth",
     headline: "Connect your message to the next meaningful action.",
     intro:
-      "Combine content, marketing operations, software and automation to plan campaigns and understand what happens after an enquiry.",
+      "Plan social media content and digital campaigns, connect enquiries to follow-up, and understand what happens after visitors contact your business.",
     demo: "marketing",
     features: [
       "Social Media Marketing",
@@ -272,9 +272,9 @@ export const products: Product[] = [
       "Follow-up workflows",
       "Lead pipeline dashboard",
     ],
-    status: "Interactive demonstration · external prototype",
+    status: "Product concept · not available for activation",
     disclosure:
-      "A local simulation is available here. An existing externally hosted prototype is linked separately; production readiness and commercial availability are not verified.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "ai-automation",
   },
   {
@@ -291,11 +291,11 @@ export const products: Product[] = [
       "Booking confirmations",
       "Calendar synchronization",
       "Reminder workflows",
-      "Booking dashboard demo",
+      "Booking dashboard requirements",
     ],
-    status: "Product concept · isolated demonstration",
+    status: "Product concept · not available for activation",
     disclosure:
-      "Monetcore’s existing company consultation workflow is operational by owner confirmation. This standalone product and its reminder features are concepts; the demo below is local and creates no real booking.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "business-integrations",
   },
   {
@@ -311,11 +311,11 @@ export const products: Product[] = [
       "Lead collection",
       "Conversation handoff",
       "Business-hours handling",
-      "Conversation simulation",
+      "Conversation handoff requirements",
     ],
-    status: "Planned product · conversation simulation",
+    status: "Product concept · not available for activation",
     disclosure:
-      "This is a proposed product experience, not a deployed AI or telephony service. The conversation uses local rules and scripted examples, without live AI, calls or messages.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "ai-automation",
   },
   {
@@ -332,11 +332,11 @@ export const products: Product[] = [
       "Customer activity",
       "Task management",
       "Reporting",
-      "Interactive CRM demo",
+      "CRM workspace requirements",
     ],
-    status: "Planned product · interactive demonstration",
+    status: "Product concept · not available for activation",
     disclosure:
-      "The workspace contains synthetic records and local interactions. It is not an available hosted CRM, and changes are not saved to a server.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "software-development",
   },
   {
@@ -352,11 +352,11 @@ export const products: Product[] = [
       "Approval workflows",
       "Notifications",
       "Integrations",
-      "Automation builder demo",
+      "Workflow configuration requirements",
     ],
-    status: "Planned product · workflow simulation",
+    status: "Product concept · not available for activation",
     disclosure:
-      "These are local workflow examples. No third-party system is connected and no approval, payment or notification is sent. A production implementation requires a separately agreed scope.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "business-integrations",
   },
   {
@@ -373,11 +373,11 @@ export const products: Product[] = [
       "Marketing workflow automation",
       "Lead nurturing",
       "Campaign analytics",
-      "Interactive marketing dashboard demo",
+      "Marketing dashboard requirements",
     ],
-    status: "Planned product · strategy simulation",
+    status: "Product concept · not available for activation",
     disclosure:
-      "The planner is deterministic and local, not connected to AI providers, advertising accounts or social platforms. Sample metrics are fictional and are not predictions or guaranteed results.",
+      "This is a product concept, not a ready-to-use hosted product. Public product demonstrations are temporarily unavailable. Discuss a scoped custom implementation, availability, integrations, costs and support with Monetcore before making a commitment.",
     related: "digital-marketing",
   },
 ];

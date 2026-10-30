@@ -1,9 +1,12 @@
 import { pageMetadata } from "../../lib/metadata";
-export const metadata = pageMetadata(
-  "/demo/fintech",
-  "MonePay Interactive Fintech Demo",
-  "Explore a fictional fintech prototype by Monetcore System Solutions. Payments, balances, savings and loan examples are simulated; no real money moves.",
-);
+export const metadata = {
+  ...pageMetadata(
+    "/products/fintech-products",
+    "Fintech Products",
+    "Discuss financial technology software requirements with Monetcore System Solutions. A product category, not a launched payment application.",
+  ),
+  robots: { index: false, follow: true },
+};
 export default function DemoLayout({
   children,
 }: {

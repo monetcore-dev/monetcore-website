@@ -1,3 +1,5 @@
+import PageHero from "../PageHero";
+import { productHeroVisuals } from "../../config/pageHeroes";
 import { hybridPricing } from "../../config/websitePackages";
 import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
@@ -23,42 +25,46 @@ export default function ProductDetail({
       <SiteHeader />
       <OfferingSchema kind="products" slug={item.slug} title={item.title} />
       <main id="main-content" className={`offering-page offering-${item.demo}`}>
-        <section className="offering-hero">
-          <div className="offering-wrap offering-hero-grid">
-            <div>
-              <nav className="offering-breadcrumb" aria-label="Breadcrumb">
-                <Link href="/">Home</Link>
-                <span>/</span>
-                <Link href="/products">Products</Link>
-                <span>/</span>
-                <span>{item.title}</span>
-              </nav>
-              <p className="offering-eyebrow">{item.title}</p>
-              <h1>{item.headline}</h1>
-              <p>{item.intro}</p>
-              <p>{hybridPricing.customDescription}</p>
-              <div className="offering-actions">
-                {demo && (
-                  <a className="offering-primary" href="#experience">
-                    Explore Demo <ArrowUpRight size={16} aria-hidden="true" />
-                  </a>
-                )}
-                <Link
-                  className="offering-secondary"
-                  href={enquiryHref("product", item.slug)}
-                >
-                  {hybridPricing.customLabel}
-                </Link>
-              </div>
-            </div>
+        <PageHero
+          title={item.headline}
+          description={item.intro}
+          eyebrow={item.title}
+          backgroundVisual={
+            productHeroVisuals[item.slug as keyof typeof productHeroVisuals]
+          }
+          supplement={
             <aside className="offering-hero-card">
               <Layers3 size={36} aria-hidden="true" />
               <p className="offering-eyebrow">Product status</p>
               <h2>{item.status}</h2>
               <p>{item.disclosure}</p>
             </aside>
+          }
+          breadcrumb={
+            <nav className="offering-breadcrumb" aria-label="Breadcrumb">
+              <Link href="/">Home</Link>
+              <span>/</span>
+              <Link href="/products">Products</Link>
+              <span>/</span>
+              <span>{item.title}</span>
+            </nav>
+          }
+        >
+          <div className="offering-actions">
+            {demo && (
+              <a className="offering-primary" href="#experience">
+                Explore Demo <ArrowUpRight size={16} aria-hidden="true" />
+              </a>
+            )}
+            <Link
+              className="offering-secondary"
+              href={enquiryHref("product", item.slug)}
+            >
+              {hybridPricing.customLabel}
+            </Link>
           </div>
-        </section>
+          <p>{hybridPricing.customDescription}</p>
+        </PageHero>
         <section className="offering-section">
           <div className="offering-wrap offering-split">
             <div>
@@ -77,7 +83,8 @@ export default function ProductDetail({
               <p>{item.disclosure}</p>
               <p>
                 No purchasing, subscription activation, provider connection or
-                customer-data import is offered by this demonstration.
+                customer-data import is available on this product information
+                page.
               </p>
             </div>
           </div>
@@ -87,9 +94,9 @@ export default function ProductDetail({
             <p className="offering-eyebrow">Product capability concept</p>
             <h2>Explore the shape of the solution.</h2>
             <p className="offering-section-intro">
-              These features describe the intended product scope. A demo may
-              illustrate part of a workflow; it does not establish production
-              support for every integration or feature.
+              These features describe potential project scope, not a
+              ready-to-use product. Availability, implementation, integrations
+              and support require a written agreement.
             </p>
             <ul className="offering-feature-list">
               {item.features.map((f) => (
@@ -158,27 +165,6 @@ export default function ProductDetail({
             </div>
           </div>
         </section>
-        {item.slug === "ai-lead-automation" && (
-          <section className="offering-section">
-            <div className="offering-wrap offering-note">
-              <h2>Existing external prototype</h2>
-              <p>
-                An independently hosted lead-automation prototype also exists.
-                Its external implementation, data handling and production
-                readiness are outside this local demo’s verified scope. Do not
-                enter real customer information.
-              </p>
-              <a
-                className="offering-text-link"
-                href="https://monetcore-lead-demo.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open external lead prototype ↗
-              </a>
-            </div>
-          </section>
-        )}
         {item.slug === "smart-booking" && (
           <section className="offering-section">
             <div className="offering-wrap offering-note">
@@ -192,7 +178,12 @@ export default function ProductDetail({
                 className="offering-text-link"
                 href={enquiryHref("product", item.slug, true)}
               >
-                Go to company consultation booking ↗
+                Go to company consultation booking{" "}
+                <ArrowUpRight
+                  className="ml-2 shrink-0"
+                  size={16}
+                  aria-hidden="true"
+                />
               </Link>
             </div>
           </section>
@@ -204,9 +195,9 @@ export default function ProductDetail({
               {[
                 [
                   "Can I buy or activate this product here?",
-                  "No. Use the expression-of-interest or consultation pathway to discuss availability, implementation and support. The local demo is not a subscription or purchase.",
+                  "No. Use the expression-of-interest or consultation pathway to discuss availability, implementation and support. This information page is not a subscription or purchase.",
                 ],
-                ["Does this demo use live integrations?", item.disclosure],
+                ["Is this a launched product?", item.disclosure],
                 [
                   "How is pricing agreed?",
                   hybridPricing.customDescription +
@@ -230,7 +221,14 @@ export default function ProductDetail({
                 href={`/services/${related.slug}`}
               >
                 <p className="offering-eyebrow">Monetcore service</p>
-                <h3>{related.title} ↗</h3>
+                <h3>
+                  {related.title}{" "}
+                  <ArrowUpRight
+                    className="inline-block align-middle"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                </h3>
                 <p>{related.intro}</p>
               </Link>
               {products
@@ -243,14 +241,24 @@ export default function ProductDetail({
                     href={`/products/${p.slug}`}
                   >
                     <p className="offering-eyebrow">{p.status}</p>
-                    <h3>{p.title} ↗</h3>
+                    <h3>
+                      {p.title}{" "}
+                      <ArrowUpRight
+                        className="inline-block align-middle"
+                        size={16}
+                        aria-hidden="true"
+                      />
+                    </h3>
                     <p>{p.intro}</p>
                   </Link>
                 ))}
             </div>
           </div>
         </section>
-        <section className="offering-section">
+        <section
+          className="offering-section"
+          id={demo ? undefined : "experience"}
+        >
           <div className="offering-wrap offering-closing">
             <p className="offering-eyebrow">Start with a conversation</p>
             <h2>Is this the right direction for your business?</h2>

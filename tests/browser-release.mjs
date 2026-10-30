@@ -1,7 +1,9 @@
 import { chromium } from "playwright-core";
 import AxeBuilder from "@axe-core/playwright";
 import assert from "node:assert/strict";
-import { publicRoutes } from "../app/lib/metadata.ts";
+// Register extensionless TypeScript resolution before loading website metadata.
+import "./register.mjs";
+const { publicRoutes, indexableRoutes } = await import("../app/lib/metadata.ts");
 const base = process.env.QA_BASE_URL;
 assert.ok(base && ["localhost", "127.0.0.1"].includes(new URL(base).hostname), "Local production-emulation server required");
 const browser = await chromium.launch({ executablePath: "/usr/bin/chromium", args: ["--no-sandbox"] });
@@ -19,6 +21,10 @@ await context.route("**/*", route => {
   return route.continue();
 });
 try {
+  assert.equal(publicRoutes.length, 23);
+  assert.equal(indexableRoutes.length, 17);
+  const conceptRoutes = ["ai-lead-automation", "smart-booking", "ai-receptionist", "crm", "business-automation", "ai-marketing-manager"].map(slug => `/products/${slug}`);
+  assert.deepEqual(publicRoutes.filter(path => !indexableRoutes.includes(path)).sort(), conceptRoutes.sort());
   for (const path of publicRoutes) {
     const response = await page.goto(base + path);
     assert.equal(response.status(), 200, path);
@@ -30,7 +36,9 @@ try {
     assert.equal(await page.locator("footer").count(), 1, path);
     assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).href, new URL("https://monetcore.dev" + path).href);
     assert.ok(await page.locator('meta[name="description"]').getAttribute("content"));
-    assert.doesNotMatch(await page.locator('meta[name="robots"]').getAttribute("content"), /noindex/);
+    const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+    assert.equal(/noindex/.test(robots), !indexableRoutes.includes(path), `${path} indexing policy`);
+    assert.match(robots, /follow/);
     assert.equal(await page.locator('a[href="/assistant"]').count(), 0);
     assert.equal(await page.getByRole("combobox", { name: "Synthetic staging test case" }).count(), 0);
     const footer = page.locator("footer");
@@ -79,6 +87,8 @@ try {
   const sitemap = await (await page.request.get(base + "/sitemap.xml")).text();
   assert.ok(sitemap.includes("https://monetcore.dev"));
   assert.ok(!sitemap.includes("/assistant"));
+  const sitemapPaths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => new URL(match[1]).pathname);
+  assert.deepEqual(sitemapPaths.sort(), [...indexableRoutes].sort());
   const robots = await (await page.request.get(base + "/robots.txt")).text();
   assert.match(robots, /Allow: \//);
   assert.deepEqual(trackers, []); assert.deepEqual(external, []); assert.deepEqual(errors, []);

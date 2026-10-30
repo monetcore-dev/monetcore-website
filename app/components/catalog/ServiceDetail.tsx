@@ -1,3 +1,5 @@
+import PageHero from "../PageHero";
+import { serviceHeroVisuals } from "../../config/pageHeroes";
 import { hybridPricing } from "../../config/websitePackages";
 import OfferingSchema from "./OfferingSchema";
 import Link from "next/link";
@@ -41,41 +43,14 @@ export default function ServiceDetail({
       <SiteHeader />
       <OfferingSchema kind="services" slug={item.slug} title={item.title} />
       <main id="main-content" className={`offering-page offering-${item.demo}`}>
-        <section className="offering-hero">
-          <div className="offering-wrap offering-hero-grid">
-            <div>
-              <nav aria-label="Breadcrumb" className="offering-breadcrumb">
-                <Link href="/">Home</Link>
-                <span>/</span>
-                <Link href="/services">Services</Link>
-                <span>/</span>
-                <span>{item.title}</span>
-              </nav>
-              <p className="offering-eyebrow">{item.title}</p>
-              <h1>{item.headline}</h1>
-              <p>{item.intro}</p>
-              <p>{hybridPricing.customDescription}</p>
-              <div className="offering-actions">
-                <Link
-                  className="offering-primary"
-                  href={enquiryHref("service", item.slug)}
-                >
-                  {hybridPricing.customLabel}{" "}
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                </Link>
-                <Link
-                  className="offering-secondary"
-                  href={enquiryHref("service", item.slug, true)}
-                >
-                  Book a Consultation
-                </Link>
-                {demo && (
-                  <a className="offering-text-link" href="#experience">
-                    Explore Demo ↓
-                  </a>
-                )}
-              </div>
-            </div>
+        <PageHero
+          title={item.headline}
+          description={item.intro}
+          eyebrow={item.title}
+          backgroundVisual={
+            serviceHeroVisuals[item.slug as keyof typeof serviceHeroVisuals]
+          }
+          supplement={
             <aside className="offering-hero-card">
               <Icon size={36} aria-hidden="true" />
               <p className="offering-eyebrow">Built around your business</p>
@@ -96,8 +71,39 @@ export default function ServiceDetail({
                 agreed before implementation.
               </p>
             </aside>
+          }
+          breadcrumb={
+            <nav aria-label="Breadcrumb" className="offering-breadcrumb">
+              <Link href="/">Home</Link>
+              <span>/</span>
+              <Link href="/services">Services</Link>
+              <span>/</span>
+              <span>{item.title}</span>
+            </nav>
+          }
+        >
+          <div className="offering-actions">
+            <Link
+              className="offering-primary"
+              href={enquiryHref("service", item.slug)}
+            >
+              {hybridPricing.customLabel}{" "}
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Link>
+            <Link
+              className="offering-secondary"
+              href={enquiryHref("service", item.slug, true)}
+            >
+              Book a Consultation
+            </Link>
+            {demo && (
+              <a className="offering-text-link" href="#experience">
+                Explore Demo ↓
+              </a>
+            )}
           </div>
-        </section>
+          <p>{hybridPricing.customDescription}</p>
+        </PageHero>
         <section className="offering-section">
           <div className="offering-wrap">
             <p className="offering-eyebrow">Start with the problem</p>
@@ -158,6 +164,24 @@ export default function ServiceDetail({
                 customer records, messages, payments or bookings are involved.
               </p>
               {demo}
+              <div
+                className="offering-actions"
+                role="group"
+                aria-label={`Next steps for ${item.title}`}
+              >
+                <Link
+                  className="offering-primary"
+                  href={enquiryHref("service", item.slug)}
+                >
+                  {hybridPricing.customLabel}
+                </Link>
+                <Link
+                  className="offering-secondary"
+                  href={enquiryHref("service", item.slug, true)}
+                >
+                  Book a Consultation
+                </Link>
+              </div>
             </div>
           </section>
         )}
@@ -197,8 +221,8 @@ export default function ServiceDetail({
                 <h2>Start with a clear package.</h2>
                 <p>
                   Smart Starter: {packagePrice(websitePackages[0])} (one-time
-                  package setup). First-year standard .com domain,
-                  hosting and SSL are included for 12 months. Annual renewal:{" "}
+                  package setup). First-year standard .com domain, hosting and
+                  SSL are included for 12 months. Annual renewal:{" "}
                   {packageRenewal(websitePackages[0])} after 12 months.
                 </p>
                 <p>{renewalTerms.included}</p>
@@ -207,8 +231,8 @@ export default function ServiceDetail({
                 </p>
                 <p>
                   Final quotations depend on your requirements. Premium domains,
-                  optional automation and third-party usage are
-                  separately quoted; no unlimited AI usage is promised.
+                  optional automation and third-party usage are separately
+                  quoted; no unlimited AI usage is promised.
                 </p>
               </div>
               <Link className="offering-primary" href="/website-packages">
@@ -255,7 +279,14 @@ export default function ServiceDetail({
                   key={p.slug}
                 >
                   <p className="offering-eyebrow">{p.status}</p>
-                  <h3>{p.title} ↗</h3>
+                  <h3>
+                    {p.title}{" "}
+                    <ArrowUpRight
+                      className="inline-block align-middle"
+                      size={16}
+                      aria-hidden="true"
+                    />
+                  </h3>
                   <p>{p.intro}</p>
                 </Link>
               ))}
@@ -269,7 +300,14 @@ export default function ServiceDetail({
                     key={s.slug}
                   >
                     <p className="offering-eyebrow">Related expertise</p>
-                    <h3>{s.title} ↗</h3>
+                    <h3>
+                      {s.title}{" "}
+                      <ArrowUpRight
+                        className="inline-block align-middle"
+                        size={16}
+                        aria-hidden="true"
+                      />
+                    </h3>
                     <p>{s.intro}</p>
                   </Link>
                 ))}

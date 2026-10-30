@@ -1,0 +1,115 @@
+/* Homepage composition only. The corporate hero and enquiry form are unchanged. */
+.home:global(.corporate-page)
+  > section:not(:global(#corporate-hero)):not(:global(#contact)) {
+  padding-block: 4rem;
+}
+.services {
+  background-image: radial-gradient(
+    ellipse at 100% 0%,
+    #eff4ff90,
+    transparent 55%
+  );
+}
+.home .serviceGrid {
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.home .serviceCard {
+  min-width: 0;
+  padding: 1.5rem;
+  border-radius: 18px;
+  box-shadow: none;
+}
+.home .serviceCard:nth-child(-n + 2) {
+  background:
+    radial-gradient(ellipse at top right, #dfe9ff70, transparent 70%), #fff;
+}
+.home .serviceCard h3 {
+  margin-top: 1rem;
+  line-height: 1.35;
+}
+.home .serviceCard p {
+  margin-top: 0.6rem;
+  line-height: 1.75;
+}
+.home .serviceCard:focus-visible {
+  outline: 3px solid #345be0;
+  outline-offset: 4px;
+}
+.home :global(.about-layout) {
+  gap: 2rem;
+}
+.home :global(.workflow-explorer) {
+  margin-top: 2rem;
+}
+@media (min-width: 1200px) {
+  .home .serviceGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+  .home .serviceCard {
+    grid-column: span 2;
+  }
+  .home .serviceCard:nth-child(-n + 2) {
+    grid-column: span 3;
+    padding: 1.75rem;
+  }
+  .home .serviceCard:nth-child(-n + 2) h3 {
+    font-size: 1.45rem;
+  }
+}
+@media (max-width: 767px) {
+  .home:global(.corporate-page)
+    > section:not(:global(#corporate-hero)):not(:global(#contact)) {
+    padding-block: 2.5rem;
+  }
+  .home .serviceGrid {
+    margin-top: 1.5rem;
+    gap: 0.75rem;
+  }
+  .home .serviceCard {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.85rem;
+    padding: 1.15rem;
+  }
+  .serviceCard > span {
+    display: contents;
+  }
+  .home .serviceCard :global(.solution-icon) {
+    grid-area: 1 / 1;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+  .serviceCard > span > svg {
+    position: absolute;
+    right: 14px;
+    top: 20px;
+    width: 16px;
+    height: 16px;
+  }
+  .home .serviceCard h3 {
+    grid-area: 1 / 2;
+    margin: 0;
+    padding-right: 12px;
+    font-size: 1.08rem;
+  }
+  .home .serviceCard p {
+    grid-column: 1 / -1;
+    margin-top: 0.75rem;
+    line-height: 1.7;
+  }
+  .home :global(.about-layout) {
+    gap: 1.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home .serviceCard {
+    transition: none;
+  }
+  .home .serviceCard:hover {
+    transform: none;
+  }
+}

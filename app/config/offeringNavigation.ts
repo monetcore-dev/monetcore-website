@@ -32,7 +32,7 @@ export const serviceNavigation = [
   {
     title: "Digital Marketing & Growth",
     description:
-      "Combine content, marketing operations, software and automation to plan campaigns and understand what happens after an enquiry.",
+      "Plan social media content and digital campaigns, connect enquiries to follow-up, and understand what happens after visitors contact your business.",
     href: "/services/digital-marketing",
   },
   {
@@ -44,33 +44,15 @@ export const serviceNavigation = [
 ];
 export const productNavigation = [
   {
-    title: "AI Lead Automation",
-    description: "Interactive demonstration · external prototype",
-    href: "/products/ai-lead-automation",
+    title: "Product Ideas & Categories",
+    description:
+      "Illustrative concepts; discuss a scoped solution with our team.",
+    href: "/product-showcase",
   },
   {
-    title: "Smart Booking",
-    description: "Product concept · isolated demonstration",
-    href: "/products/smart-booking",
-  },
-  {
-    title: "AI Receptionist",
-    description: "Planned product · conversation simulation",
-    href: "/products/ai-receptionist",
-  },
-  {
-    title: "CRM",
-    description: "Planned product · interactive demonstration",
-    href: "/products/crm",
-  },
-  {
-    title: "Business Automation",
-    description: "Planned product · workflow simulation",
-    href: "/products/business-automation",
-  },
-  {
-    title: "AI Marketing Manager",
-    description: "Planned product · strategy simulation",
-    href: "/products/ai-marketing-manager",
+    title: "Fintech Products",
+    description:
+      "Financial technology software requirements, not a launched payment app.",
+    href: "/products/fintech-products",
   },
 ];

@@ -265,6 +265,10 @@ export function ProductShowcase() {
                 </span>
                 <p className={styles.kicker}>{solution.label}</p>
                 <h3>{solution.title}</h3>
+                <p className={styles.illustration}>
+                  Illustrative concept · potential benefits depend on the agreed
+                  project scope.
+                </p>
                 <ul>
                   {solution.benefits.map((benefit) => (
                     <li key={benefit}>

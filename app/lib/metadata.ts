@@ -11,10 +11,14 @@ export const publicRoutes = [
   "/privacy",
   "/book",
   "/website-packages",
-  "/demo/fintech",
+  "/products/fintech-products",
   ...services.map((item) => `/services/${item.slug}`),
   ...products.map((item) => `/products/${item.slug}`),
 ];
+// Product concept pages remain navigable, but are not advertised for indexing.
+export const indexableRoutes = publicRoutes.filter(
+  (path) => !products.some((product) => path === `/products/${product.slug}`),
+);
 export function pageMetadata(
   path: string,
   title: string,

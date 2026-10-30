@@ -1,0 +1,409 @@
+.banner {
+  --hero-cycle: 24s;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #f8fafc;
+  background:
+    radial-gradient(ellipse at 91% 22%, #233a73 0, transparent 58%),
+    radial-gradient(ellipse at 98% 92%, #583044 0, transparent 42%),
+    linear-gradient(115deg, #08152d, #10264d 65%, #201d48);
+  padding: clamp(7rem, 9vw, 8rem) 1.5rem 4.5rem;
+  border-bottom: 1px solid #304a70;
+}
+.compact {
+  padding-top: 3rem;
+}
+.wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 1240px;
+  margin: auto;
+  min-width: 0;
+}
+.copy {
+  max-width: 740px;
+  min-width: 0;
+}
+.banner[data-page-hero] .title {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: clamp(2.05rem, 4.4vw, 3.8rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  color: #fff;
+  margin: 1rem 0 0;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+.banner .description {
+  font-size: clamp(1rem, 1.4vw, 1.13rem);
+  line-height: 1.85;
+  color: #dbe6f5;
+  max-width: 640px;
+  margin: 1.1rem 0 0;
+  text-wrap: pretty;
+}
+.banner .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.6;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c4dbff;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.eyebrow::before {
+  content: "";
+  height: 7px;
+  width: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #fb7185;
+  box-shadow: 0 0 14px #f9731655;
+}
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #08152df5 0%,
+    #08152de8 36%,
+    #08152d91 57%,
+    transparent 80%
+  );
+}
+.illustration {
+  position: absolute;
+  width: 650px;
+  max-width: none;
+  height: auto;
+  right: calc((100% - min(1240px, 100%)) / 2 - 80px);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.85;
+}
+.drift {
+  animation: hero-drift var(--hero-cycle) ease-in-out infinite;
+  transform-origin: center;
+}
+.breathe {
+  animation: hero-breathe 8s ease-in-out infinite;
+}
+.flow {
+  stroke-dasharray: 10 22;
+  animation: hero-flow var(--hero-cycle) linear infinite;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.75rem;
+}
+.banner .primary,
+.banner .secondary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.85rem 1.3rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    background-color 0.18s,
+    border-color 0.18s;
+}
+.banner .primary {
+  background: #2563eb;
+  color: #fff;
+  border: 1px solid #60a5fa;
+}
+.banner .primary:hover {
+  background: #1d4ed8;
+  border-color: #fb7185;
+}
+.banner .secondary {
+  background: #11294a;
+  color: #edf5ff;
+  border: 1px solid #7c9dc6;
+}
+.banner .secondary:hover {
+  background: #1b3a62;
+  border-color: #fdba74;
+}
+.banner a:focus-visible,
+.motionToggle:focus-visible ~ .motionLabel {
+  outline: 3px solid #fdba74;
+  outline-offset: 5px;
+}
+.breadcrumb {
+  margin-bottom: 1.2rem;
+  font-size: 0.8rem;
+  color: #cadcf5;
+}
+.breadcrumb nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  color: inherit;
+}
+.breadcrumb a {
+  color: #d9e9ff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+.extra {
+  margin-top: 1.25rem;
+  max-width: 680px;
+}
+.extra :global(.page-hero-note),
+:is(.extra, .supplement) :global(.offering-hero-card) {
+  width: 100%;
+  max-width: 640px;
+  padding: 1.1rem 1.25rem;
+  margin-top: 1.5rem;
+  background: #122c4ce8;
+  border: 1px solid #5a7699;
+  border-radius: 16px;
+  box-shadow: none;
+  color: #dbe6f5;
+}
+:is(.extra, .supplement) :global(.offering-hero-card) h2,
+.extra :global(.page-hero-note) strong {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #f8fafc;
+}
+:is(.extra, .supplement) :global(.offering-hero-card) p,
+.extra :global(.page-hero-note) p,
+.extra > p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: #dbe6f5;
+  margin-top: 0.6rem;
+}
+:is(.extra, .supplement) :global(.offering-hero-card) svg {
+  color: #93c5fd;
+}
+:is(.extra, .supplement) :global(.offering-hero-card) ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.7rem;
+}
+:is(.extra, .supplement) :global(.offering-hero-card) li {
+  font-size: 0.83rem;
+  color: #dbe6f5;
+}
+.extra :global(.offering-actions) {
+  margin-top: 1.25rem;
+}
+.extra :global(.offering-text-link),
+.extra :global(.offering-eyebrow) {
+  color: #bfdbfe;
+}
+.extra :global(.offering-secondary) {
+  color: #edf5ff;
+  background: #11294a;
+  border-color: #7c9dc6;
+}
+.motionToggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  bottom: 20px;
+  right: 24px;
+}
+.motionLabel {
+  position: absolute;
+  z-index: 3;
+  bottom: 14px;
+  right: max(24px, calc((100% - 1240px) / 2));
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid #607a9d;
+  color: #dbe6f5;
+  background: #102642;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.motionToggle:checked ~ .background * {
+  animation-play-state: paused;
+}
+.motionToggle:checked ~ .motionLabel {
+  border-color: #fdba74;
+}
+.banner[data-motion="disabled"] .background * {
+  animation: none;
+}
+@keyframes hero-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+@keyframes hero-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+@keyframes hero-flow {
+  from {
+    stroke-dashoffset: 128;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (max-width: 900px) {
+  .illustration {
+    right: -200px;
+    opacity: 0.5;
+  }
+  .background::after {
+    background: linear-gradient(90deg, #08152df5, #08152db8 65%, #08152d50);
+  }
+  .copy {
+    max-width: 680px;
+  }
+}
+@media (max-width: 600px) {
+  .banner {
+    padding: 6rem 1.25rem 4rem;
+  }
+  .compact {
+    padding-top: 2.5rem;
+  }
+  .illustration {
+    right: -345px;
+    width: 620px;
+    opacity: 0.35;
+  }
+  .copy {
+    max-width: 100%;
+  }
+  .actions {
+    gap: 0.7rem;
+  }
+  .actions a {
+    flex: 1 1 190px;
+  }
+  .banner[data-page-hero] .title {
+    font-size: clamp(2rem, 7.8vw, 2.8rem);
+  }
+  .banner .description {
+    margin-top: 1rem;
+  }
+  .motionLabel {
+    right: 20px;
+  }
+  :is(.extra, .supplement) :global(.offering-hero-card) {
+    padding: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .background * {
+    animation: none !important;
+  }
+  .motionToggle,
+  .motionLabel {
+    display: none;
+  }
+  .banner a {
+    transition: none;
+  }
+}
+
+/* Shared detail-page composition. Keep every word and the decorative background. */
+.withSupplement {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+.supplement {
+  min-width: 0;
+}
+.supplement :global(.offering-hero-card) {
+  margin-top: 0;
+  max-width: none;
+  padding: 1.5rem;
+}
+.supplement :global(.offering-hero-card) h2 {
+  margin: 0.65rem 0 1rem;
+}
+.supplement :global(.offering-hero-card) :global(.offering-eyebrow) {
+  margin-top: 0.75rem;
+}
+.supplement :global(.offering-hero-card) li {
+  margin: 0;
+}
+.extra > :global(.offering-actions):first-child {
+  margin-top: 0;
+}
+@media (min-width: 1024px) {
+  .withSupplement {
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: center;
+  }
+  .withSupplement .copy {
+    max-width: 740px;
+  }
+  .withSupplement .title {
+    font-size: clamp(2.4rem, 4vw, 3.6rem);
+  }
+}
+@media (max-width: 600px) {
+  .breadcrumb {
+    margin-bottom: 0.75rem;
+  }
+  .extra {
+    margin-top: 1rem;
+  }
+  .withSupplement {
+    gap: 1rem;
+  }
+  .supplement :global(.offering-hero-card) {
+    padding: 1rem;
+  }
+  .supplement :global(.offering-hero-card) > svg {
+    width: 28px;
+    height: 28px;
+  }
+  .supplement :global(.offering-hero-card) h2 {
+    margin: 0.5rem 0;
+  }
+}

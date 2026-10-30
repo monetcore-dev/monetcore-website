@@ -36,10 +36,19 @@ export default function ProductDiscovery() {
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <p className={styles.concept}>
-                  Illustrative concept · local demonstration available
+                  {item.kind === "service"
+                    ? "Website development service · illustrative preview"
+                    : "Illustrative concept · not a launched product"}
                 </p>
-                <Link href={discoveryContent(item).demoHref}>
-                  View Demonstration
+                <Link
+                  href={
+                    discoveryContent(item).demoHref ??
+                    discoveryContent(item).enquiryHref
+                  }
+                >
+                  {item.kind === "service"
+                    ? "View Service Demonstration"
+                    : "Discuss This Solution"}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </Link>
               </div>

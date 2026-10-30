@@ -72,7 +72,7 @@ summary {
   touch-action: manipulation;
 }
 :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid #7195ff;
+  outline: 3px solid #5077ef;
   outline-offset: 4px;
 }
 [id] {
@@ -96,13 +96,14 @@ summary {
   letter-spacing: -0.025em;
   line-height: 1.35;
 }
-.corporate-page:not(.demo-page) > section:first-of-type {
+.corporate-page:not(.demo-page)
+  > section:first-of-type:not(:where([data-page-hero])) {
   background:
     radial-gradient(ellipse at 90% 0%, #dfe9ff 0%, transparent 53%),
     linear-gradient(130deg, #f8faff, #f0f4fb);
 }
 .corporate-page:not(.demo-page)
-  > section:first-of-type
+  > section:first-of-type:not(:where([data-page-hero]))
   > div[aria-hidden="true"] {
   opacity: 0.35;
 }
@@ -358,15 +359,15 @@ summary {
 }
 .mega-link strong {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   font-weight: 650;
   color: #17253f;
 }
 .mega-link small {
   display: block;
-  margin-top: 5px;
-  font-size: 0.72rem;
+  margin-top: 4px;
+  font-size: 0.8125rem;
   color: #61718c;
   line-height: 1.65;
 }
@@ -2779,7 +2780,7 @@ summary {
   .showcase-note {
     margin-top: 10px;
   }
-  .corporate-page > section:not(#corporate-hero) {
+  .corporate-page > section:not(#corporate-hero):not(:where([data-page-hero])) {
     padding-top: 44px;
     padding-bottom: 44px;
   }
@@ -2946,4 +2947,48 @@ summary {
   color: #a82d4b;
   background: #fff0f3;
   border-color: #FB7185;
+}
+
+/* Phase 1: readable descriptions, compact touch navigation; routes are unchanged. */
+@media (max-width: 1199px) {
+  .mega-introduction {
+    padding: 12px 16px;
+  }
+  .mega-introduction h2 {
+    margin-top: 6px;
+    font-size: 1.15rem;
+  }
+  .mega-introduction > p:not(.eyebrow) {
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+  .mega-introduction > a {
+    margin-top: 4px;
+    min-height: 44px;
+  }
+  .mega-links {
+    padding: 6px;
+    gap: 0;
+  }
+  .mega-link {
+    padding: 10px;
+    gap: 10px;
+  }
+  .mega-link small {
+    line-height: 1.5;
+  }
+  .mega-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Keep keyboard outlines visible inside the scrollable mobile navigation. */
+@media (max-width: 1199px) {
+  .primary-navigation :is(a, button):focus-visible {
+    outline-offset: -3px;
+  }
+  .primary-navigation .nav-consult:focus-visible {
+    outline-color: #fff;
+  }
 }

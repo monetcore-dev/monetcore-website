@@ -30,7 +30,10 @@ const base = {
 };
 let sequence = 0;
 function request(data, path = "contact", extras = {}) {
-  const host = process.env.MONETCORE_VPS_REVIEW === "true" && !process.env.VERCEL_ENV ? "review.monetcore.dev" : "review.example";
+  const host =
+    process.env.MONETCORE_VPS_REVIEW === "true" && !process.env.VERCEL_ENV
+      ? "review.monetcore.dev"
+      : "review.example";
   return new Request(`https://${host}/api/${path}`, {
     method: "POST",
     headers: {
@@ -146,8 +149,8 @@ test("production SEO allows public routes; preview uses three independent indexi
   process.env.VERCEL_ENV = "production";
   assert.equal(isReviewPreview(), false);
   assert.equal(robots().rules.allow, "/");
-  assert.equal(sitemap().length, 23);
-  assert.equal(new Set(sitemap().map((item) => item.url)).size, 23);
+  assert.equal(sitemap().length, 17);
+  assert.equal(new Set(sitemap().map((item) => item.url)).size, 17);
   assert.ok(!sitemap().some((item) => item.url.endsWith("/assistant")));
   assert.ok(sitemap().every((x) => x.url.startsWith("https://monetcore.dev")));
   assert.ok(
@@ -489,7 +492,9 @@ test("staging contact opt-in is VPS-only, recipient-locked and requires SMTP acc
     "MONETCORE_VPS_PROXY_VERIFIED",
     "NODE_ENV",
     "STAGING_CONTACT_ENABLED",
-    "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "RATE_LIMIT_KEY_SECRET",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "RATE_LIMIT_KEY_SECRET",
     "MONETCORE_EMAIL",
     "MONETCORE_EMAIL_PASSWORD",
   ];
@@ -520,7 +525,8 @@ test("staging contact opt-in is VPS-only, recipient-locked and requires SMTP acc
     globalThis.fetch = async () => Response.json({ result: [1, 600000] });
     process.env.UPSTASH_REDIS_REST_URL = "https://synthetic.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "synthetic-only";
-    process.env.RATE_LIMIT_KEY_SECRET = "synthetic-long-test-key-over-thirty-two";
+    process.env.RATE_LIMIT_KEY_SECRET =
+      "synthetic-long-test-key-over-thirty-two";
     // An authorized VPS review requires explicit configuration.
     delete process.env.VERCEL_ENV;
     delete process.env.VERCEL;
@@ -536,7 +542,9 @@ test("staging contact opt-in is VPS-only, recipient-locked and requires SMTP acc
 
     process.env.MONETCORE_VPS_REVIEW = "true";
     process.env.MONETCORE_VPS_PROXY_VERIFIED = "true";
-    globalThis.fetch = async () => { throw new Error("synthetic Redis outage"); };
+    globalThis.fetch = async () => {
+      throw new Error("synthetic Redis outage");
+    };
     assert.equal((await contact(request(valid))).status, 503);
     assert.equal(state.emails.length, initial);
     globalThis.fetch = async () => Response.json({ result: [11, 600000] });

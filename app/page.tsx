@@ -22,8 +22,12 @@ import {
   Smartphone,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
+import homeStyles from "./homepage.module.css";
 import ProductDiscovery from "./components/ProductDiscovery";
-import { ProductShowcase, TechnologyStack } from "./components/HomepageShowcase";
+import {
+  ProductShowcase,
+  TechnologyStack,
+} from "./components/HomepageShowcase";
 import SolutionExplorer from "./components/SolutionExplorer";
 import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
@@ -90,7 +94,7 @@ const faqs = [
   ],
   [
     "Are all the product showcases live services?",
-    "No. Showcase interfaces illustrate possibilities. MonePay is a fictional interactive prototype, and the lead automation demo is hosted separately. Booking is an existing integration-dependent workflow. We confirm availability and scope before any engagement; unfinished or optional tools are not sold as fully operational services.",
+    "No. Product visuals illustrate possibilities, not launched software. Product demonstrations are temporarily unavailable. Our Services pages provide working illustrative service demonstrations. Use our contact or consultation links to discuss your requirements; product availability, scope and integrations must be confirmed before an engagement.",
   ],
   [
     "Do you also offer business websites?",
@@ -108,7 +112,7 @@ export default function Home() {
       <SiteHeader />
       <main
         id="main-content"
-        className="corporate-page bg-white text-slate-950"
+        className={`${homeStyles.home} corporate-page bg-white text-slate-950`}
       >
         <HeroBanner>
           <div className="relative mx-auto grid max-w-7xl items-center gap-8">
@@ -183,7 +187,10 @@ export default function Home() {
           </div>
         </HeroBanner>
 
-        <section id="services" className="px-5 py-20 lg:px-8">
+        <section
+          id="services"
+          className={`${homeStyles.services} px-5 py-20 lg:px-8`}
+        >
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 lg:grid-cols-2">
               <div>
@@ -203,12 +210,14 @@ export default function Home() {
                 technology. {hybridPricing.customDescription}
               </p>
             </div>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={`${homeStyles.serviceGrid} mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3`}
+            >
               {corporateSolutions.map((item) => (
                 <Link
                   key={item.number}
                   href={item.href}
-                  className="solution-card group"
+                  className={`${homeStyles.serviceCard} solution-card group`}
                 >
                   <span className="flex items-center justify-between text-sm font-bold text-blue-700">
                     <span className="solution-icon">
