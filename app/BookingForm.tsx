@@ -22,7 +22,6 @@ import {
 
 export default function BookingForm({
   initialInterest,
-  stagingTesting = false,
 }: { initialInterest?: EnquiryInterest; stagingTesting?: boolean } = {}) {
   const source = initialInterest?.id ?? "";
   const [editedEnquiry, setEditedEnquiry] = useState({
@@ -40,6 +39,7 @@ export default function BookingForm({
         };
   const submitting = useRef(false);
   const availabilityRequest = useRef(0);
+  const requestIntent = useRef<{ payload: string; key: string } | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [feedback, setFeedback] = useState("");
   const [reservationNotice, setReservationNotice] = useState("");
@@ -191,20 +191,24 @@ export default function BookingForm({
       startedAt: formData.get("startedAt"),
     };
 
-    let uncertain = stagingTesting;
+    // Keep the same identity for retries of one intent; no identity/PII is persisted in browser storage.
+    const payload = JSON.stringify({ ...data, startedAt: undefined });
+    let uncertain = false;
     try {
+      if (!requestIntent.current || requestIntent.current.payload !== payload)
+        requestIntent.current = { payload, key: crypto.randomUUID() };
+      uncertain = true;
       const response = await fetch("/api/book", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, idempotencyKey: requestIntent.current.key }),
       });
 
       const result = await response.json();
       uncertain =
-        (stagingTesting || result.outcome === "unknown") &&
-        response.status >= 500 &&
+        (response.status >= 500 || result.outcome === "unknown") &&
         result.outcome !== "not_created";
       if (
         response.status === 202 &&
@@ -213,13 +217,13 @@ export default function BookingForm({
       ) {
         setStatus("error");
         setReservationNotice(
-          "Your reservation was saved, but confirmation is incomplete. Do not resubmit or choose another slot. Contact hello@monetcore.dev for reconciliation.",
+          `Your reservation was saved, but confirmation is incomplete. Do not resubmit or choose another slot. Contact hello@monetcore.dev for reconciliation. Request reference: ${requestIntent.current?.key ?? "unavailable"}.`,
         );
         return;
       }
 
       if (!response.ok || result.success !== true) {
-        if (response.status === 409) {
+        if (response.status === 409 && (!result.code || result.code === "SLOT_UNAVAILABLE")) {
           setSelectedTime("");
           setStatus("error");
           setFeedback(
@@ -241,6 +245,7 @@ export default function BookingForm({
         `Your consultation has been booked for ${selectedDate} at ${selectedTime} WAT.`,
       );
 
+      requestIntent.current = null;
       form.reset();
       setEditedEnquiry({
         source,
@@ -259,7 +264,7 @@ export default function BookingForm({
       setStatus("error");
       if (uncertain) {
         setReservationNotice(
-          "The booking outcome could not be verified. Do not resubmit or choose another slot. Contact hello@monetcore.dev to check the reservation first.",
+          `The booking outcome could not be verified. Do not resubmit or choose another slot. Contact hello@monetcore.dev to check the reservation first. Request reference: ${requestIntent.current?.key ?? "unavailable"}.`,
         );
       }
       setFeedback(

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import net from "node:net";
@@ -19,11 +20,11 @@ function request(body) {
       origin: "https://example.invalid",
       "x-forwarded-for": `synthetic-${++sequence}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, idempotencyKey: body.idempotencyKey ?? randomUUID() }),
   });
 }
 beforeEach(() => {
-  for (const key of ["bookings", "calendars", "emails", "transports"])
+  for (const key of ["bookings", "calendars", "emails", "transports", "requests"])
     state[key].length = 0;
   state.failCalendar = state.failEmail = state.failDatabase = false;
   process.env.VERCEL_ENV = "development";
@@ -85,7 +86,9 @@ test("4 insertion: valid synthetic request reaches only mock storage; rejected i
   const f = bookingFixtures();
   for (const key of ["invalidEmail", "invalidDate", "unknownType"])
     assert.equal((await book(request(f[key]))).status, 400);
-  assert.equal((await book(request(f.honeypot))).status, 200);
+  const rejectedBot = await book(request(f.honeypot));
+  assert.equal(rejectedBot.status, 400);
+  assert.equal((await rejectedBot.json()).outcome, "not_created");
   assert.equal(state.bookings.length, 0);
   assert.equal((await book(request(f.base))).status, 201);
   assert.equal(state.bookings.length, 1);
@@ -135,13 +138,15 @@ test("6 Calendar: mock event duration, WAT conversion and invitation settings ma
 test("7 failures: database failure blocks effects; Calendar/mail failure retains reservation and truthful flags", async () => {
   const f = bookingFixtures().base;
   state.failDatabase = true;
-  assert.equal((await book(request(f))).status, 500);
+  assert.equal((await book(request(f))).status, 503);
   assert.equal(state.calendars.length + state.emails.length, 0);
   state.failDatabase = false;
   state.failCalendar = state.failEmail = true;
   const response = await book(request(f));
-  assert.equal(response.status, 201);
+  assert.equal(response.status, 202);
   const result = await response.json();
+  assert.equal(result.success, false);
+  assert.equal(result.outcome, "reserved_incomplete");
   assert.equal(state.bookings.length, 1);
   assert.equal(result.calendar.eventCreated, false);
   assert.equal(result.email.customerConfirmationSent, false);

@@ -6,7 +6,7 @@ registerHooks({ resolve(specifier, context, next) {
   if (specifier === 'pg') return { url: new URL('./pg-state.mjs', import.meta.url).href, shortCircuit: true };
   return next(specifier, context);
 } });
-const { getPostgresPool } = await import('../app/lib/postgres.ts');
+const { getPostgresPool, postgresConfiguration } = await import('../app/lib/postgres.ts');
 const repository = await import('../app/lib/bookingRepository.ts');
 test('PostgreSQL pool/repository contract, permissions-aware SQL and cached-pool guards (no sockets)', async () => {
   const saved = { ...process.env }, error = console.error;
@@ -33,11 +33,17 @@ test('PostgreSQL pool/repository contract, permissions-aware SQL and cached-pool
     process.env.STAGING_BOOKING_ENABLED = 'true';
     pgState.result = { rows: [{ id: 'test-id', booking_date: '2030-01-07', booking_time: '09:00' }], rowCount: 1 };
     const input = { consultation_type: 'Discovery Call - 30 minutes', booking_date: '2030-01-07', booking_time: '09:00', name: "Synthetic'); DROP TABLE bookings;--", email: 'test@example.invalid' };
-    await repository.createBooking(input);
-    const insert = pgState.queries.at(-1);
-    assert.ok(insert.values.includes(input.name)); assert.ok(!insert.text.includes(input.name));
-    assert.match(insert.text, /RETURNING/); assert.match(insert.text, /Africa\/Lagos/);
-    pgState.result = { rows: [], rowCount: 0 }; await assert.rejects(repository.createBooking(input));
+    pgState.queue = [
+      {rows:[]},{rows:[]},{rows:[]},{rows:[{eligible:true}]},
+      {rows:[{id:'12345678-1234-4234-8234-123456789abc',booking_date:'2030-01-07',booking_time:'09:00',consultation_type:input.consultation_type}]},
+      {rows:[],rowCount:1},{rows:[]}
+    ];
+    const reserved=await repository.reserveBooking(input,'12345678-1234-4234-8234-123456789abd','a'.repeat(64));
+    assert.equal(reserved.calendar_state,'pending');
+    const insert = pgState.queries.findLast(q=>q.text.includes('INSERT INTO public.bookings'));
+    assert.ok(insert.values.includes(input.name));assert.ok(!insert.text.includes(input.name));
+    assert.match(insert.text,/RETURNING/);assert.match(insert.text,/Africa\/Lagos/);
+    assert.equal(pgState.queries.at(-1).text,'COMMIT');assert.equal(pgState.releases.at(-1),false);
     pgState.result = { rows: [{ booking_time: '09:00' }], rowCount: 1 };
     assert.deepEqual(await repository.getBookedTimes('2030-01-07'), ['09:00']);
     assert.match(pgState.queries.at(-1).text, /status <> 'cancelled'/);
@@ -54,4 +60,20 @@ test('PostgreSQL pool/repository contract, permissions-aware SQL and cached-pool
     console.error = error;
     for (const key of Object.keys(process.env)) delete process.env[key]; Object.assign(process.env, saved);
   }
+});
+
+test('remote PostgreSQL configuration is explicit, verified TLS, pooler-safe and fail-closed without credentials', () => {
+ const saved={...process.env};
+ try {
+  for(const key of Object.keys(process.env))delete process.env[key];
+  Object.assign(process.env,{NODE_ENV:'production',VERCEL_ENV:'production',VERCEL:'1'});
+  assert.throws(postgresConfiguration);
+  Object.assign(process.env,{BOOKING_DATABASE_URL:'postgresql://monetcore_app.synthetic:synthetic-only@region.pooler.supabase.com:6543/postgres',BOOKING_DATABASE_EXPECTED_HOST:'region.pooler.supabase.com',BOOKING_DATABASE_EXPECTED_USER:'monetcore_app.synthetic'});
+  const c=postgresConfiguration();assert.equal(c.ssl.rejectUnauthorized,true);assert.equal(c.ssl.servername,'region.pooler.supabase.com');assert.equal(c.max,1);assert.equal(c.options,undefined);
+  const original=process.env.BOOKING_DATABASE_URL;
+  for(const url of [original+'?sslmode=no-verify',original.replace('monetcore_app.synthetic','postgres.synthetic'),original.replace('region.pooler.supabase.com','attacker.example'),original.replace(':6543',':80')]) {
+   process.env.BOOKING_DATABASE_URL=url;assert.throws(postgresConfiguration);
+  }
+  process.env.BOOKING_DATABASE_URL=original;process.env.VERCEL_ENV='preview';assert.throws(postgresConfiguration);
+ }finally{for(const key of Object.keys(process.env))delete process.env[key];Object.assign(process.env,saved);}
 });

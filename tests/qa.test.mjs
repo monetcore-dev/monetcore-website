@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -42,7 +43,7 @@ function request(data, path = "contact", extras = {}) {
       "x-forwarded-for": `test-${++sequence}`,
       ...extras,
     },
-    body: typeof data === "string" ? data : JSON.stringify(data),
+    body: typeof data === "string" ? data : JSON.stringify(path === "book" && data && typeof data === "object" ? { ...data, idempotencyKey: data.idempotencyKey ?? randomUUID() } : data),
   });
 }
 test("bounded JSON, content type, malformed payloads and same-origin validation", async () => {
@@ -245,7 +246,7 @@ test("booking, unique-slot conflict, unavailable date and partial integration fa
   state.failCalendar = true;
   state.failEmail = true;
   const partial = await booking(request({ ...valid, time: "11:00" }, "book"));
-  assert.equal(partial.status, 201);
+  assert.equal(partial.status, 202);
   const result = await partial.json();
   assert.equal(result.calendar.eventCreated, false);
   assert.equal(result.email.customerConfirmationSent, false);
@@ -388,7 +389,7 @@ test("booking keeps Calendar id internal and persists all tracking fields", asyn
   assert.deepEqual(result.calendar, { eventCreated: true });
   assert.equal(JSON.stringify(result).includes("mock-event"), false);
   const record = state.bookings.at(-1);
-  assert.equal(record.google_calendar_event_id, "mock-event");
+  assert.match(record.google_calendar_event_id, /^[0-9a-f]{64}$/);
   for (const field of [
     "google_calendar_event_created_at",
     "confirmation_sent_at",
@@ -422,8 +423,10 @@ test("returned and thrown tracking errors are sanitized and never erase or repea
           "book",
         ),
       );
-      assert.equal(response.status, 201);
+      assert.equal(response.status, 202);
       const result = await response.json();
+      assert.equal(result.outcome, "reserved_incomplete");
+      assert.equal(result.success, false);
       assert.deepEqual(result.calendar, { eventCreated: true });
       assert.equal(result.email.customerConfirmationSent, true);
       assert.equal(result.email.adminNotificationSent, true);

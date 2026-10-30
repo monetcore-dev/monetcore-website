@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -47,7 +48,7 @@ const request = (body = valid) =>
       origin: "https://review.monetcore.dev",
       "x-forwarded-for": "synthetic",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, idempotencyKey: body.idempotencyKey ?? randomUUID() }),
   });
 const availability = () =>
   GET(
@@ -56,7 +57,7 @@ const availability = () =>
 function reset() {
   for (const key of ["VERCEL", "VERCEL_ENV", "VERCEL_GIT_COMMIT_REF"]) delete process.env[key];
   Object.assign(process.env, config);
-  for (const key of ["bookings", "emails", "updates", "calendars"])
+  for (const key of ["bookings", "emails", "updates", "calendars", "requests"])
     state[key].length = 0;
   for (const key of [
     "failTracking",
@@ -157,20 +158,20 @@ test("staging booking safety, isolation, delivery outcomes and retry boundaries 
     assert.equal((await availability()).status, 200);
     reset();
     state.failDatabase = true;
-    assert.equal((await POST(request())).status, 500);
+    assert.equal((await POST(request())).status, 503);
     assert.equal((await availability()).status, 500);
     assert.equal(state.emails.length, 0);
     assert.equal(state.calendars.length, 0);
     reset();
     state.loseReservationAck = true;
     const uncertain = await POST(request());
-    assert.equal(uncertain.status, 500);
-    assert.equal((await uncertain.json()).outcome, "unknown");
+    assert.equal(uncertain.status, 201);
+    assert.equal((await uncertain.json()).outcome, "confirmed");
     assert.equal(state.bookings.length, 1);
-    assert.equal(state.emails.length + state.calendars.length, 0);
+    assert.equal(state.emails.length + state.calendars.length, 3);
     state.loseReservationAck = false;
     assert.equal((await POST(request())).status, 409);
-    assert.equal(state.emails.length + state.calendars.length, 0);
+    assert.equal(state.emails.length + state.calendars.length, 3);
     reset();
     let response = await POST(request());
     assert.equal(response.status, 201);
