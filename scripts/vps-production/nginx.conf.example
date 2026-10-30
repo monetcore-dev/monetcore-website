@@ -1,0 +1,30 @@
+# TEMPLATE: install only after certificate, port, existing vhosts and approval.
+# These zones belong inside http{}, once. Merge; do not replace nginx.conf.
+limit_req_zone $binary_remote_addr zone=monetcore_leads:1m rate=6r/m;
+limit_req_zone $binary_remote_addr zone=monetcore_ai:1m rate=2r/m;
+server {
+    listen 443 ssl;
+    server_name monetcore.dev;
+    if ($host != monetcore.dev) { return 444; }
+    ssl_certificate /etc/letsencrypt/live/monetcore.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/monetcore.dev/privkey.pem;
+    client_max_body_size 40k;
+    # Fail closed until isolated live-provider tests and launch approval pass.
+    location = /api { return 403; }
+    location ^~ /api/ { return 403; }
+    location / {
+        proxy_pass http://127.0.0.1:4400;
+        proxy_http_version 1.1;
+        proxy_set_header Host monetcore.dev;
+        proxy_set_header X-Forwarded-Host monetcore.dev;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Forwarded "";
+        proxy_set_header Connection "";
+        proxy_read_timeout 120s;
+    }
+}
+# Production API opening is a separately reviewed change: use exact contact/book/
+# availability locations with rate limits and the SAME overwritten proxy headers.
+# Keep /api/assistant blocked until separately approved paid owner testing.
+# Do not expose port4400 or trust client-provided forwarding chains.

@@ -1,0 +1,27 @@
+# TEMPLATE ONLY. No installation or activation is performed by this repository.
+[Unit]
+Description=Monetcore production website (isolated from review)
+After=network.target postgresql.service
+[Service]
+Type=simple
+User=monetcore_web
+Group=monetcore_web
+WorkingDirectory=/srv/monetcore-production/current
+EnvironmentFile=/etc/monetcore-production/runtime.env
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStartPre=/usr/bin/node scripts/vps-production/runtime-check.mjs
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 4400
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=90
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/monetcore-production/current/.next/cache
+RestrictSUIDSGID=true
+[Install]
+WantedBy=multi-user.target

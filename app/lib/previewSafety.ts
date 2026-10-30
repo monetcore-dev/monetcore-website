@@ -1,3 +1,4 @@
+import { isTrustedVpsProduction, vpsProductionOrigin } from "./vpsDeployment";
 /** Identify Vercel previews and the private VPS review environment. */
 export function isReviewPreview() {
   return (
@@ -45,6 +46,7 @@ export function isStagingBookingEnabled() {
  * proxy; Nginx must overwrite Host/forwarded headers, not append client values.
  */
 export function submissionOrigin(request: Request): string | null {
+  if (isTrustedVpsProduction()) return vpsProductionOrigin(request);
   const url = new URL(request.url);
   if (!isAuthorizedVpsReview()) return url.origin;
   const canonical = "https://review.monetcore.dev";

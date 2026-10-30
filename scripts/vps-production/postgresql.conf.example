@@ -1,0 +1,6 @@
+# Merge into verified PostgreSQL16 instance configuration ONLY after approval.
+# Never replace the whole live configuration or assume cluster/path names.
+listen_addresses = '127.0.0.1'
+password_encryption = 'scram-sha-256'
+# Size max_connections/shared_buffers against measured RAM and other workloads.
+# Apply per-role statement/lock/idle transaction limits after rehearsal.

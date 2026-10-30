@@ -1,0 +1,15 @@
+# Install only after successful local backup AND isolated restore rehearsal.
+[Unit]
+Description=Monetcore private PostgreSQL backup
+After=postgresql.service
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+ExecStart=/srv/monetcore-production/current/scripts/vps-production/backup.sh /var/backups/monetcore-production
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/monetcore-production

@@ -1,0 +1,8 @@
+# REVIEWED INSERTION ONLY, not a replacement file. First matching rule wins.
+# Preserve verified administrator and unrelated application access.
+local monetcore_db postgres peer
+host  monetcore_db monetcore_app 127.0.0.1/32 scram-sha-256
+# Reject app connections from all other hosts; DB also binds loopback only.
+host  monetcore_db monetcore_app 0.0.0.0/0 reject
+host  monetcore_db monetcore_app ::/0 reject
+# Inspect earlier rules; an earlier broad rule could defeat this restriction.

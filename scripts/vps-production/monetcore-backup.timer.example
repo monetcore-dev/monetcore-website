@@ -1,0 +1,10 @@
+# TEMPLATE ONLY. No enable/start command is performed automatically.
+[Unit]
+Description=Daily Monetcore PostgreSQL backup
+[Timer]
+OnCalendar=*-*-* 02:15:00 UTC
+RandomizedDelaySec=15m
+Persistent=true
+Unit=monetcore-backup.service
+[Install]
+WantedBy=timers.target
