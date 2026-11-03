@@ -156,15 +156,15 @@ summary {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
-  background: #ffffffed;
+  background: #ffffff;
   border-bottom: 1px solid #dfe5efb0;
-  backdrop-filter: blur(20px);
+  backdrop-filter: none;
   transition:
     box-shadow 0.2s,
     background-color 0.2s;
 }
 .site-header.is-scrolled {
-  background: #fffffffa;
+  background: #ffffff;
   box-shadow: 0 8px 28px -20px #0c172d66;
 }
 .navigation-shell {

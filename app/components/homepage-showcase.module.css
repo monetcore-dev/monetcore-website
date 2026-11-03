@@ -516,3 +516,16 @@
 .cardContent > ul {
   margin-top: 0;
 }
+
+/* Spacious product storytelling; concepts retain every original disclosure. */
+.products:global(#products){background:radial-gradient(ellipse at 95% 5%,#21477c40,transparent 48%),#09182d;padding-block:5.5rem}
+.products .heading{font-size:clamp(2rem,3.7vw,3.5rem);letter-spacing:-.05em;max-width:900px}
+.products .cards{gap:24px;margin-top:40px}
+.products .card{border:1px solid #354b6a;border-radius:16px;background:#10233c;box-shadow:none}
+.products .preview{padding:24px;background:#122843;border-color:#34516f}
+.products .windowbar{font-size:11px}
+.products .previewHeading{font-size:16px;margin:20px 0}
+.products .previewHeading span{font-size:11px}
+.products .demoPill{font-size:10px}
+.products .card h3{letter-spacing:-.035em}
+@media(max-width:767px){.products:global(#products){padding-block:3.5rem}.products .cards{margin-top:28px;gap:20px}.products .preview{padding:20px}.products .windowbar{font-size:10px}}

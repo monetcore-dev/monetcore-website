@@ -33,7 +33,7 @@ import { ProjectPlanProvider } from "./components/ProjectPlanContext";
 import ProjectWorkflow from "./components/ProjectWorkflow";
 import CorporateFAQ from "./components/CorporateFAQ";
 import SiteHeader from "./components/SiteHeader";
-import HeroBanner, { HeroServiceElectron } from "./components/HeroBanner";
+import PremiumCorporateHero, { ServiceGraphic } from "./components/PremiumCorporateHero";
 import { corporateSolutions } from "./config/corporateSolutions";
 import {
   packagePrice,
@@ -83,10 +83,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 };
-const primary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-800";
-const secondary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition-colors hover:bg-slate-100";
 const faqs = [
   [
     "What can Monetcore help my business build?",
@@ -114,78 +110,7 @@ export default function Home() {
         id="main-content"
         className={`${homeStyles.home} corporate-page bg-white text-slate-950`}
       >
-        <HeroBanner>
-          <div className="relative mx-auto grid max-w-7xl items-center gap-8">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase leading-6 tracking-[0.16em] text-blue-800">
-                Monetcore System Solutions · Business technology
-              </p>
-              <h1 className="mt-6 text-5xl font-bold leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
-                Build smarter.
-                <br />
-                <span className="text-blue-700">Automate faster.</span>
-                <br />
-                Grow further.
-              </h1>
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
-                We develop technology solutions for businesses. Custom software,
-                AI automation, websites and digital applications — connected to
-                the way your business works.
-              </p>
-              <p className="mt-4 max-w-2xl leading-7 text-slate-600">
-                From a professional online presence to a connected business
-                workflow, Monetcore brings software engineering and practical
-                technology thinking to your next step.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/services" className={primary}>
-                  Explore Solutions{" "}
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </Link>
-                <Link href="/book" className={secondary}>
-                  Book Consultation
-                </Link>
-              </div>
-              <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-700">
-                {[
-                  "Custom software",
-                  "AI & automation",
-                  "Web & mobile",
-                  "Business integrations",
-                ].map((item, index) => (
-                  <span key={item} className="flex items-center gap-2">
-                    <HeroServiceElectron index={index} />
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="company-snapshot relative mx-auto mt-14 grid max-w-7xl gap-4 sm:grid-cols-3">
-            {[
-              [
-                "Established in 2016",
-                "A company focused on useful technology.",
-              ],
-              [
-                "Abuja, Nigeria",
-                "Business technology with local understanding.",
-              ],
-              [
-                "Built around your workflow",
-                "Start with the problem. Shape the right solution.",
-              ],
-            ].map(([title, text]) => (
-              <div
-                key={title}
-                className="rounded-2xl border border-slate-200 bg-white p-6"
-              >
-                <p className="text-lg font-bold">{title}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
-              </div>
-            ))}
-          </div>
-        </HeroBanner>
+        <PremiumCorporateHero />
 
         <section
           id="services"
@@ -213,7 +138,7 @@ export default function Home() {
             <div
               className={`${homeStyles.serviceGrid} mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3`}
             >
-              {corporateSolutions.map((item) => (
+              {corporateSolutions.map((item, index) => (
                 <Link
                   key={item.number}
                   href={item.href}
@@ -234,6 +159,7 @@ export default function Home() {
                     </span>
                     <ArrowUpRight size={19} aria-hidden="true" />
                   </span>
+                  <ServiceGraphic index={index} />
                   <h3 className="mt-6 text-xl font-bold">{item.title}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
                     {item.description}

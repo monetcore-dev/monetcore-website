@@ -1066,3 +1066,17 @@
     }
   }
 }
+
+/* Light editorial counterpoint to the preceding software showcase. */
+.discovery{background:#f9fbff;padding-block:5.5rem}
+.sectionHeading h2{font-size:clamp(2rem,3.8vw,3.5rem);letter-spacing:-.05em}
+.discoveryGrid{gap:24px}
+.discoveryCard{grid-template-columns:1fr;border-color:#d9e3f3;border-radius:16px;box-shadow:none}
+.cardVisual{padding:32px;background:linear-gradient(135deg,#edf3ff,#e6edfb);min-height:240px;justify-content:center;border-bottom:1px solid #dfe7f3}
+.cardVisual>svg,.cardVisual>div{width:100%;max-width:430px}
+.discoveryContent{padding:28px;min-height:270px}
+.discoveryContent h3{font-size:1.7rem;letter-spacing:-.04em}
+.discoveryContent .concept{font-size:12px;color:#50627d}
+.discoveryContent>a{font-size:14px}
+.exploreRow{border-top:1px solid #d9e3f2;padding-top:28px}
+@media(max-width:767px){.discovery{padding-block:3.5rem}.discoveryGrid{gap:20px}.cardVisual{min-height:180px;padding:22px}.discoveryContent{padding:22px;min-height:0}.discoveryContent h3{font-size:1.45rem}}
