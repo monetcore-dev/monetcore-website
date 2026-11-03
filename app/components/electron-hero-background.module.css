@@ -6,8 +6,13 @@
 .ribbons{position:absolute;inset:0;width:100%;height:100%;opacity:.85;pointer-events:none}
 .background[data-visible="true"][data-motion="running"] .electron,.background[data-visible="true"][data-motion="running"] .trail{animation-play-state:running}
 .background figcaption{position:absolute;left:max(24px,calc((100vw - 1280px)/2));bottom:10px;color:#b7c8e0;font-size:9px;line-height:1.4;max-width:60%}
-.motion{position:absolute;bottom:4px;right:max(24px,calc((100vw - 1280px)/2));display:flex;align-items:center;gap:6px;min-height:44px;padding:8px 10px;border:0;border-radius:7px;color:#c3d4ed;background:#07152e90;font-size:10px;pointer-events:auto;cursor:pointer}.motion:focus-visible{outline:3px solid #ffb674;outline-offset:2px}.motion:hover{background:#152944}.motion:disabled{cursor:default}
 @keyframes particle-flow{from{offset-distance:0%}to{offset-distance:100%}}
 @keyframes trail-flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-1000}}
-@media(max-width:767px){.orbits{inset:auto;width:1050px;height:590px;left:calc(50% - 660px);top:8px;opacity:.28;mask-image:linear-gradient(90deg,transparent 38%,#000 76%)}.ring[data-reference-orbit="3"]{display:none}.stars circle:nth-child(n+13){display:none}.ambience{background:radial-gradient(ellipse at 0% 0%,#ea6e1230,transparent 26%),radial-gradient(ellipse at 100% 42%,#632ba23a,transparent 45%),radial-gradient(ellipse at 10% 100%,#4b24ae44,transparent 45%),#07162f}.ambience:after{background:linear-gradient(90deg,#04122b18,#04122b30)}.background figcaption{left:20px;bottom:12px;font-size:8px;max-width:58%}.motion{right:12px;font-size:9px}.ribbons{opacity:.6}}
+@media(max-width:767px){.orbits{inset:auto;width:1050px;height:590px;left:calc(50% - 660px);top:8px;opacity:.28;mask-image:linear-gradient(90deg,transparent 38%,#000 76%)}.ring[data-reference-orbit="3"]{display:none}.stars circle:nth-child(n+13){display:none}.ambience{background:radial-gradient(ellipse at 0% 0%,#ea6e1230,transparent 26%),radial-gradient(ellipse at 100% 42%,#632ba23a,transparent 45%),radial-gradient(ellipse at 10% 100%,#4b24ae44,transparent 45%),#07162f}.ambience:after{background:linear-gradient(90deg,#04122b18,#04122b30)}.background figcaption{left:20px;bottom:12px;font-size:8px;max-width:58%}.ribbons{opacity:.6}}
 @media(prefers-reduced-motion:reduce){.background .electron,.background .trail{animation:none!important}.electron{offset-distance:19%}.ring:nth-child(2) .electron{offset-distance:57%}.ring:nth-child(3) .electron{offset-distance:88%}.ring:nth-child(4) .electron{offset-distance:39%}.trail{stroke-dashoffset:-175;opacity:.4}}
+/* Bring desktop orbits ~15–18% left without scaling or changing their paths.
+   Keep visible strokes/particles outside the existing 600px copy envelope. */
+@media(min-width:1200px){
+ .orbitPosition{transform:translateX(-13vw)}
+ .orbits{--copy-safe-edge:calc(max(24px,calc((100vw - 1280px)/2)) + 616px);mask-image:linear-gradient(90deg,transparent var(--copy-safe-edge),#000 calc(var(--copy-safe-edge) + 32px))}
+}
