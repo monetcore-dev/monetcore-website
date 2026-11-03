@@ -1,3 +1,5 @@
+import { contactFormsEnabled } from "../../lib/enquiries/access";
+import { submitDurableEnquiry } from "../../lib/enquiries/submit";
 import { isPublicLaunch, publicLaunchUnavailable } from "../../lib/publicLaunch";
 import {
   readSubmission,
@@ -18,7 +20,7 @@ import {
 } from "@/app/config/websitePackages";
 
 export async function POST(request: Request) {
-  if (isPublicLaunch()) return publicLaunchUnavailable();
+  if (isPublicLaunch()) return contactFormsEnabled() ? submitDurableEnquiry(request) : publicLaunchUnavailable();
   const staging = isStagingContactEnabled();
   if (isReviewPreview() && !staging) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });

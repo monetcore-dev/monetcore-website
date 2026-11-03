@@ -20,6 +20,7 @@ import {
 } from "./config/enquiryInterests";
 
 type ContactFormProps = {
+  durable?: boolean;
   initialPackageId?: string;
   quotationMode?: boolean;
   initialInterest?: EnquiryInterest;
@@ -29,8 +30,11 @@ export default function ContactForm({
   initialPackageId,
   initialInterest,
   quotationMode = false,
+  durable = false,
 }: ContactFormProps) {
   const submitting = useRef(false);
+  const intent = useRef<{payload:string; key:string} | null>(null);
+  const [uncertainReceipt, setUncertainReceipt] = useState(false);
   const planner = useProjectPlan();
   const incomingPlan = quotationMode ? null : planner?.draft;
   const planId = incomingPlan?.id ?? 0;
@@ -98,7 +102,7 @@ export default function ContactForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current) return;
+    if (submitting.current || uncertainReceipt) return;
     setFeedbackForDraft(feedbackKey);
 
     if (!fields.message.trim()) {
@@ -126,26 +130,38 @@ export default function ContactForm({
       consent: quotationMode ? formData.get("consent") === "on" : undefined,
     };
 
+    let attempted = false;
+    let safelyRejected = false;
     try {
+      if (durable) {
+        const payload = JSON.stringify({...data, startedAt:undefined});
+        if (!intent.current || intent.current.payload !== payload) intent.current = {payload,key:crypto.randomUUID()};
+      }
+      attempted = true;
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(durable ? {...data,idempotencyKey:intent.current?.key} : data),
       });
 
       const result = await response.json();
 
+      safelyRejected = result.outcome === "not_created";
+      if (durable && (!response.ok || result.success !== true || result.outcome !== "received" || result.requestReference !== intent.current?.key || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(String(result.enquiryReference)))) {
+        throw new Error(result.error || "Receipt could not be verified.");
+      }
       if (!response.ok || result.success !== true) {
         throw new Error(result.error || "Unable to send enquiry.");
       }
 
       setStatus("success");
       setFeedback(
-        "Thank you. Your project enquiry has been sent to Monetcore.",
+        durable ? `Your enquiry has been securely received. Reference: ${result.enquiryReference}. Our team will review it; this does not confirm a quotation or appointment.` : "Thank you. Your project enquiry has been sent to Monetcore.",
       );
 
+      intent.current = null;
       // A package change during a pending request must not clear the newer draft.
       if (
         quotationMode &&
@@ -160,11 +176,21 @@ export default function ContactForm({
         budget: "",
         message: "",
       });
-      if (quotationMode) setSelectedPackageId(initialPackageId ?? "");
+      if (quotationMode) {
+        setSelectedPackageId(initialPackageId ?? "");
+        // Keep the receipt visible after resetting the package selector. A later
+        // selection change still hides feedback for the previous draft.
+        setFeedbackForDraft(`${interestSource}:${planId}:${initialPackageId ?? ""}`);
+      }
     } catch (error) {
       console.error("Enquiry submission failed.");
 
       setStatus("error");
+      if (durable && attempted && !safelyRejected) {
+        setUncertainReceipt(true);
+        setFeedback(`We could not verify receipt. Do not resubmit. Contact hello@monetcore.dev or WhatsApp with reference ${intent.current?.key ?? "unavailable"}.`);
+        return;
+      }
       setFeedback(
         `We couldn't send your enquiry. ${error instanceof Error ? error.message : "Please try again."} You can email hello@monetcore.dev.`,
       );
@@ -355,18 +381,19 @@ export default function ContactForm({
 
         <button
           type="submit"
-          disabled={status === "sending"}
+          disabled={status === "sending" || uncertainReceipt}
           className="rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === "sending"
-            ? "Sending..."
+            ? (durable ? "Saving..." : "Sending...")
             : quotationMode
               ? "Send Quotation Request"
               : "Send Project Enquiry"}
         </button>
+        <a href="https://wa.me/2347065880558" className="text-sm font-semibold text-blue-600 underline underline-offset-4">Contact us on WhatsApp</a>
       </div>
 
-      {feedback && feedbackForDraft === feedbackKey && (
+      {feedback && (feedbackForDraft === feedbackKey || uncertainReceipt) && (
         <p
           role={status === "error" ? "alert" : "status"}
           className={`rounded-lg px-4 py-3 text-sm font-medium ${

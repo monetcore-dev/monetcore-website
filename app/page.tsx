@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+import { contactFormsEnabled } from "./lib/enquiries/access";
 import LaunchContactOptions from "./components/LaunchContactOptions";
 import { isPublicLaunch } from "./lib/publicLaunch";
 import type { Metadata } from "next";
@@ -365,7 +367,7 @@ export default function Home() {
                   </Link>
                 </div>
                 <div>
-                  {isPublicLaunch() ? <LaunchContactOptions /> : <ContactForm />}
+                  {isPublicLaunch() && !contactFormsEnabled() ? <LaunchContactOptions /> : <ContactForm durable={contactFormsEnabled()} />}
                 </div>
               </div>
             </div>

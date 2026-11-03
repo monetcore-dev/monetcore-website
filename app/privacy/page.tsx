@@ -14,7 +14,7 @@ const sections = [
     id: "information",
     title: "Information we collect",
     paragraphs: [
-      "Contact and quotation forms collect your name, email address and project message. You may also provide your company, service interests and estimated budget. Website quotations include your package selection and permission to respond to the request.",
+      "Contact and quotation forms collect your name, email address and project message. You may also provide your company, service interests and estimated budget. Website quotations include your package selection and permission to respond to the request. When online enquiries are enabled, submitted details are saved in our private PostgreSQL enquiry records before acknowledgement; notification state and request references help prevent lost or duplicate processing. Business notifications go to hello@monetcore.dev.",
       "Consultation forms collect your name, email address, consultation type and appointment date and time. You may also provide your phone or WhatsApp number, company, service interests and discussion details.",
       "Technical information associated with website requests may be processed by hosting and security services. The application uses address-derived identifiers, request counts and expiry information for rate limiting. These identifiers should not be treated as anonymous information.",
       "Please do not send passwords, payment credentials, identity documents or unnecessary sensitive personal information through enquiry forms. Only provide another person's information if you are entitled to do so.",
@@ -53,7 +53,7 @@ const sections = [
     id: "providers",
     title: "Service providers and external services",
     paragraphs: [
-      "This VPS website implementation uses Namecheap hosting, Namecheap Private Email for email delivery, PostgreSQL for booking records, Google Calendar for appointments and Upstash Redis where shared rate limiting is configured. Providers receive information relevant to the features involved and may process associated technical metadata.",
+      "This VPS website implementation uses Namecheap hosting, Namecheap Private Email for email delivery, PostgreSQL for booking and enquiry records, Google Calendar for appointments and Upstash Redis where shared rate limiting is configured. Providers receive information relevant to the features involved and may process associated technical metadata.",
       "Google Maps is provided as an external link rather than an embedded map. Opening it, using WhatsApp or following social links takes you to another service whose privacy practices also apply.",
       "Information may also need to be disclosed where required by applicable law or for establishing, exercising or defending legal claims.",
     ],

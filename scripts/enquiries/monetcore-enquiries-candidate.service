@@ -1,0 +1,32 @@
+[Unit]
+Description=Monetcore contact/quotation candidate (not review)
+After=network.target
+[Service]
+Type=simple
+DynamicUser=yes
+User=monetcore_enquiries_web
+WorkingDirectory=@RELEASE@
+ExecStart=@NODE@ @RELEASE@/production-start.cjs
+Environment=PORT=4308
+Environment=MONETCORE_CONTACT_ENABLED=false
+Environment=MONETCORE_CONTACT_PROXY_VERIFIED=false
+LoadCredential=enquiry-db-password:/etc/monetcore/enquiries/db-password
+LoadCredential=enquiry-rate-secret:/etc/monetcore/enquiries/rate-secret
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+IPAddressDeny=any
+IPAddressAllow=localhost
+MemoryMax=768M
+TasksMax=128
+UMask=0077
+[Install]
+WantedBy=multi-user.target

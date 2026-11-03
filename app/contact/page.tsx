@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+import { contactFormsEnabled } from "../lib/enquiries/access";
 import LaunchContactOptions from "../components/LaunchContactOptions";
 import { isPublicLaunch } from "../lib/publicLaunch";
 import PageHero from "../components/PageHero";
@@ -76,7 +78,7 @@ export default async function ContactPage({
             <div
               className={`${styles.formPanel} rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/50`}
             >
-              {isPublicLaunch() ? <LaunchContactOptions /> : <ContactForm initialInterest={initialInterest} />}
+              {isPublicLaunch() && !contactFormsEnabled() ? <LaunchContactOptions /> : <ContactForm durable={contactFormsEnabled()} initialInterest={initialInterest} />}
             </div>
           </div>
         </div>
