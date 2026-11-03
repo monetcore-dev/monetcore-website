@@ -1,3 +1,5 @@
+import LaunchContactOptions from "./components/LaunchContactOptions";
+import { isPublicLaunch } from "./lib/publicLaunch";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -363,7 +365,7 @@ export default function Home() {
                   </Link>
                 </div>
                 <div>
-                  <ContactForm />
+                  {isPublicLaunch() ? <LaunchContactOptions /> : <ContactForm />}
                 </div>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { isPublicLaunch, publicLaunchUnavailable } from "../../lib/publicLaunch";
 import {
   readSubmission,
   enforceRateLimit,
@@ -17,6 +18,7 @@ import {
 } from "@/app/config/websitePackages";
 
 export async function POST(request: Request) {
+  if (isPublicLaunch()) return publicLaunchUnavailable();
   const staging = isStagingContactEnabled();
   if (isReviewPreview() && !staging) {
     return NextResponse.json({ error: previewFormMessage }, { status: 403 });

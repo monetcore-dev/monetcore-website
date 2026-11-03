@@ -1,3 +1,4 @@
+import { isPublicLaunch, publicLaunchUnavailable } from "../../lib/publicLaunch";
 import {
   readSubmission,
   enforceRateLimit,
@@ -156,6 +157,7 @@ async function updateBookingTracking(
 }
 
 export async function POST(request: Request) {
+  if (isPublicLaunch()) return publicLaunchUnavailable();
   const staging = isStagingBookingEnabled();
   const blocked = bookingAccessError();
   if (blocked) return blocked;

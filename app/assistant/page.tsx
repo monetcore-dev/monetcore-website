@@ -1,3 +1,5 @@
+import { isPublicLaunch } from "../lib/publicLaunch";
+import LaunchContactOptions from "../components/LaunchContactOptions";
 import PageHero from "../components/PageHero";
 import SiteHeader from "../components/SiteHeader";
 import { pageMetadata } from "../lib/metadata";
@@ -13,6 +15,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 export default function AssistantPage() {
+  if (isPublicLaunch()) return <><SiteHeader /><main id="main-content" className="mx-auto w-full max-w-3xl px-5 py-16"><h1 className="mb-6 text-3xl font-bold">AI Assistant is not available yet</h1><LaunchContactOptions /></main></>;
   return (
     <>
       <SiteHeader />

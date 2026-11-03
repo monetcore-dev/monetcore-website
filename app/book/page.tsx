@@ -1,3 +1,5 @@
+import LaunchContactOptions from "../components/LaunchContactOptions";
+import { isPublicLaunch } from "../lib/publicLaunch";
 import PageHero from "../components/PageHero";
 import { resolveInterest } from "../config/offeringCatalog";
 import { pageMetadata } from "../lib/metadata";
@@ -48,10 +50,10 @@ export default async function BookPage({
             </div>
 
             <div id="booking-form" className="min-w-0 scroll-mt-32">
-              <BookingForm
+              {isPublicLaunch() ? <LaunchContactOptions booking /> : <BookingForm
                 initialInterest={initialInterest}
                 stagingTesting={isStagingBookingEnabled()}
-              />
+              />}
               <PrivacyNotice booking />
             </div>
           </div>

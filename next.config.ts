@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(process.env.MONETCORE_PRODUCTION_ARTIFACT === "true" ? { output: "standalone" as const } : {}),
   // Opt-in for the secret-free review artifact only; normal builds are unchanged.
   ...(process.env.MONETCORE_REVIEW_ARTIFACT === "true" &&
     process.env.MONETCORE_STAGING === "true" &&

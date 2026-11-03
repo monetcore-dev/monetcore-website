@@ -1,3 +1,4 @@
+import { isPublicLaunch, publicLaunchUnavailable } from "../../../lib/publicLaunch";
 import { enforceRateLimit, isValidDate } from "@/app/lib/submissionSafety";
 import { isStagingBookingEnabled } from "@/app/lib/previewSafety";
 import { bookingAccessError } from "@/app/lib/stagingBooking";
@@ -36,6 +37,7 @@ function getLagosDateParts() {
 }
 
 export async function GET(request: Request) {
+  if (isPublicLaunch()) return publicLaunchUnavailable();
   const blocked = bookingAccessError();
   if (blocked) return blocked;
   const limited = await enforceRateLimit(

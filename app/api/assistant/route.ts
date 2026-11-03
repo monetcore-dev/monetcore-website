@@ -1,3 +1,4 @@
+import { isPublicLaunch, publicLaunchUnavailable } from "../../lib/publicLaunch";
 import { ownerTestAccess, assistantRequestOrigin } from "../../lib/assistant/access";
 import { configuration, admit } from "../../lib/assistant/controls";
 import { assemble } from "../../lib/assistant/knowledge";
@@ -25,6 +26,7 @@ const unavailable = () =>
     { status: 503 },
   );
 export async function POST(request: Request) {
+  if (isPublicLaunch()) return publicLaunchUnavailable();
   const denied = ownerTestAccess(request);
   if (denied) return denied;
   const measurement = stagingMeasurement(request);

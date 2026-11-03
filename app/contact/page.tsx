@@ -1,3 +1,5 @@
+import LaunchContactOptions from "../components/LaunchContactOptions";
+import { isPublicLaunch } from "../lib/publicLaunch";
 import PageHero from "../components/PageHero";
 import { Mail, Phone, MessageCircle, MapPin } from "lucide-react";
 import styles from "./contact.module.css";
@@ -74,7 +76,7 @@ export default async function ContactPage({
             <div
               className={`${styles.formPanel} rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/50`}
             >
-              <ContactForm initialInterest={initialInterest} />
+              {isPublicLaunch() ? <LaunchContactOptions /> : <ContactForm initialInterest={initialInterest} />}
             </div>
           </div>
         </div>
