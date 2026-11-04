@@ -1,7 +1,9 @@
 import { createHash, createHmac } from "node:crypto";
+import { isCpanelRuntime, trustedCpanelRequest, cpanelClientAddress } from "./cpanelRuntime";
 
 /** Trust Vercel's overwritten header there; other hosts need a trusted proxy. */
 function clientAddress(request: Request) {
+  if (isCpanelRuntime()) return cpanelClientAddress(request);
   return (
     (process.env.VERCEL === "1"
       ? request.headers.get("x-vercel-forwarded-for")
@@ -61,6 +63,8 @@ export async function enforceRateLimit(
   windowMs = 600_000,
   required = false,
 ) {
+  if (isCpanelRuntime() && !trustedCpanelRequest(request))
+    return Response.json({ error: "Submission service unavailable." }, { status: 503 });
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   const secret = process.env.RATE_LIMIT_KEY_SECRET;
