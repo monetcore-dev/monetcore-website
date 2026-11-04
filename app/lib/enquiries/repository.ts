@@ -1,6 +1,6 @@
 import "server-only";
 import { enquiryPool } from "./database";
-export type EnquiryInput = { kind: "contact" | "quotation"; name: string; email: string; company: string; service: string; budget: string; message: string; package_id: string | null; package_summary: string | null };
+export type EnquiryInput = { kind: "contact" | "quotation"; name: string; email: string; phone?: string; company: string; service: string; budget: string; message: string; package_id: string | null; package_summary: string | null };
 export type Enquiry = { id: string; payload: EnquiryInput; notification_state: "pending" | "started" | "accepted" | "uncertain" | "failed"; attempts: number };
 /** All limits are durable fixed windows; every valid request/replay consumes admission. */
 export async function saveEnquiry(key: string, hash: string, ip: string, payload: EnquiryInput): Promise<Enquiry> {
@@ -40,12 +40,15 @@ export async function saveEnquiry(key: string, hash: string, ip: string, payload
   } finally { client.release(broken); }
 }
 export async function claimNotification(id?: string): Promise<Enquiry | null> {
+  const after = process.env.MONETCORE_ENQUIRY_NOTIFY_AFTER;
+  if (after !== undefined && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(after) || !Number.isFinite(Date.parse(after)))) throw Error("Invalid notification activation time");
   const result = await enquiryPool().query<Enquiry>(`WITH candidate AS (
     SELECT id FROM monetcore_enquiries.enquiries WHERE notification_state='pending' AND attempts<5
       AND next_attempt_at <= clock_timestamp() AND ($1::uuid IS NULL OR id=$1::uuid)
+      AND ($2::timestamptz IS NULL OR created_at >= $2::timestamptz)
       ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1)
     UPDATE monetcore_enquiries.enquiries e SET notification_state='started',attempts=attempts+1,
-      started_at=clock_timestamp(),updated_at=clock_timestamp() FROM candidate c WHERE e.id=c.id RETURNING e.*`, [id ?? null]);
+      started_at=clock_timestamp(),updated_at=clock_timestamp() FROM candidate c WHERE e.id=c.id RETURNING e.*`, [id ?? null, after ?? null]);
   return result.rows[0] ?? null;
 }
 export async function finishNotification(id: string, state: "accepted" | "pending" | "uncertain", category: string) {

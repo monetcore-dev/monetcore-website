@@ -9,7 +9,9 @@ module.exports = function configure(role) {
   const directory = process.env.CREDENTIALS_DIRECTORY;
   const values = {};
   if (enabled) {
-    if (!proxy || !directory || !/^\/run\/credentials\/monetcore-(production|enquiries-candidate|enquiry-worker)\.service$/.test(directory)) throw Error('Enquiry commissioning incomplete');
+    if (!proxy) throw Error('Enquiry commissioning incomplete: trusted proxy verification required');
+    const allowed = role === 'web' ? ['monetcore-production.service','monetcore-enquiries-candidate.service'] : ['monetcore-enquiry-worker.service'];
+    if (!directory || !allowed.some(unit => directory === '/run/credentials/'+unit)) throw Error('Enquiry commissioning incomplete: role-specific systemd credentials required');
     const read = name => fs.readFileSync(directory+'/'+name,'utf8').replace(/\r?\n$/, '');
     values.MONETCORE_ENQUIRY_DB_PASSWORD = read('enquiry-db-password');
     if (!values.MONETCORE_ENQUIRY_DB_PASSWORD) throw Error('Missing enquiry database credential');
@@ -17,6 +19,9 @@ module.exports = function configure(role) {
       values.MONETCORE_ENQUIRY_RATE_SECRET = read('enquiry-rate-secret');
       if (values.MONETCORE_ENQUIRY_RATE_SECRET.length < 32) throw Error('Invalid enquiry rate secret');
     } else {
+      const after = process.env.MONETCORE_ENQUIRY_NOTIFY_AFTER;
+      if (!after || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(after) || !Number.isFinite(Date.parse(after))) throw Error('Enquiry notification activation time required');
+      values.MONETCORE_ENQUIRY_NOTIFY_AFTER = after;
       values.MONETCORE_EMAIL = 'hello@monetcore.dev';
       values.MONETCORE_EMAIL_PASSWORD = read('enquiry-smtp-password');
       if (!values.MONETCORE_EMAIL_PASSWORD) throw Error('Missing enquiry SMTP credential');

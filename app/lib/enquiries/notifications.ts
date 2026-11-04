@@ -17,7 +17,7 @@ export async function processEnquiryNotification(id?: string) {
     const delivery = await Promise.race([transport.sendMail({
       from: `"Monetcore Website" <${mailbox}>`, to: mailbox, envelope: { from: mailbox, to: [mailbox] }, replyTo: input.email,
       messageId: `<monetcore.enquiry.${row.id}@monetcore.dev>`, subject: input.kind === "quotation" ? "New Monetcore Quotation Request" : "New Monetcore Project Enquiry",
-      text: `Enquiry reference: ${row.id}\n\nName: ${input.name}\nEmail: ${input.email}\nCompany: ${input.company}\nService: ${input.service}\nBudget: ${input.budget}\n${input.package_summary ?? ""}\n\nProject details:\n${input.message}`,
+      text: `Enquiry reference: ${row.id}\n\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone || "Not provided"}\nCompany: ${input.company}\nService: ${input.service}\nBudget: ${input.budget}\n${input.package_summary ?? ""}\n\nProject details:\n${input.message}`,
     }), new Promise<never>((_,reject) => { timer = setTimeout(() => { transport.close(); reject(Error("SMTP deadline")); },45000); })]);
     const accepted = Array.isArray(delivery.accepted) && delivery.accepted.some(a => typeof a === "string" && a.toLowerCase() === mailbox);
     if (accepted && (!delivery.rejected || delivery.rejected.length === 0)) { state = "accepted"; category = "smtp_accepted"; }

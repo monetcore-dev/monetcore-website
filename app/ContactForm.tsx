@@ -120,6 +120,7 @@ export default function ContactForm({
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
+      phone: formData.get("phone"),
       company: formData.get("company"),
       service: formData.get("service"),
       budget: formData.get("budget"),
@@ -284,6 +285,11 @@ export default function ContactForm({
             maxLength={200}
             className={inputStyle}
           />
+        </label>
+
+        <label className="text-sm font-semibold text-slate-900">
+          Phone (optional)
+          <input name="phone" type="tel" autoComplete="tel" placeholder="Your phone number" maxLength={50} className={inputStyle} />
         </label>
 
         <label className="text-sm font-semibold text-slate-900">

@@ -174,3 +174,25 @@ reload, then verify b989 HTTPS marker and review health. Stop/disable ONLY the n
 candidate timer/service if needed under explicit rollback authorization. Restore
 public contact alternatives; retain schema, enquiries, secrets and uncertain receipts
 for reconciliation. Never delete queued enquiries or replay uncertain messages.
+
+
+## Minimal form restoration update
+
+Both forms share ContactForm and POST /api/contact. Optional phone is validated,
+stored in the existing JSON payload and included in notifications. Blank phone
+preserves prior request hashes; no schema migration is required.
+
+At the approved new-form activation instant, set the notification worker's
+MONETCORE_ENQUIRY_NOTIFY_AFTER to that UTC instant (YYYY-MM-DDTHH:MM:SSZ). The
+launcher requires this setting. The worker claims only records created at/after
+it, leaving every earlier pending/test notification unchanged. Keep this instant
+fixed across restarts. Do not run controlled-test or complete-enquiries recovery
+commands for this rollout. Existing enquiries remain stored for separate review.
+
+Use a separate immutable release; preserve production4307, candidate4308 and
+review4306 until candidate verification and routing approval. Root-private
+systemd credential files remain unchanged. No database migration/credential
+recreation is needed. Nginx must overwrite trusted headers on the exact contact
+route and keep booking/AI APIs blocked. Switch production pages and exact contact
+endpoint together only after explicit approval. Rollback restores the verified
+4307 Nginx configuration without deleting any enquiries or resetting receipts.
