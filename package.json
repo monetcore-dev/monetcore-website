@@ -10,7 +10,9 @@
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./tests/register.mjs --test tests/*.test.mjs",
     "test:browser": "node tests/browser-routes.mjs && node tests/browser-home.mjs && node tests/browser-packages.mjs && node tests/browser-booking-demo.mjs && node tests/browser-audit.mjs && node tests/browser-mobile.mjs && node tests/browser-motion.mjs && node tests/browser-booking-conflicts.mjs && node tests/browser-service-experiences.mjs && node tests/browser-product-experiences.mjs && node tests/browser-offering-qa.mjs && node tests/browser-ai-core.mjs && node tests/browser-booking-outcomes.mjs",
     "typecheck": "tsc --noEmit",
-    "test:staging:local": "node scripts/staging/local-check.mjs"
+    "test:staging:local": "node scripts/staging/local-check.mjs",
+    "build:cpanel": "node scripts/cpanel/build.mjs",
+    "package:cpanel": "node scripts/cpanel/package.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
