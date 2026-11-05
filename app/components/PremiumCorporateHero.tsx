@@ -35,7 +35,7 @@ export default function PremiumCorporateHero() {
 
 export function ServiceGraphic({ index }: { index: number }) {
   return <div className={`${styles.serviceGraphic} ${index < 2 ? styles.featureGraphic : ""}`} aria-hidden="true">
-    <span className={styles.diagramTag}>{["INTELLIGENT WORKFLOWS", "PURPOSE-BUILT SOFTWARE", "CUSTOMER JOURNEYS", "CONNECTED SYSTEMS", "DIGITAL EXPERIENCES", "CLARITY BEFORE CODE", "CONTENT → CONVERSATION", "MOBILE EXPERIENCES"][index]}</span>
+    <span className={styles.diagramTag}>{["INTELLIGENT WORKFLOWS", "PURPOSE-BUILT SOFTWARE", "CUSTOMER JOURNEYS", "CONNECTED SYSTEMS", "DIGITAL EXPERIENCES", "CLARITY BEFORE CODE", "CONTENT → CONVERSATION", "MOBILE EXPERIENCES", "BUILD → RELEASE → RECOVER"][index]}</span>
     {index === 1 ? <div className={styles.codeDiagram}><span>&lt;your.next.chapter&gt;</span><i /><i /><i /><span>&lt;/built.around.you&gt;</span></div> : index === 4 ? <div className={styles.siteDiagram}><span /><div><i /><i /><i /></div></div> : index === 7 ? <div className={styles.phoneDiagram}><span><i /><i /><i /></span><span><i /><i /><i /></span></div> : index === 6 ? <div className={styles.marketingDiagram}><span>Content</span><ArrowRight size={11} /><span>Campaign</span><ArrowRight size={11} /><span>Conversation</span></div> : <div className={styles.nodeDiagram}><span /><i /><span /><i /><span /></div>}
     <span className={styles.diagramCaption}>Designed around your business</span>
   </div>;

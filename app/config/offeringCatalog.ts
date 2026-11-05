@@ -255,6 +255,18 @@ export const services: Service[] = [
       "An Abuja business could map its current processes, identify information gaps and agree a phased technology roadmap before buying software.",
     formService: "Technology Consulting",
   },
+  {
+    slug: "devops-infrastructure",
+    title: "DevOps & Infrastructure Solutions",
+    headline: "Build. Deploy. Manage. Scale.",
+    intro: "Connect software delivery, Linux and VPS administration, secure hosting and recovery planning around your business.",
+    demo: "devops-workflow",
+    features: ["Development and testing", "Version control and collaboration", "Infrastructure management", "Server administration", "Web server configuration", "Service management", "Release management and CI/CD", "Backup and recovery verification"],
+    challenges: ["Unclear release ownership", "Inconsistent environments", "Unplanned recovery"],
+    industries: ["Growing businesses", "Software teams", "Digital service providers"],
+    usecase: "A business can define secure hosting, release approvals and a tested recovery procedure before launching a new application.",
+    formService: "Technology Consulting",
+  },
 ];
 export const products: Product[] = [
   {

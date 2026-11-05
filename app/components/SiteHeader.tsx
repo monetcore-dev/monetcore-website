@@ -18,6 +18,7 @@ import {
   MonitorPlay,
   PlugZap,
   Workflow,
+  Server,
   X,
 } from "lucide-react";
 
@@ -35,7 +36,7 @@ const menus = [
       "The right expertise for your next business challenge. Start with what you want to achieve.",
     links: serviceNavigation.map((item, index) => ({
       ...item,
-      icon: [Cpu, Code2, Globe2, PlugZap, MonitorPlay, Workflow, Compass][
+      icon: [Cpu, Code2, Globe2, PlugZap, MonitorPlay, Workflow, Compass, Server][
         index
       ],
     })),

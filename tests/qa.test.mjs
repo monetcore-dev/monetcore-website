@@ -149,8 +149,8 @@ test("production SEO allows public routes; preview uses three independent indexi
   process.env.VERCEL_ENV = "production";
   assert.equal(isReviewPreview(), false);
   assert.equal(robots().rules.allow, "/");
-  assert.equal(sitemap().length, 17);
-  assert.equal(new Set(sitemap().map((item) => item.url)).size, 17);
+  assert.equal(sitemap().length, 18);
+  assert.equal(new Set(sitemap().map((item) => item.url)).size, 18);
   assert.ok(!sitemap().some((item) => item.url.endsWith("/assistant")));
   assert.ok(sitemap().every((x) => x.url.startsWith("https://monetcore.dev")));
   assert.ok(

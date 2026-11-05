@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "feature/monetcore-vps-completed": false,
       "feature/phase2-clean-review": false,
-      "feature/review-deployment-automation": false
+      "feature/review-deployment-automation": false,
+      "feature/devops-infrastructure-review-20261105": false
     }
   }
 }

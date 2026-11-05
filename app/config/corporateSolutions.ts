@@ -57,4 +57,10 @@ export const corporateSolutions = [
       "Customer-facing and internal mobile applications, designed for useful journeys on Android, iOS and cross-platform devices.",
     href: "/services/mobile-app-development",
   },
+  {
+    number: "09",
+    title: "DevOps & Infrastructure",
+    description: "Build, deploy and manage dependable software environments with secure hosting, clear release approvals and recovery planning.",
+    href: "/services/devops-infrastructure",
+  },
 ] as const;

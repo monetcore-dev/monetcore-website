@@ -10,7 +10,7 @@ import { services, products } from "../app/config/offeringCatalog.ts";
 const read = (path) =>
   fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
 test("every existing internal route has an intentional page-specific hero theme", () => {
-  assert.equal(Object.keys(internalHeroRoutes).length, 23);
+  assert.equal(Object.keys(internalHeroRoutes).length, 24);
   for (const service of services)
     assert.equal(
       internalHeroRoutes["/services/" + service.slug],

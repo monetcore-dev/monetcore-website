@@ -13,15 +13,15 @@ import {
   marketingGoals,
   marketingPlatforms,
 } from "../app/config/demoPlanning.ts";
-test("offering catalog has all seven services and six honestly labelled products", () => {
-  assert.equal(services.length, 7);
+test("offering catalog has all eight services and six honestly labelled products", () => {
+  assert.equal(services.length, 8);
   assert.equal(products.length, 6);
   assert.equal(
     new Set([
       ...services.map((s) => `/services/${s.slug}`),
       ...products.map((p) => `/products/${p.slug}`),
     ]).size,
-    13,
+    14,
   );
   for (const s of services) {
     assert.ok(s.features.length >= 8);

@@ -24,6 +24,7 @@ import {
   CircleHelp,
   Megaphone,
   Smartphone,
+  Server,
 } from "lucide-react";
 import ContactForm from "./ContactForm";
 import homeStyles from "./homepage.module.css";
@@ -56,6 +57,7 @@ const solutionIcons = [
   Compass,
   Megaphone,
   Smartphone,
+  Server,
 ];
 export const metadata: Metadata = {
   title: {

@@ -41,6 +41,11 @@ export const serviceNavigation = [
       "Assess your processes, priorities and constraints before choosing technology or committing to a build.",
     href: "/services/technology-consulting",
   },
+  {
+    title: "DevOps & Infrastructure",
+    description: "Connect software delivery, secure hosting, server operations and practical recovery planning.",
+    href: "/services/devops-infrastructure",
+  },
 ];
 export const productNavigation = [
   {

@@ -1,3 +1,4 @@
+import DevOpsService from "../../components/devops/DevOpsService";
 import { notFound } from "next/navigation";
 import { services, findService } from "../../config/offeringCatalog";
 import { pageMetadata } from "../../lib/metadata";
@@ -24,6 +25,7 @@ export default async function ServicePage({
   const { slug } = await params;
   const item = findService(slug);
   if (!item) notFound();
+  if (slug === "devops-infrastructure") return <DevOpsService />;
   return (
     <ServiceDetail item={item} demo={<ServiceExperience kind={item.demo} />} />
   );

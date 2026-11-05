@@ -61,7 +61,8 @@ test("concept product demos are unmounted and omitted from indexing, not silentl
   );
 });
 test("all seven service demonstration implementations remain wired and their enquiry routes resolve", () => {
-  assert.equal(services.length, 7);
+  assert.equal(services.length, 8);
+  assert.equal(services.filter(item => item.slug !== "devops-infrastructure").length, 7);
   assert.match(
     read("app/services/[slug]/page.tsx"),
     /ServiceExperience kind=\{item.demo\}/,

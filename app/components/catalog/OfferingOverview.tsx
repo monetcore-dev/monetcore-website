@@ -11,10 +11,11 @@ import {
   Megaphone,
   Compass,
   Layers3,
+  Server,
 } from "lucide-react";
 import SiteHeader from "../SiteHeader";
 import { services, products, enquiryHref } from "../../config/offeringCatalog";
-const icons = [Cpu, Code2, Globe2, PlugZap, Smartphone, Megaphone, Compass];
+const icons = [Cpu, Code2, Globe2, PlugZap, Smartphone, Megaphone, Compass, Server];
 export default function OfferingOverview({
   kind,
 }: {
@@ -62,7 +63,7 @@ export default function OfferingOverview({
             </p>
             <h2>
               {isService
-                ? "Seven connected service areas."
+                ? "Eight connected service areas."
                 : "Product ideas, with clear expectations."}
             </h2>
             <div className="offering-grid two">

@@ -7,6 +7,7 @@ export const serviceHeroVisuals = {
   "mobile-app-development": "mobile",
   "digital-marketing": "marketing",
   "technology-consulting": "strategy",
+  "devops-infrastructure": "network",
 } as const;
 export const productHeroVisuals = {
   "ai-lead-automation": "pipeline",
