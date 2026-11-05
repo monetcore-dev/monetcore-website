@@ -24,10 +24,11 @@ export async function submitDurableEnquiry(request: Request) {
     if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(key)) return reply({error:"Reload the form before submitting.",outcome:"not_created"},400);
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     if (phone && !/^[+0-9() .-]{5,50}$/.test(phone)) return reply({error:"Please enter a valid phone number.",outcome:"not_created"},400);
+    if (body.kind !== undefined && body.kind !== "contact" && body.kind !== "quotation") return reply({error:"Choose a valid enquiry type.",outcome:"not_created"},400);
     const selected = getWebsitePackage(body.packageId);
     if (body.packageId !== undefined && (!selected || body.consent !== true)) return reply({error:"Choose a valid package and consent to a response.",outcome:"not_created"},400);
     const text = (name: string) => typeof body[name] === "string" ? body[name].trim() : "";
-    const payload: EnquiryInput = {kind:selected?"quotation":"contact",name:text("name"),email:text("email").toLowerCase(),...(phone ? {phone} : {}),company:text("company"),service:text("service"),budget:text("budget"),message:text("message"),package_id:selected?.id ?? null,
+    const payload: EnquiryInput = {kind:selected || body.kind === "quotation"?"quotation":"contact",name:text("name"),email:text("email").toLowerCase(),...(phone ? {phone} : {}),company:text("company"),service:text("service"),budget:text("budget"),message:text("message"),package_id:selected?.id ?? null,
       package_summary:selected?`${selected.name}: ${packagePrice(selected)}; annual renewal ${packageRenewal(selected)}. Written scope required. Consent to response: yes.`:null};
     const digest = (purpose: string,value: string) => createHmac("sha256",secret).update(purpose+":"+value).digest("hex");
     attempted = true;

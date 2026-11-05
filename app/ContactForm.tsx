@@ -30,7 +30,7 @@ export default function ContactForm({
   initialPackageId,
   initialInterest,
   quotationMode = false,
-  durable = false,
+  durable = true,
 }: ContactFormProps) {
   const submitting = useRef(false);
   const intent = useRef<{payload:string; key:string} | null>(null);
@@ -118,6 +118,7 @@ export default function ContactForm({
     const formData = new FormData(form);
 
     const data = {
+      kind: quotationMode ? "quotation" : "contact",
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
@@ -131,6 +132,8 @@ export default function ContactForm({
       consent: quotationMode ? formData.get("consent") === "on" : undefined,
     };
 
+    const controller = new AbortController();
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     let attempted = false;
     let safelyRejected = false;
     try {
@@ -138,9 +141,11 @@ export default function ContactForm({
         const payload = JSON.stringify({...data, startedAt:undefined});
         if (!intent.current || intent.current.payload !== payload) intent.current = {payload,key:crypto.randomUUID()};
       }
+      deadline = setTimeout(() => controller.abort(), 20_000);
       attempted = true;
       const response = await fetch("/api/contact", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
@@ -196,6 +201,7 @@ export default function ContactForm({
         `We couldn't send your enquiry. ${error instanceof Error ? error.message : "Please try again."} You can email hello@monetcore.dev.`,
       );
     } finally {
+      if (deadline) clearTimeout(deadline);
       submitting.current = false;
     }
   }
