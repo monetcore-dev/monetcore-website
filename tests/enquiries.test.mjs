@@ -9,6 +9,17 @@ test('durable production enquiries and fixed-recipient outbox (synthetic service
  try{
   for(const k of Object.keys(process.env))delete process.env[k];Object.assign(process.env,{NODE_ENV:'production',MONETCORE_PUBLIC_LAUNCH:'true',MONETCORE_CONTACT_ENABLED:'true',MONETCORE_CONTACT_PROXY_VERIFIED:'true',MONETCORE_ENQUIRY_RATE_SECRET:'synthetic-012345678901234567890123456789',MONETCORE_EMAIL:'hello@monetcore.dev',MONETCORE_EMAIL_PASSWORD:'synthetic-only'});globalThis.fetch=async()=>{throw Error('No network allowed');};
   await t.test('valid receipt is persisted before success; fixed mailbox and stable Message-ID',async()=>{resetEnquiries();const key=randomUUID();const r=await POST(request(key));assert.equal(r.status,202);const b=await r.json();assert.equal(b.outcome,'received');assert.equal(b.requestReference,key);assert.equal(state.rows.length,1);assert.equal(state.mails.length,0);await processEnquiryNotification(state.rows[0].id);assert.equal(state.rows[0].notification_state,'accepted');const mail=state.mails[0];assert.equal(mail.to,'hello@monetcore.dev');assert.deepEqual(mail.envelope.to,['hello@monetcore.dev']);assert.match(mail.messageId,new RegExp(state.rows[0].id));assert.equal(mail.options.secure,true);assert.equal(mail.options.port,465);assert.equal(mail.options.disableFileAccess,true);assert.equal(mail.options.disableUrlAccess,true);assert.equal(mail.replyTo,valid.email);});
+  await t.test('traceability requests DSNs and never claims inbox proof or leaks raw SMTP replies',async()=>{
+    resetEnquiries();await POST(request());state.smtpResponse='250 2.0.0 queued as SAFE123\npassword=synthetic-sensitive';const logs=[];const original=console.info;console.info=value=>logs.push(value);
+    try{await processEnquiryNotification();await processEnquiryNotification();}finally{console.info=original;}
+    assert.equal(state.mails.length,1);assert.equal(logs.length,1);const trace=JSON.parse(logs[0]);assert.equal(trace.queueId,'SAFE123');assert.equal(trace.responseCode,'250');assert.equal(trace.inboxVerified,false);assert.equal(trace.receiptPersisted,true);assert.equal(trace.envelopeFrom,'hello@monetcore.dev');assert.ok(!logs[0].includes('synthetic-sensitive'));
+    const mail=state.mails[0];assert.equal(mail.headers['X-Monetcore-Enquiry-ID'],state.rows[0].id);assert.deepEqual(mail.dsn.notify,['FAILURE','DELAY']);assert.equal(mail.dsn.recipient,'hello@monetcore.dev');assert.equal(mail.dsn.id,state.rows[0].id);
+  });
+  await t.test('lost database SMTP receipt retains safe provider trace without resending',async()=>{
+    resetEnquiries();await POST(request());state.failReceipt=true;const logs=[];const original=console.info;console.info=value=>logs.push(value);
+    try{await assert.rejects(processEnquiryNotification());}finally{console.info=original;}
+    assert.equal(state.rows[0].notification_state,'started');assert.equal(JSON.parse(logs[0]).receiptPersisted,false);state.failReceipt=false;await assert.rejects(drainEnquiryQueue);assert.equal(state.mails.length,1);
+  });
   await t.test('phone is validated, saved and included in notification; blank phone preserves old replay payloads',async()=>{
     resetEnquiries();assert.equal((await POST(request(randomUUID(),{phone:'bad\r\nvalue'}))).status,400);assert.equal(state.rows.length,0);
     assert.equal((await POST(request(randomUUID(),{phone:'+234 706 588 0558'}))).status,202);assert.equal(state.rows[0].payload.phone,'+234 706 588 0558');await processEnquiryNotification();assert.match(state.mails[0].text,/Phone: \+234 706 588 0558/);

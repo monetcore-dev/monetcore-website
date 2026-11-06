@@ -12,13 +12,21 @@ export async function processEnquiryNotification(id?: string) {
     disableFileAccess: true, disableUrlAccess: true, auth: { user: mailbox, pass: process.env.MONETCORE_EMAIL_PASSWORD } });
   let state: "accepted" | "pending" | "uncertain" = "uncertain", category = "smtp_uncertain";
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let responseCode: string | undefined, enhancedStatus: string | undefined, queueId: string | undefined;
   try {
     const input = row.payload;
     const delivery = await Promise.race([transport.sendMail({
       from: `"Monetcore Website" <${mailbox}>`, to: mailbox, envelope: { from: mailbox, to: [mailbox] }, replyTo: input.email,
+      headers: { "X-Monetcore-Enquiry-ID": row.id },
+      dsn: { id: row.id, return: "headers", notify: ["FAILURE", "DELAY"], recipient: mailbox },
       messageId: `<monetcore.enquiry.${row.id}@monetcore.dev>`, subject: input.kind === "quotation" ? "New Monetcore Quotation Request" : "New Monetcore Project Enquiry",
       text: `Enquiry reference: ${row.id}\n\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone || "Not provided"}\nCompany: ${input.company}\nService: ${input.service}\nBudget: ${input.budget}\n${input.package_summary ?? ""}\n\nProject details:\n${input.message}`,
     }), new Promise<never>((_,reject) => { timer = setTimeout(() => { transport.close(); reject(Error("SMTP deadline")); },45000); })]);
+    // Whitelist protocol metadata only; never log raw SMTP replies/customer text.
+    const response = typeof delivery.response === "string" ? delivery.response : "";
+    responseCode = response.match(/^(\d{3})(?:[ -]|$)/)?.[1];
+    enhancedStatus = response.match(/\b([245]\.\d{1,3}\.\d{1,3})\b/)?.[1];
+    queueId = response.match(/\b(?:queued as|queue(?: id)?[:=])\s*([A-Za-z0-9-]{3,80})(?=\s|$)/i)?.[1];
     const accepted = Array.isArray(delivery.accepted) && delivery.accepted.some(a => typeof a === "string" && a.toLowerCase() === mailbox);
     if (accepted && (!delivery.rejected || delivery.rejected.length === 0)) { state = "accepted"; category = "smtp_accepted"; }
     else if (!accepted && Array.isArray(delivery.rejected) && delivery.rejected.includes(mailbox)) { state = "pending"; category = "smtp_rejected"; }
@@ -28,7 +36,15 @@ export async function processEnquiryNotification(id?: string) {
     if (["CONN", "EHLO", "HELO", "AUTH", "MAIL FROM", "RCPT TO"].includes(command)) { state = "pending"; category = "smtp_pre_message"; }
   } finally { if (timer) clearTimeout(timer); transport.close(); }
   // Failed receipt persistence leaves 'started'; stale attempts become uncertain, never blindly replayed.
-  await finishNotification(row.id,state,category);
+  const trace = { event: "enquiry_smtp_accepted", enquiryReference: row.id,
+    messageId: `<monetcore.enquiry.${row.id}@monetcore.dev>`, envelopeFrom: mailbox, recipient: mailbox,
+    responseCode, enhancedStatus, queueId, inboxVerified: false };
+  try { await finishNotification(row.id,state,category); }
+  catch (error) {
+    if (state === "accepted") console.info(JSON.stringify({...trace, receiptPersisted: false}));
+    throw error;
+  }
+  if (state === "accepted") console.info(JSON.stringify({...trace, receiptPersisted: true}));
   return true;
 }
 export async function drainEnquiryQueue() {
